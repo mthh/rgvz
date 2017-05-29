@@ -2,7 +2,7 @@
 
 import 'd3-selection-multi';
 import { select } from 'd3-selection';
-import { geoBounds, geoPath, geoMercator, geoProjection, geoEquirectangular } from 'd3-geo';  // eslint-disable-line no-unused-vars
+import { geoBounds, geoPath, geoMercator, geoProjection, geoAzimuthalEqualArea, geoEquirectangular } from 'd3-geo';  // eslint-disable-line no-unused-vars
 import { get } from './helpers';
 
 export default class D3Map {
@@ -12,7 +12,8 @@ export default class D3Map {
       .attrs({ width, height })
       .append('g');
 
-    this.projection = geoEquirectangular()
+    this.projection = geoAzimuthalEqualArea()
+      .rotate([-10, -52, 0])
       .scale(100)
       .translate([width / 2, height / 2]);
 
@@ -39,29 +40,27 @@ export default class D3Map {
       });
   }
 
-  addLayer(url, zoomFit = false, props = {}) {
-    const path = this.path;
+  addLayer(url, id, zoomFit = false, style = {}) {
     const container = this.container;
-    const options = props;
     get(url)
       .then((result) => {
         const parsed = JSON.parse(result);
         container
           .append('g')
-          .attr('id', options.id)
+          .attr('id', id)
           .styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
           .selectAll('path')
           .data(parsed.features)
           .enter()
           .append('path')
-          .attrs({ d: path, height: '100%', width: '100%' })
-          .style('fill', options.color);
+          .attrs({ d: this.path, height: '100%', width: '100%' })
+          .styles(style);
 
         if (zoomFit) {
-          this.projection().fitSize([this.width, this.height], parsed.features[0]);
+          this.projection = this.projection.fitSize([this.width, this.height], parsed);
           this.path = geoPath(this.projection);
           container.selectAll('path')
-            .attr('d', path);
+            .attr('d', this.path);
         }
       });
   }
