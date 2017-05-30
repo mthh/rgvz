@@ -1,6 +1,7 @@
 import { select as d3select } from 'd3-selection';
 import debug from 'debug';
 import D3Map from './modules/map';
+import Table from './modules/table';
 // import '../styles/main.css';
 
 const log = debug('app:log');
@@ -137,3 +138,8 @@ zoomMap.addLayer(
   false,
   { fill: 'transparent', 'stroke-width': 0.3, stroke: '#180000', 'stroke-opacity': '0' },
 );
+
+const table = new Table('#uptable',
+                        'data/nuts-version2013-level2_stocks.csv',
+                        { height: 300, 'font-size': '0.65em' });
+log(table);

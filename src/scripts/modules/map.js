@@ -54,7 +54,7 @@ export default class D3Map {
           .enter()
           .append('path')
           .attrs({ d: this.path, height: '100%', width: '100%' })
-          .attr('id', (d,i) => ['feature_', i].join(''))
+          .attr('id', (d, i) => ['feature_', i].join(''))
           .styles(style);
 
         if (zoomFit) {
@@ -82,7 +82,7 @@ export default class D3Map {
       features.push(layer[i].__data__);
     }
     this.projection = this.projection
-      .fitSize([this.width, this.height], { type: 'FeatureCollection', features: features });
+      .fitSize([this.width, this.height], { type: 'FeatureCollection', features });
     this.path = geoPath(this.projection);
     this.container.selectAll('path')
       .attr('d', this.path);
