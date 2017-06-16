@@ -10,46 +10,45 @@ export default class Table {
         const [valid, data] = parseCsv(dataText);
         if (valid) {
           const table = this.createTableDOM(data);
-          for (const (key, value) of Object.entries(options)) {
-            console.log(key, value);
+          for (const [key, value] of Object.entries(options)) { // eslint-disable-line
             parent.style[key] = options[value];
           }
           parent.appendChild(table);
           this.dataTable = new DataTable(table);
         }
       });
-
   }
 
   createTableDOM(data, options = {}) {
     const opts = options;
-    options.id = options.id || "myTable";
-    const doc = document,
-      nbFeatures = data.length,
-      columnNames = Object.getOwnPropertyNames(data[0]),
-      nbColumns = columnNames.length;
-    const myTable = doc.createElement("table"),
-      headers = doc.createElement("thead"),
-      body = doc.createElement("tbody"),
-      headers_row = doc.createElement("tr");
-    for (let i=0; i < nbColumns; i++) {
-      const cell = doc.createElement("th");
+    opts.id = options.id || 'myTable';
+    const doc = document;
+    const nbFeatures = data.length;
+    const columnNames = Object.getOwnPropertyNames(data[0]);
+    const nbColumns = columnNames.length;
+    const myTable = doc.createElement('table');
+    const headers = doc.createElement('thead');
+    const body = doc.createElement('tbody');
+    const headersRow = doc.createElement('tr');
+    for (let i=0; i < nbColumns; i++) { // eslint-disable-line
+      const cell = doc.createElement('th');
       cell.innerHTML = columnNames[i];
-      headers_row.appendChild(cell);
+      headersRow.appendChild(cell);
     }
-    headers.appendChild(headers_row);
+    headers.appendChild(headersRow);
     myTable.appendChild(headers);
     for (let i=0; i < nbFeatures; i++) { //eslint-disable-line
-      const row = doc.createElement("tr");
+      const row = doc.createElement('tr');
       for (let j=0; j < nbColumns; j++) { //eslint-disable-line
-        const cell = doc.createElement("td");
-        cell.innerHTML = data[i][columnNames[j]]
+        const cell = doc.createElement('td');
+        cell.innerHTML = data[i][columnNames[j]];
         row.appendChild(cell);
       }
       body.appendChild(row);
     }
     myTable.appendChild(body);
-    myTable.setAttribute("id", options.id);
+    myTable.setAttribute('id', options.id);
+    this.table = myTable;
     return myTable;
   }
 }

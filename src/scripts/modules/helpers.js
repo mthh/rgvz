@@ -19,12 +19,12 @@ export function get(url) {
 }
 
 export function parseCsv(readedText, lineSeparator = '\n', delimiter = ',', fromLine = 1, textSeparator = null) {
-  const stripTextSeparator = (line) => { // eslint-disable-line no-param-reassign
+  const stripTextSeparator = (line) => {  // eslint-disable-line no-param-reassign
     const len = line.length;
     for (let i = 0; i < len; i++) { // eslint-disable-line
       const val = line[i];
       if (textSeparator && val.startsWith(textSeparator) && val.endsWith(textSeparator)) {
-        line[i] = val.slice(1, -1);
+        line[i] = val.slice(1, -1); // eslint-disable-line no-param-reassign
       }
     }
   };
