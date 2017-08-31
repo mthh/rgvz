@@ -114,32 +114,33 @@ span.square.checked {
       <p class="title_menu">
         Ma région
       </p>
-      <p><span class='square'></span>Auvergne-Rhone-Alpes</p>
-      <p><span class='square'></span>Bourgogne-Franche-Comté</p>
-      <p><span class='square'></span>Bretagne</p>
-      <p><span class='square'></span>Centre-Val-de-Loire</p>
-      <p><span class='square'></span>Corse</p>
-      <p><span class='square checked'></span>Hauts-de-France</p>
+      <p><span value="FRK" class='target_region square'></span><span class="label_chk">Auvergne-Rhone-Alpes</span></p>
+      <p><span value="FRC" class='target_region square'></span><span class="label_chk">Bourgogne-Franche-Comté</span></p>
+      <p><span value="FRH" class='target_region square checked'></span><span class="label_chk">Bretagne</span></p>
+      <p><span value="FRB" class='target_region square'></span><span class="label_chk">Centre-Val-de-Loire</span></p>
+      <p><span value="FRM" class='target_region square'></span><span class="label_chk">Corse</span></p>
+      <p><span value="FRE" class='target_region square'></span><span class="label_chk">Hauts-de-France</span></p>
     </div>
     <div class="box">
       <p class="title_menu">
         Mon/mes indicateur(s)
       </p>
-      <p><span class='square'></span>Pauvreté exclusion sociale</p>
-      <p><span class='square'></span>Innovation sociale et territoriale</p>
-      <p><span class='square'></span>Connectivité des territoires</p>
-      <p><span class='square'></span>Environnement et risques naturels</p>
-      <p><span class='square'></span>Qualité de vie</p>
+      <p><span class='square'></span><span class="label_chk">Pauvreté exclusion sociale</span></p>
+      <p><span class='square'></span><span class="label_chk">Innovation sociale et territoriale</span></p>
+      <p><span class='square'></span><span class="label_chk">Connectivité des territoires</span></p>
+      <p><span class='square'></span><span class="label_chk">Environnement et risques naturels</span></p>
+      <p><span class='square'></span><span class="label_chk">Qualité de vie</p>
     </div>
     <div class="box">
       <p class="title_menu">
         Mon filtre de comparaison
       </p>
-      <p><span filter-value="no_filter" class='filter_v square checked'></span>Pas de filtre - (UE 28)</p>
-      <p><span filter-value="territ" class='filter_v square'></span>Maille d'action territoriale</p>
-      <p><span filter-value="density" class='filter_v square'></span>Densité de peuplement</p>
-      <p><span filter-value="wealth" class='filter_v square'></span>Niveau de richesse</p>
-      <p><span filter-value="urb" class='filter_v square'></span>Degré d'urbanisation</p>
+      <p><span filter-value="no_filter" class='filter_v square checked'></span><span class="label_chk">Pas de filtre - (UE 28)</span></p>
+      <p><span filter-value="territ" class='filter_v square'></span><span class="label_chk">Maille d'action territoriale</span></p>
+      <p><span filter-value="density" class='filter_v square'></span><span class="label_chk">Densité de peuplement</span></p>
+      <p><span filter-value="wealth" class='filter_v square'></span><span class="label_chk">Niveau de richesse</span></p>
+      <p><span filter-value="urb" class='filter_v square'></span><span class="label_chk">Degré d'urbanisation</span></p>
+      <p><span filter-value="national_FR" class='filter_v square'></span><span class="label_chk">Filtre national</span></p>
     </div>
   </div>
   <div id="map_section" style="width:490px;float:right;padding-top:90px;">
@@ -178,27 +179,43 @@ const xAxis = d3.axisBottom(x),
 const color_countries = 'rgb(147,144,252)';
 const color_disabled = 'rgb(214, 214, 214)';
 
-let brush_bottom, brush_top, brush_map, zoom, ref_data, data, nbFt, length_dataset, mean_value;
-let focus, context;
-let displayed;
-let current_range = [0, 0];
-let current_range_brush = [0, 0];
-let my_region = 'FRB';
+const changeRegion = (id_region) => {
+  my_region = id_region;
+  colors = {};
+  colors[my_region] = 'yellow';
+  ref_value = ref_data.filter(d => d.id === my_region).map(d => d.ratio)[0];
+  update();
+  updateAxis();
+  updateMiniBars();
+  updateContext(0, data.length);
+  updateMapRegio();
+  svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
+};
+
+let my_region = 'FRH';
+let ref_value;
+
 let variable_name = 'ratio';
 let id_field = 'NUTS1_2016';
 let num = 'EMP_2014';
 let denum = 'Y20.64_2014';
 let ratio = 'TX_EMP_2014';
 let variable_pretty_name = 'Taux d\'emploi (2014)';
-let ref_value;
+
+let brush_bottom, brush_top, brush_map, zoom, zoom_map, ref_data, data, nbFt, length_dataset, mean_value;
+let focus, context;
+let displayed;
+let current_range = [0, 0];
+let current_range_brush = [0, 0];
+
 let current_ids;
 let serie_inversed = false;
 let projection;
 let path;
 let nuts1_lyr;
+let g_bar;
 let colors = {};
 colors[my_region] = 'yellow';
-let g_bar;
 
 const comp = (test_value, ref_value) => {
   if (test_value < ref_value) {
@@ -336,7 +353,7 @@ function makeUI() {
     .attrs({
       width: 24,
       height: 24,
-      'src': 'gtk-info.svg',
+      src: 'gtk-info.svg',
       id: 'img_info'
     })
     .style('margin', '3px')
@@ -344,13 +361,93 @@ function makeUI() {
 
   d3.selectAll('span.filter_v')
     .on('click', function () {
-      if (this.classList.contains('.checked')) {
+      if (this.classList.contains('checked')) {
         return;
       } else {
         d3.selectAll('span.filter_v').attr('class', 'filter_v square');
         this.classList.add('checked');
         const filter_type = this.getAttribute('filter-value');
         applyFilter(filter_type);
+      }
+    });
+
+  d3.selectAll('span.target_region')
+    .on('click', function () {
+      if (this.classList.contains('checked')) {
+        return;
+      } else {
+        d3.selectAll('span.target_region').attr('class', 'target_region square');
+        this.classList.add('checked');
+        changeRegion(this.getAttribute('value'));
+      }
+    });
+
+  d3.selectAll('span.label_chk')
+    .on('click', function () {
+      this.previousSibling.click();
+    });
+
+  const header_map_section =   d3.select('#map_section')
+    .insert('p', 'svg')
+    .style('margin-bottom', '0')
+    .style('margin-left', '10px');
+
+  header_map_section.insert('img')
+    .attrs({
+      width: 20,
+      height: 20,
+      src: 'gimp-tool-rect-select.png',
+      id: 'img_rect_selec',
+      class: 'active'
+    })
+    .styles({
+      margin: '3px',
+      float: 'left',
+    })
+    .on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        this.style.filter = null;
+        document.getElementById('img_map_zoom').style.filter = 'invert(75%)';
+        document.getElementById('img_map_zoom').classList.add('active');
+        svg_map.on('.zoom', null);
+        svg_map.select('.brush_map').style('display', null);
+      } else {
+        this.classList.add('active');
+        this.style.filter = 'invert(75%)';
+        document.getElementById('img_map_zoom').style.filter = '';
+        document.getElementById('img_map_zoom').classList.remove('active');
+        svg_map.call(zoom_map);
+        svg_map.select('.brush_map').style('display', 'none');
+      }
+    });
+
+  header_map_section.insert('img')
+    .attrs({
+      width: 20,
+      height: 20,
+      src: 'gimp-tool-zoom.png',
+      id: 'img_map_zoom',
+    })
+    .styles({
+      margin: '3px',
+      float: 'left',
+    })
+    .on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        this.style.filter = null;
+        document.getElementById('img_rect_selec').style.filter = 'invert(75%)';
+        document.getElementById('img_rect_selec').classList.add('active');
+        svg_map.call(zoom_map);
+        svg_map.select('.brush_map').style('display', 'none');
+      } else {
+        this.classList.add('active');
+        this.style.filter = 'invert(75%)';
+        document.getElementById('img_rect_selec').style.filter = '';
+        document.getElementById('img_rect_selec').classList.remove('active');
+        svg_map.on('.zoom', null);
+        svg_map.select('.brush_map').style('display', null);
       }
     });
 }
@@ -368,7 +465,7 @@ function makeMap(nuts1, countries, remote, template, seaboxes) {
   const layers = svg_map.append('g')
     .attr('id', 'layers');
 
-  const zoom_map = d3.zoom()
+  zoom_map = d3.zoom()
     .scaleExtent([1, 5])
     .translateExtent([[0, 0],[width_map, height_map]])
     .on('zoom', map_zoomed);
@@ -421,7 +518,7 @@ function makeMap(nuts1, countries, remote, template, seaboxes) {
     .attrs({ d: path });
 
   const no_data_lyr = layers.append('g')
-    .attrs({ id: 'nuts1_no_data', 'fill': 'rgb(199, 198, 255)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' })
+    .attrs({ id: 'nuts1_no_data', 'fill': 'white', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: 'lightgrey' })
     .selectAll('path')
     .data(no_data_features)
     .enter()
@@ -446,11 +543,11 @@ function makeMap(nuts1, countries, remote, template, seaboxes) {
       svg_bar.select('.brush_top').call(brush_top.move, null);
       let selection = d3.event.selection;
       let [topleft, bottomright] = selection;
-      const transform = svg_map.node().__zoom;
-      topleft[0] = (topleft[0] - transform.x) / transform.k;
-      topleft[1] = (topleft[1] - transform.y) / transform.k;
-      bottomright[0] = (bottomright[0] - transform.x) / transform.k;
-      bottomright[1] = (bottomright[1] - transform.y) / transform.k;
+      // const transform = svg_map.node().__zoom;
+      // topleft[0] = (topleft[0] - transform.x) / transform.k;
+      // topleft[1] = (topleft[1] - transform.y) / transform.k;
+      // bottomright[0] = (bottomright[0] - transform.x) / transform.k;
+      // bottomright[1] = (bottomright[1] - transform.y) / transform.k;
       const rect = new Rect(topleft, bottomright);
       colors = {};
       nuts1_lyr.selectAll('path')
@@ -479,7 +576,7 @@ function makeMap(nuts1, countries, remote, template, seaboxes) {
         focus.selectAll(".bar")
           .style('fill', (d, i) => colors[d.id] || color_countries);
         const ids = Object.keys(colors);
-        let ranks = data.filter(d => ids.indexOf(d.id) > -1).map(d => d.rang);
+        let ranks = ids.map(d => current_ids.indexOf(d.id) > -1).map(d => current_ranks[d]);
         if (ranks.length > 1) {
           const c1 = ranks[0] - 1;
           const c2 = ranks[ranks.length - 1];
@@ -537,6 +634,7 @@ function makeChart(ref_data) {
   data = [].concat(ref_data);
   data.sort((a, b) => a.ratio - b.ratio);
   current_ids = data.map(d => d.id);
+  current_ranks = data.map((d, i) => i + 1);
   nbFt = data.length;
   mean_value = d3.mean(data.map(d => d.ratio));
   brush_bottom = d3.brushX()
@@ -690,6 +788,13 @@ function makeChart(ref_data) {
     .style("text-anchor", "middle")
     .attr("font-size", "14px")
     .attr("font-weight", "bold");
+}
+
+function updateMapRegio() {
+  nuts1_lyr.selectAll('path')
+    .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
+                              ? (colors[d.properties[id_field]] || color_countries)
+                              : color_disabled);
 }
 
 function updateMiniBars(){
@@ -851,10 +956,7 @@ function brushed_top() {
         }
         return color_countries;
       });
-      nuts1_lyr.selectAll('path')
-        .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
-                                  ? (colors[d.properties[id_field]] || color_countries)
-                                  : color_disabled);
+      updateMapRegio();
     // d3.select('#myTable').selectAll('tbody > tr')
     //   .attr('class', function(d, i) { return colors[this.id.split('row_')[1]]; });
   } else {
@@ -863,10 +965,11 @@ function brushed_top() {
       svg_map.select('.brush_map').call(brush_map.move, null);
       colors = {};
       colors[my_region] = 'yellow';
-      nuts1_lyr.selectAll('path')
-        .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
-                                  ? (colors[d.properties[id_field]] || color_countries)
-                                  : color_disabled);
+      updateMapRegio();
+      // nuts1_lyr.selectAll('path')
+      //   .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
+      //                             ? (colors[d.properties[id_field]] || color_countries)
+      //                             : color_disabled);
     }
     focus.selectAll(".bar")
       .style('fill', (d, i) => colors[d.id] || color_countries);
@@ -947,17 +1050,20 @@ function createTableDOM(data, opts) {
 function applyFilter(filter_type) {
   if (filter_type === 'no_filter') {
     data = ref_data.slice();
+  } else if (filter_type === 'national_FR'){
+    data = ref_data.filter(d => d.id.indexOf('FR') > -1);
   } else {
     const data_my_region = ref_data.filter(d => d.id === my_region)[0];
     data = ref_data.slice(0, Math.round(Math.random() * 101));
     data.push(data_my_region);
   }
+  current_ids = data.map(d => d.id);
+  current_ranks = data.map((d, i) => i + 1);
   if (!serie_inversed) {
     data.sort((a, b) => a.ratio - b.ratio);
   } else {
     data.sort((a, b) => b.ratio - a.ratio);
   }
-  current_ids = data.map(d => d.id);
   colors = {};
   colors[my_region] = 'yellow';
   nbFt = data.length;
@@ -969,21 +1075,22 @@ function applyFilter(filter_type) {
   updateAxis();
   updateMiniBars();
   updateContext(0, data.length);
-  brush_bottom.extent(current_range)
+  // brush_bottom.extent(current_range)
   svg_bar.select('.brush_bottom').call(brush_bottom.move, x2.range());
   svg_map.select('.brush_map').call(brush_map.move, null);
   colors = {};
   colors[my_region] = 'yellow';
-  nuts1_lyr.selectAll('path')
-    .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
-                              ? (colors[d.properties[id_field]] || color_countries)
-                              : color_disabled);
+  updateMapRegio();
+  // nuts1_lyr.selectAll('path')
+  //   .attr('fill', (d, i) => current_ids.indexOf(d.properties[id_field]) > -1
+  //                             ? (colors[d.properties[id_field]] || color_countries)
+  //                             : color_disabled);
 }
 
 function reset() {
   svg_map.transition()
     .duration(750)
-    .call( zoom.transform, d3.zoomIdentity );
+    .call(zoom_map.transform, d3.zoomIdentity );
 }
 
 function map_zoomed() {
@@ -992,12 +1099,24 @@ function map_zoomed() {
     transform.x = 0;
     transform.y = 0;
   }
-  svg_map.select('#layers')
+  const layers = svg_map.select('#layers');
+  const t = layers
     .selectAll('g')
-    .style("stroke-width", function(){ return styles[this.id].stroke_width / transform.k + "px"; });
+    .transition()
+    .duration(225);
 
-  svg_map.select('#layers')
-    .selectAll('g')
+  layers.selectAll('g')
+    .transition(t)
+    .style("stroke-width", function () {
+      return styles[this.id].stroke_width / transform.k + "px";
+    });
+
+  layers.selectAll('g')
+    .transition(t)
+    .attr("transform", transform);
+
+  svg_map.select('.brush_map')
+    .transition(t)
     .attr("transform", transform);
 }
 
