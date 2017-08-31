@@ -145,6 +145,7 @@ span.square.checked {
   </div>
   <div id="map_section" style="width:490px;float:right;padding-top:90px;">
     <svg id="svg_map" width="480" height="375"></svg>
+    <svg id="svg_legend" width="480" height="100"></svg>
   </div>
   <div id="bar_section" style="width:540px;float:left;margin-left: 20px;">
     <svg id="svg_bar" width="540" height="500"></svg>
@@ -879,19 +880,26 @@ function update() {
 }
 
 function makeSourceSection() {
-  const text_zone = svg_map.append('text')
-    .attrs({ y: 400, 'text-anchor': 'end' })
-    .style('font-size', '8px')
+  const text_zone = d3.select('#svg_legend')
+    .append('text')
+    .attrs({ y: 0, 'text-anchor': 'end' })
+    .style('font-size', '10px')
     .style('font-family', '\'Signika\', sans-serif');
   text_zone.append('tspan')
-    .attrs({ x: 465, dy: 12 })
+    .attrs({ x: 470, dy: 12 })
     .text('Niveau régional : NUTS 1 (version 2016)');
   text_zone.append('tspan')
-    .attrs({ x: 465, dy: 12 })
+    .attrs({ x: 470, dy: 12 })
     .text('Origine des données : Eurostat, 2016');
   text_zone.append('tspan')
-    .attrs({ x: 465, dy: 12 })
+    .attrs({ x: 470, dy: 12 })
     .text('Limite administrative: UMS RIATE, CC-BY-SA')
+}
+
+function makeMapLegend() {
+  const grp_lgd = d3.select('#svg_legend')
+    .append('g');
+  // TODO!!
 }
 
 function updateAxis() {
@@ -1120,6 +1128,46 @@ function map_zoomed() {
     .attr("transform", transform);
 }
 
+function selectBelowMyRegion() {
+  const my_rank = data.filter(d => d.id === my_region).map(d => d.rang)[0];
+  current_range_brush = [0, my_rank];
+  colors = {};
+  colors[my_region] = 'yellow';
+  data.filter(d => d.rang < my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'red'; })
+  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  updateMapRegio();
+}
 
+function selectAboveMyRegion() {
+  const my_rank = data.filter(d => d.id === my_region).map(d => d.rang)[0];
+  current_range_brush = [my_rank - 1, data.length];
+  colors = {};
+  colors[my_region] = 'yellow';
+  data.filter(d => d.rang > my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
+  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  updateMapRegio();
+}
+
+function selectAboveMean() {
+  let mean_rank = data.map(d => [d.ratio, Math.abs(mean_value - d.ratio), d.rang])
+  mean_rank.sort((a, b) => a[1] - b[1]);
+  console.log(mean_rank);
+  mean_rank = mean_rank[0];
+  if (mean_rank[1] > mean_value) {
+    mean_rank = mean_rank[2] - 1;
+  } else {
+    mean_rank = mean_rank[2];
+  }
+  current_range_brush = [mean_rank - 1, data.length];
+  colors = {};
+  colors[my_region] = 'yellow';
+  data.filter(d => d.rang > mean_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
+  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  updateMapRegio();
+}
+
+function selectBelowMean() {
+// TODO!!
+}
 
 </script>
