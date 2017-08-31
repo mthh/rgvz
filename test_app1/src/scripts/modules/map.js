@@ -1,18 +1,19 @@
 /* eslint-env browser */
 
 import 'd3-selection-multi';
-import { select } from 'd3-selection';
+// import { select } from 'd3-selection';
 import { geoBounds, geoPath, geoMercator, geoProjection, geoAzimuthalEqualArea, geoEquirectangular } from 'd3-geo';  // eslint-disable-line no-unused-vars
+import * as d3 from 'd3';
 import { get } from './helpers';
 
 export default class D3Map {
   constructor(selector, width = 600, height = 400) {
-    this.container = select(selector)
+    this.container = d3.select(selector)
       .append('svg')
       .attrs({ width, height })
       .append('g');
 
-    this.projection = geoAzimuthalEqualArea()
+    this.projection = d3.geoAzimuthalEqualArea()
       .rotate([-10, -52, 0])
       .scale(100)
       .translate([width / 2, height / 2]);
