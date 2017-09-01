@@ -107,6 +107,38 @@ span.square.checked {
   background: #4f81bd;
 }
 
+.button_blue {
+  border-top: 1px solid #96d1f8;
+  background: #65a9d7;
+  background: -webkit-gradient(linear, left top, left bottom, from(#3e779d), to(#65a9d7));
+  background: -webkit-linear-gradient(top, #3e779d, #65a9d7);
+  background: -moz-linear-gradient(top, #3e779d, #65a9d7);
+  background: -ms-linear-gradient(top, #3e779d, #65a9d7);
+  background: -o-linear-gradient(top, #3e779d, #65a9d7);
+  padding: 5px 10px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  -webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
+  -moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
+  box-shadow: rgba(0,0,0,1) 0 1px 0;
+  text-shadow: rgba(0,0,0,.4) 0 1px 0;
+  color: white;
+  font-size: 12px;
+  font-family: 'Lucida Grande', Helvetica, Arial, Sans-Serif;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.button_blue:hover {
+  border-top-color: #28597a;
+  background: #28597a;
+  color: #ccc;
+}
+.button_blue:active {
+  border-top-color: #1b435e;
+  background: #1b435e;
+}
+
 </style>
 <div style="width:1360px;">
   <div id="menu" style="width:300px;float: left;">
@@ -143,7 +175,7 @@ span.square.checked {
       <p><span filter-value="national_FR" class='filter_v square'></span><span class="label_chk">Filtre national</span></p>
     </div>
   </div>
-  <div id="map_section" style="width:490px;float:right;padding-top:90px;">
+  <div id="map_section" style="width:490px;float:right;padding-top:60px;">
     <svg id="svg_map" width="480" height="375"></svg>
     <svg id="svg_legend" width="480" height="100"></svg>
   </div>
@@ -155,6 +187,15 @@ span.square.checked {
 <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
 <script src="vanilla-dataTables.min.js"></script>
 <script>
+
+const region_names = { // TODO: Fetch the real list of name
+  FRK: 'Auvergne-Rhone-Alpes',
+  FRC: 'Bourgogne-Franche-Comté',
+  FRH: 'Bretagne',
+  FRB: 'Centre-Val-de-Loire',
+  FRM: 'Corse',
+  FRE: 'Hauts-de-France',
+}
 
 const svg_bar = d3.select("svg#svg_bar"),
   margin = { top: 10, right: 20, bottom: 110, left: 30 },
@@ -182,6 +223,7 @@ const color_disabled = 'rgb(214, 214, 214)';
 
 const changeRegion = (id_region) => {
   my_region = id_region;
+  my_region_pretty_name = region_names[my_region];
   colors = {};
   colors[my_region] = 'yellow';
   ref_value = ref_data.filter(d => d.id === my_region).map(d => d.ratio)[0];
@@ -193,6 +235,7 @@ const changeRegion = (id_region) => {
 };
 
 let my_region = 'FRH';
+let my_region_pretty_name = region_names[my_region];
 let ref_value;
 
 let variable_name = 'ratio';
@@ -271,6 +314,7 @@ d3.queue(5)
     makeChart(data_no_empty);
     makeUI();
     makeSourceSection();
+    makeMapLegend();
     makeTable(data_no_empty);
 });
 
@@ -279,7 +323,7 @@ function makeTable(data_no_empty) {
   document.querySelector('#map_section').append(table);
   const dataTable = new DataTable("#myTable");
   const t = document.querySelector('.dataTable-wrapper');
-  t.style.marginTop = '70px';
+  t.style.marginTop = '20px';
   t.style.display = 'none';
   t.style.fontSize = '0.7em';
   t.querySelector('.dataTable-top').remove();
@@ -330,10 +374,16 @@ function makeUI() {
     .on('click', function () {
       if (document.querySelector('.dataTable-wrapper').style.display) {
         document.querySelector('#svg_map').style.display = 'none';
+        document.querySelector('#svg_legend').style.display = 'none';
+        document.querySelector('#header_map').style.display = 'none';
+        document.querySelector('#header_table').style.display = null;
         document.querySelector('.dataTable-wrapper').style.display = null;
         this.style.filter = 'invert(75%)';
       } else {
         document.querySelector('#svg_map').style.display = null;
+        document.querySelector('#svg_legend').style.display = null;
+        document.querySelector('#header_map').style.display = null;
+        document.querySelector('#header_table').style.display = 'none';
         document.querySelector('.dataTable-wrapper').style.display = 'none';
         this.style.filter = null;
       }
@@ -389,6 +439,7 @@ function makeUI() {
 
   const header_map_section =   d3.select('#map_section')
     .insert('p', 'svg')
+    .attr('id', 'header_map')
     .style('margin-bottom', '0')
     .style('margin-left', '10px');
 
@@ -406,19 +457,23 @@ function makeUI() {
     })
     .on('click', function () {
       if (this.classList.contains('active')) {
-        this.classList.remove('active');
-        this.style.filter = null;
-        document.getElementById('img_map_zoom').style.filter = 'invert(75%)';
-        document.getElementById('img_map_zoom').classList.add('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').style('display', null);
+        return;
+        // this.classList.remove('active');
+        // this.style.filter = null;
+        // document.getElementById('img_map_zoom').style.filter = 'invert(75%)';
+        // document.getElementById('img_map_zoom').classList.add('active');
+        // svg_map.on('.zoom', null);
+        // svg_map.select('.brush_map').style('display', null);
       } else {
         this.classList.add('active');
-        this.style.filter = 'invert(75%)';
-        document.getElementById('img_map_zoom').style.filter = '';
+        this.style.filter = '';
+        document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
         document.getElementById('img_map_zoom').classList.remove('active');
-        svg_map.call(zoom_map);
-        svg_map.select('.brush_map').style('display', 'none');
+        document.getElementById('img_map_select').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_select').classList.remove('active');
+        svg_map.on('.zoom', null);
+        svg_map.select('.brush_map').style('display', null);
+        nuts1_lyr.selectAll('path').on('click', null);
       }
     });
 
@@ -432,24 +487,113 @@ function makeUI() {
     .styles({
       margin: '3px',
       float: 'left',
+      filter: 'opacity(25%)',
     })
     .on('click', function () {
       if (this.classList.contains('active')) {
-        this.classList.remove('active');
-        this.style.filter = null;
-        document.getElementById('img_rect_selec').style.filter = 'invert(75%)';
-        document.getElementById('img_rect_selec').classList.add('active');
-        svg_map.call(zoom_map);
-        svg_map.select('.brush_map').style('display', 'none');
+        return;
+        // this.classList.remove('active');
+        // this.style.filter = null;
+        // document.getElementById('img_rect_selec').style.filter = 'invert(75%)';
+        // document.getElementById('img_rect_selec').classList.add('active');
+        // svg_map.call(zoom_map);
+        // svg_map.select('.brush_map').style('display', 'none');
       } else {
         this.classList.add('active');
-        this.style.filter = 'invert(75%)';
-        document.getElementById('img_rect_selec').style.filter = '';
+        this.style.filter = '';
+        document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
         document.getElementById('img_rect_selec').classList.remove('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').style('display', null);
+        document.getElementById('img_map_select').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_select').classList.remove('active');
+        svg_map.call(zoom_map);
+        svg_map.select('.brush_map').call(brush_map.move, null)
+        svg_map.select('.brush_map').style('display', 'none');
+        nuts1_lyr.selectAll('path').on('click', null);
       }
     });
+
+  header_map_section.insert('img')
+    .attrs({
+      width: 20,
+      height: 20,
+      src: 'gimp-cursor.png',
+      id: 'img_map_select',
+    })
+    .styles({
+      margin: '3px',
+      float: 'left',
+      filter: 'opacity(25%)',
+    })
+    .on('click', function () {
+        if (this.classList.contains('active')) {
+          return;
+        } else {
+          this.classList.add('active');
+          this.style.filter = '';
+          document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
+          document.getElementById('img_rect_selec').classList.remove('active');
+          document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
+          document.getElementById('img_map_zoom').classList.remove('active');
+          svg_map.on('.zoom', null);
+          svg_map.select('.brush_map').call(brush_map.move, null)
+          svg_map.select('.brush_map').style('display', 'none');
+          nuts1_lyr.selectAll('path')
+            .on('click', function (d, i) {
+              const id = d.properties[id_field];
+              if (current_ids.indexOf(id) < 0) return;
+              if (colors[id] !== undefined) {
+                colors[id] = undefined;
+                d3.select(this).attr('fill', color_countries);
+              } else {
+                // const value = d.properties.ratio;
+                // const color = comp(value, ref_value);
+                // colors[id] = color;
+                // d3.select(this).attr('fill', color);
+                d3.select(this).attr('fill', colors[id] = comp(d.properties.ratio, ref_value));
+              }
+              update();
+            });
+        }
+    });
+
+  const header_table_section = d3.select('#map_section')
+      .insert('p', 'svg')
+      .attr('id', 'header_table')
+      .style('display', 'none')
+      .style('text-align', 'right')
+      .style('margin', 'auto');
+
+  header_table_section.append('span')
+    .attr('class', 'button_blue')
+    .html('CSV');
+
+  const buttons_under_chart = d3.select('#bar_section')
+    .append('div')
+    .styles({ padding: '10px', 'text-align': 'center' });
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_above_mean' })
+    .style('margin', '8px')
+    .text('Rang inférieur à la moyenne')
+    .on('click', selectBelowMean);
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_below_mean' })
+    .style('margin', '8px')
+    .text('Rang supérieur à la moyenne')
+    .on('click', selectAboveMean);
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
+    .style('margin', '8px')
+    .text('Rang inférieur à ma région')
+    .on('click', selectBelowMyRegion);
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
+    .style('margin', '8px')
+    .text('Rang supérieur à ma région')
+    .on('click', selectAboveMyRegion);
 }
 
 function makeMap(nuts1, countries, remote, template, seaboxes) {
@@ -911,9 +1055,42 @@ function makeSourceSection() {
 }
 
 function makeMapLegend() {
+  const legend_elems = [
+    { color: 'yellow', text: `Ma région : ${my_region_pretty_name}` },
+    { color: color_countries, text: 'Autres régions du filtre de comparaison' },
+    { color: 'green', text: 'Rang plus élevé que ma région' },
+    { color: 'red', text: 'Rang moins élevé que ma région' },
+  ];
+
+  const rect_size = 14;
+  const spacing = 4;
+  const height = rect_size + spacing;
+  const offset =  height * legend_elems.length / 2;
+
   const grp_lgd = d3.select('#svg_legend')
-    .append('g');
-  // TODO!!
+    .append('g')
+    .attr('transform', 'translate(50, 40)')
+    .styles({ 'font-size': '8px', 'font-family': '\'Signika\', sans-serif'});
+
+  const legends = grp_lgd.selectAll('.legend')
+    .data(legend_elems)
+    .enter()
+    .append('g')
+    .attr('class', 'legend')
+    .attr('transform', (d, i) => {
+      const tx = -2 * rect_size;
+      const ty = i * height - offset;
+      return 'translate(' + tx + ',' + ty + ')';
+    });
+
+  legends.append('rect')
+    .attrs({ width: rect_size, height: rect_size })
+    .styles(d => ({ fill: d.color, stroke: d.color }));
+
+  legends.append('text')
+    .attr('x', rect_size + spacing)
+    .attr('y', rect_size - spacing)
+    .text(d => d.text);
 }
 
 function updateContext(min, max) {
@@ -1165,7 +1342,7 @@ function selectAboveMean() {
   colors = {};
   colors[my_region] = 'yellow';
   if (!serie_inversed) {
-    current_range_brush = [mean_rank - 1, data.length];
+    current_range_brush = [mean_rank, data.length];
     data.filter(d => d.rang > mean_rank).forEach(ft => {
       if (ft.ratio > ref_value) colors[ft.id] = 'green'
       else colors[ft.id] = 'red';
@@ -1186,13 +1363,13 @@ function selectBelowMean() {
   const mean_rank = getMeanRank();
   colors = {};
   if (!serie_inversed) {
-    current_range_brush = [0, mean_rank];
+    current_range_brush = [0, mean_rank - 1];
     data.filter(d => d.rang < mean_rank).forEach(ft => {
       if (ft.ratio < ref_value) colors[ft.id] = 'red';
       else colors[ft.id] = 'green';
     });
   } else {
-    current_range_brush = [data.length - mean_rank, data.length];
+    current_range_brush = [data.length - mean_rank + 1, data.length];
     data.filter(d => d.rang < mean_rank).forEach(ft => {
       if (ft.ratio < ref_value) colors[ft.id] = 'green';
       else colors[ft.id] = 'red';
