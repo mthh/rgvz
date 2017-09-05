@@ -89,6 +89,12 @@ span.small {
   margin: 0;
 }
 
+#menu > div > p.small {
+  font-size: 10px;
+  margin-left: 12px;
+  color: black;
+}
+
 .box {
   margin-top: 15px;
   border: solid 1px #4f81bd;
@@ -101,10 +107,26 @@ span.square {
     padding-left: 10px;
     margin-right: 5px;
     font-size: 0.8em;
+    cursor: pointer;
 }
 
-span.square.checked {
+span.small_square {
+  height: 5px;
+  border: 1px solid #4f81bd;
+  content: " ";
+  padding-left: 8px;
+  margin-right: 4px;
+  font-size: 0.6em;
+  cursor: pointer;
+}
+
+span.square.checked, span.small_square.checked {
   background: #4f81bd;
+  cursor: pointer;
+}
+
+span.label_chk {
+  cursor: pointer;
 }
 
 .button_blue {
@@ -128,6 +150,7 @@ span.square.checked {
   font-family: 'Lucida Grande', Helvetica, Arial, Sans-Serif;
   text-decoration: none;
   vertical-align: middle;
+  cursor: pointer;
 }
 .button_blue:hover {
   border-top-color: #28597a;
@@ -140,8 +163,8 @@ span.square.checked {
 }
 
 </style>
-<div style="width:1360px;">
-  <div id="menu" style="width:300px;float: left;">
+<div style="width:1400px;">
+  <div id="menu" style="width:340px;float: left;">
     <div class="box">
       <p class="title_menu">
         Ma région
@@ -157,7 +180,12 @@ span.square.checked {
       <p class="title_menu">
         Mon/mes indicateur(s)
       </p>
-      <p><span class='square'></span><span class="label_chk">Pauvreté exclusion sociale</span></p>
+      <p><span class='square checked'></span><span class="label_chk">Pauvreté exclusion sociale</span></p>
+        <p class="small"><span class='small_square checked'></span><span>Taux d'emploi (2015)</span>
+        <p class="small"><span class="small_square"></span><span>Part de l'emploi dans le secteur tertiaire (2015)</span>
+        <p class="small"><span class="small_square"></span><span>Part de la population avec un haut niveau d'éducation (2015)</span>
+        <p class="small"><span class="small_square"></span><span>Part des 18-24 ans ayant quitté prématurément l'école (2015)</span>
+        <p class="small"><span class="small_square"></span><span>Taux de jeunes en décrochage scolaire (2015)</span>
       <p><span class='square'></span><span class="label_chk">Innovation sociale et territoriale</span></p>
       <p><span class='square'></span><span class="label_chk">Connectivité des territoires</span></p>
       <p><span class='square'></span><span class="label_chk">Environnement et risques naturels</span></p>
@@ -175,7 +203,7 @@ span.square.checked {
       <p><span filter-value="national_FR" class='filter_v square'></span><span class="label_chk">Filtre national</span></p>
     </div>
   </div>
-  <div id="map_section" style="width:490px;float:right;padding-top:60px;">
+  <div id="map_section" style="width:490px;float:right;padding-top:35px;">
     <svg id="svg_map" width="480" height="375"></svg>
     <svg id="svg_legend" width="480" height="100"></svg>
   </div>
@@ -232,6 +260,8 @@ const changeRegion = (id_region) => {
   updateContext(0, data.length);
   updateMapRegio();
   svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
+  svg_map.select('.brush_map').call(brush_map.move, null);
+  updateLegend();
 };
 
 let my_region = 'FRH';
@@ -441,6 +471,7 @@ function makeUI() {
     .insert('p', 'svg')
     .attr('id', 'header_map')
     .style('margin-bottom', '0')
+    .style('margin-top', '0')
     .style('margin-left', '10px');
 
   header_map_section.insert('img')
@@ -540,7 +571,7 @@ function makeUI() {
           nuts1_lyr.selectAll('path')
             .on('click', function (d, i) {
               const id = d.properties[id_field];
-              if (current_ids.indexOf(id) < 0) return;
+              if (current_ids.indexOf(id) < 0 || id === my_region) return;
               if (colors[id] !== undefined) {
                 colors[id] = undefined;
                 d3.select(this).attr('fill', color_countries);
@@ -565,7 +596,20 @@ function makeUI() {
 
   header_table_section.append('span')
     .attr('class', 'button_blue')
-    .html('CSV');
+    .html('CSV')
+    .on('click', function() {
+      let content = [
+        "id,Numérateur,Dénominateur,Ratio,Rang\r\n",
+        ref_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n')
+      ].join('');
+      const elem = document.createElement('a');
+      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
+      elem.setAttribute('download', 'table.csv');
+      elem.style.display = 'none';
+      document.body.appendChild(elem);
+      elem.click();
+      document.body.removeChild(elem);
+    });
 
   const buttons_under_chart = d3.select('#bar_section')
     .append('div')
@@ -574,25 +618,25 @@ function makeUI() {
   buttons_under_chart.append('button')
     .attrs({ class: 'button_blue', id: 'btn_above_mean' })
     .style('margin', '8px')
-    .text('Rang inférieur à la moyenne')
+    .text('< à la moyenne')
     .on('click', selectBelowMean);
 
   buttons_under_chart.append('button')
     .attrs({ class: 'button_blue', id: 'btn_below_mean' })
     .style('margin', '8px')
-    .text('Rang supérieur à la moyenne')
+    .text('> à la moyenne')
     .on('click', selectAboveMean);
 
   buttons_under_chart.append('button')
     .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
     .style('margin', '8px')
-    .text('Rang inférieur à ma région')
+    .text('< à ma région')
     .on('click', selectBelowMyRegion);
 
   buttons_under_chart.append('button')
     .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
     .style('margin', '8px')
-    .text('Rang supérieur à ma région')
+    .text('> à ma région')
     .on('click', selectAboveMyRegion);
 }
 
@@ -845,20 +889,25 @@ function makeChart(ref_data) {
 
   groupe_line_mean.append('line')
       .attrs({
-        x1: 0, x2: width, y1: y(mean_value), y2: y(mean_value),
-        'stroke-dasharray': '10, 5', 'stroke-width': '2px',
+        x1: 0,
+        x2: width,
+        y1: y(mean_value),
+        y2: y(mean_value),
+        'stroke-dasharray': '10, 5',
+        'stroke-width': '2px',
+        class: 'mean_line',
       })
       .style('stroke', 'red');
 
-  groupe_line_mean.append('line')
-      .attrs({ x1: 0, x2: width, y1: y(mean_value), y2: y(mean_value), 'stroke-width': '14px' })
-      .style('stroke', 'transparent')
-      .on('mouseover', function (){
-        groupe_line_mean.select('text').style('display', 'initial');
-      })
-      .on('mouseout', function () {
-        groupe_line_mean.select('text').style('display', 'none');
-      });
+  // groupe_line_mean.append('line')
+  //     .attrs({ x1: 0, x2: width, y1: y(mean_value), y2: y(mean_value), 'stroke-width': '14px' })
+  //     .style('stroke', 'transparent')
+  //     .on('mouseover', function (){
+  //       groupe_line_mean.select('text').style('display', 'initial');
+  //     })
+  //     .on('mouseout', function () {
+  //       groupe_line_mean.select('text').style('display', 'none');
+  //     });
 
   updateMiniBars();
 
@@ -1020,6 +1069,15 @@ function update() {
 
   bar.exit().remove();
 
+  focus.select('.axis--y')
+    .call(yAxis);
+
+  focus.select('.mean_line')
+    .attrs({
+      y1: y(mean_value),
+      y2: y(mean_value),
+    })
+
   const axis_x = focus.select(".axis--x")
     .attr('font-size', d => displayed > 75 ? 6 : 10)
     .call(xAxis);
@@ -1091,6 +1149,10 @@ function makeMapLegend() {
     .attr('x', rect_size + spacing)
     .attr('y', rect_size - spacing)
     .text(d => d.text);
+}
+
+function updateLegend() {
+  d3.select('#svg_legend > g > .legend > text').text(`Ma région : ${my_region_pretty_name}`);
 }
 
 function updateContext(min, max) {
@@ -1233,9 +1295,13 @@ function applyFilter(filter_type) {
   } else if (filter_type === 'national_FR'){
     data = ref_data.filter(d => d.id.indexOf('FR') > -1);
   } else {
-    const data_my_region = ref_data.filter(d => d.id === my_region)[0];
-    data = ref_data.slice(0, Math.round(Math.random() * 101));
-    data.push(data_my_region);
+    let a = Math.round(Math.random() * 50);
+    let b = Math.round(Math.random() * 101);
+    if (a > b) [a, b] = [b, a];
+    data = ref_data.slice(a, b);
+    if(data.filter(d => d.id === my_region)[0] === undefined) {
+      data.push(ref_data.filter(d => d.id === my_region)[0]);
+    };
   }
   current_ids = data.map(d => d.id);
   current_ranks = data.map((d, i) => i + 1);
@@ -1248,7 +1314,7 @@ function applyFilter(filter_type) {
   colors[my_region] = 'yellow';
   nbFt = data.length;
   x.domain(data.map(ft => ft.id));
-  y.domain([d3.min(data, d => d.ratio), d3.max(data, d => d.ratio)]);
+  y.domain([d3.min(data, d => d.ratio) - 2, d3.max(data, d => d.ratio)]);
   x2.domain(x.domain());
   y2.domain(y.domain());
   update();
@@ -1296,37 +1362,37 @@ function map_zoomed() {
 }
 
 function selectBelowMyRegion() {
-  const my_rank = data.filter(d => d.id === my_region).map(d => d.rang)[0];
+  const my_rank = data.map((d,i) => [d.id, i]).filter(d => d[0]=== my_region)[0][1];
   colors = {};
   colors[my_region] = 'yellow';
   if (!serie_inversed) {
     current_range_brush = [0, my_rank];
-    data.filter(d => d.rang < my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'red'; })
+    data.filter((d, i) => i < my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'red'; })
   } else {
-    current_range_brush = [data.length - my_rank, data.length];
-    data.filter(d => d.rang < my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
+    current_range_brush = [my_rank, data.length];
+    data.filter((d, i) => i > my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
   }
   svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }
 
 function selectAboveMyRegion() {
-  const my_rank = data.filter(d => d.id === my_region).map(d => d.rang)[0];
+  const my_rank = data.map((d,i) => [d.id, i]).filter(d => d[0] === my_region)[0][1];
   colors = {};
   colors[my_region] = 'yellow';
   if (!serie_inversed) {
-    current_range_brush = [my_rank - 1, data.length];
-    data.filter(d => d.rang > my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
+    current_range_brush = [my_rank, data.length];
+    data.filter((d, i) => i > my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'green'; })
   } else {
-    current_range_brush = [0, data.length - my_rank];
-    data.filter(d => d.rang > my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'red'; })
+    current_range_brush = [0, my_rank];
+    data.filter((d, i) => i < my_rank).map(d => d.id).forEach(ft => { colors[ft] = 'red'; })
   }
   svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }
 
 function getMeanRank() {
-  let mean_rank = data.map(d => [d.ratio, Math.abs(mean_value - d.ratio), d.rang])
+  let mean_rank = data.map((d, i) => [d.ratio, Math.abs(mean_value - d.ratio), i])
   mean_rank.sort((a, b) => a[1] - b[1]);
   mean_rank = mean_rank[0];
   if (mean_rank[1] > mean_value) {
@@ -1343,13 +1409,13 @@ function selectAboveMean() {
   colors[my_region] = 'yellow';
   if (!serie_inversed) {
     current_range_brush = [mean_rank, data.length];
-    data.filter(d => d.rang > mean_rank).forEach(ft => {
+    data.filter(d => d.ratio > mean_value).forEach(ft => {
       if (ft.ratio > ref_value) colors[ft.id] = 'green'
       else colors[ft.id] = 'red';
     });
   } else {
-    current_range_brush = [0, data.length - mean_rank];
-    data.filter(d => d.rang > mean_rank).forEach(ft => {
+    current_range_brush = [0, mean_rank + 1];
+    data.filter(d => d.ratio > mean_value).forEach(ft => {
       if (ft.ratio > ref_value) colors[ft.id] = 'red';
       else colors[ft.id] = 'green';
     });
@@ -1363,14 +1429,14 @@ function selectBelowMean() {
   const mean_rank = getMeanRank();
   colors = {};
   if (!serie_inversed) {
-    current_range_brush = [0, mean_rank - 1];
-    data.filter(d => d.rang < mean_rank).forEach(ft => {
+    current_range_brush = [0, mean_rank];
+    data.filter(d => d.ratio < mean_value).forEach(ft => {
       if (ft.ratio < ref_value) colors[ft.id] = 'red';
       else colors[ft.id] = 'green';
     });
   } else {
-    current_range_brush = [data.length - mean_rank + 1, data.length];
-    data.filter(d => d.rang < mean_rank).forEach(ft => {
+    current_range_brush = [mean_rank + 1, data.length];
+    data.filter(d => d.ratio < mean_value).forEach(ft => {
       if (ft.ratio < ref_value) colors[ft.id] = 'green';
       else colors[ft.id] = 'red';
     });
