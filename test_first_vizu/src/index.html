@@ -3,7 +3,22 @@
 <link href="vanilla-dataTables.min.css" rel="stylesheet">
 <style>
 
-@import url('https://fonts.googleapis.com/css?family=Signika');
+/* @import url('https://fonts.googleapis.com/css?family=Signika'); */
+@font-face {
+  font-family: 'Signika';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Signika Regular'), local('Signika-Regular'), url(AF4iYPZnDjGMiNsxxSXYQfY6323mHUZFJMgTvxaG2iE.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Signika';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Signika Regular'), local('Signika-Regular'), url(q41y_9MUP_N8ipOH4ORRvw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
 
 .area {
   fill: steelblue;
@@ -193,14 +208,20 @@ span.label_chk {
     </div>
     <div class="box">
       <p class="title_menu">
-        Mon filtre de comparaison
+        Mon espace d'étude
       </p>
-      <p><span filter-value="no_filter" class='filter_v square checked'></span><span class="label_chk">Pas de filtre - (UE 28)</span></p>
-      <p><span filter-value="territ" class='filter_v square'></span><span class="label_chk">Maille d'action territoriale</span></p>
-      <p><span filter-value="density" class='filter_v square'></span><span class="label_chk">Densité de peuplement</span></p>
-      <p><span filter-value="wealth" class='filter_v square'></span><span class="label_chk">Niveau de richesse</span></p>
-      <p><span filter-value="urb" class='filter_v square'></span><span class="label_chk">Degré d'urbanisation</span></p>
-      <p><span filter-value="national_FR" class='filter_v square'></span><span class="label_chk">Filtre national</span></p>
+      <p><span filter-value="no_filter" class='filter_v square checked'></span><span class="label_chk">UE 28</span></p>
+      <p><span filter-value="demo1" class='filter_v square'></span><span class="label_chk">Espace d'étude de démonstration 1</span></p>
+      <p><span filter-value="demo2" class='filter_v square'></span><span class="label_chk">Espace d'étude de démonstration 2</span></p>
+      <p><span filter-value="national_FR" class='filter_v square'></span><span class="label_chk">Pays d'appartenance</span></p>
+    </div>
+    <div class="box">
+      <p class="title_menu">
+        Maillage territorial d'analyse
+      </p>
+      <p><span class='square checked'></span><span class="label_chk">NUTS1</span></p>
+      <p><span class='square'></span><span class="label_chk">NUTS1/2 - Statistique</span></p>
+      <p><span class='square'></span><span class="label_chk">NUTS1/2 - Gouvernance</span></p>
     </div>
   </div>
   <div id="map_section" style="width:490px;float:right;padding-top:35px;">
@@ -211,8 +232,8 @@ span.label_chk {
     <svg id="svg_bar" width="540" height="500"></svg>
   </div>
 </div>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+<script src="d3.v4.min.js"></script>
+<script src="d3-selection-multi.v1.min.js"></script>
 <script src="vanilla-dataTables.min.js"></script>
 <script>
 
@@ -273,7 +294,7 @@ let id_field = 'NUTS1_2016';
 let num = 'EMP_2014';
 let denum = 'Y20.64_2014';
 let ratio = 'TX_EMP_2014';
-let variable_pretty_name = 'Taux d\'emploi (2014)';
+let variable_pretty_name = 'Taux d\'emploi (2015)';
 
 let brush_bottom, brush_top, brush_map, zoom, zoom_map, ref_data, data, nbFt, length_dataset, mean_value;
 let focus, context;
@@ -1010,16 +1031,16 @@ function updateMiniBars(){
       .attr("height", d => height2 - y2(d.ratio))
       .style('fill', d => d.id !== my_region ? color_countries : 'yellow');;
   mini_bars.exit().remove();
-  context.select('.axis--x').remove();
-  context.append("g")
-    .attr("class", "axis axis--x")
-    .attr("transform", "translate(0," + height2 + ")")
-    .call(xAxis2)
-      .selectAll("text")
-      .style("text-anchor", "end")
-      .attr("dx", "-.8em")
-      .attr("dy", ".15em")
-      .attr("transform", "rotate(-65)");
+  // context.select('.axis--x').remove();
+  // context.append("g")
+  //   .attr("class", "axis axis--x")
+  //   .attr("transform", "translate(0," + height2 + ")")
+  //   .call(xAxis2)
+  //     .selectAll("text")
+  //     .style("text-anchor", "end")
+  //     .attr("dx", "-.8em")
+  //     .attr("dy", ".15em")
+  //     .attr("transform", "rotate(-65)");
 }
 
 function update() {
@@ -1099,7 +1120,7 @@ function makeSourceSection() {
   const text_zone = d3.select('#svg_legend')
     .append('text')
     .attrs({ y: 0, 'text-anchor': 'end' })
-    .style('font-size', '10px')
+    .style('font-size', '11px')
     .style('font-family', '\'Signika\', sans-serif');
   text_zone.append('tspan')
     .attrs({ x: 470, dy: 12 })
@@ -1128,7 +1149,7 @@ function makeMapLegend() {
   const grp_lgd = d3.select('#svg_legend')
     .append('g')
     .attr('transform', 'translate(50, 40)')
-    .styles({ 'font-size': '8px', 'font-family': '\'Signika\', sans-serif'});
+    .styles({ 'font-size': '11px', 'font-family': '\'Signika\', sans-serif'});
 
   const legends = grp_lgd.selectAll('.legend')
     .data(legend_elems)

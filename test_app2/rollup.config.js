@@ -12,12 +12,6 @@ export default {
   format: 'iife',
   sourceMap: 'inline',
   plugins: [
-    // postcss({
-    //  plugins: [
-    //    cssnano(),
-    //  ],
-    //  extensions: ['.css'],
-    // }),
     resolve({
       jsnext: true,
       main: true,
