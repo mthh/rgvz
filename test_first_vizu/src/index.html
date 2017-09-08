@@ -1078,7 +1078,7 @@ function update() {
         .text(`${Math.round(d.ratio)}`);
       tooltip
         .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
-    });;
+    });
 
   bar.enter()
     .insert("rect", '.mean')
