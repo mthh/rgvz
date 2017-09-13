@@ -1,7 +1,86 @@
 import debug from 'debug';
-import { select as d3select } from 'd3-selection';
 
 debug('app:log');
+
+
+function createMenu (names, variables, study_zones, territorial_mesh) {
+  // First section, regions names:
+  const section1 = document.createElement('div');
+  section1.className = 'box';
+  const title_section1 = document.createElement('p');
+  title_section1.className = 'title_menu';
+  title_section1.innerHTML = 'Ma région';
+  section1.appendChild(title_section1);
+  for (let i = 0, len_i = names.length; i < len_i; i++) {
+    const id = names[i].geo;
+    const name = names[i].Nom;
+    const entry = document.createElement('p');
+    entry.innerHTML = `<span value="${id}" class='target_region square'></span><span class="label_chk">${name}</span>`;
+    section1.appendChild(entry);
+  }
+
+  // Second section, groups of variables:
+  const section2 = document.createElement('div');
+  section2.className = 'box';
+  const title_section2 = document.createElement('p');
+  title_section2.className = 'title_menu';
+  title_section2.innerHTML = 'Mon/mes indicateurs';
+  section2.appendChild(title_section2);
+  const groups_var = Object.keys(variables);
+  for (let i = 0, len_i = groups_var.length; i < len_i; i++) {
+    const gp_name = groups_var[i];
+    const entry = document.createElement('p');
+    entry.innerHTML = `<span class='square checked'></span><span class="label_chk">${gp_name}</span>`;
+    section2.appendChild(entry);
+    const var_names = Object.keys(variables[gp_name]);
+    for (let j = 0, len_j = var_names.length; j < len_j; j++) {
+      const name_var = var_names[j];
+      const code_var = variables[gp_name][name_var];
+      const sub_entry = document.createElement('p');
+      sub_entry.className = 'small';
+      sub_entry.innerHTML = `<span value="${code_var}" class="small_square"></span><span>${var_names[j]}</span>`;
+      section2.appendChild(sub_entry);
+    }
+  }
+
+  // Third section, study zone:
+  const section3 = document.createElement('div');
+  section3.className = 'box';
+  const title_section3 = document.createElement('p');
+  title_section3.className = 'title_menu';
+  title_section3.innerHTML = 'Mon espace d\'étude';
+  section3.appendChild(title_section3);
+  for (let i = 0, len_i = study_zones.length; i < len_i; i++) {
+    const entry = document.createElement('p');
+    const zone = study_zones[i];
+    entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square checked'></span><span class="label_chk">${zone.name}</span>`;
+    section3.appendChild(entry);
+  }
+
+  // Fourth section:
+  const section4 = document.createElement('div');
+  section4.className = 'box';
+  const title_section4 = document.createElement('p');
+  title_section4.className = 'title_menu';
+  title_section4.innerHTML = 'Maillage territorial d\'analyse';
+  for (let i = 0, len_i = territorial_mesh.length; i < len_i; i++) {
+    const entry = document.createElement('p');
+    const territ_level = territorial_mesh[i];
+    entry.innerHTML = `<span value="${territ_level.id}" class='square checked'></span><span class="label_chk">${territ_level.name}</span>`;
+    section4.appendChild(entry);
+  }
+
+  // The actual menu containing these 4 sections:
+  const menu = document.createElement('div');
+  menu.id = 'menu';
+  menu.style.width = '340px';
+  menu.style.float = 'left';
+  menu.appendChild(section1);
+  menu.appendChild(section2);
+  menu.appendChild(section3);
+  menu.appendChild(section4);
+}
+
 
 const svg_bar = d3.select("svg#svg_bar"),
   margin = { top: 10, right: 20, bottom: 110, left: 30 },
@@ -29,7 +108,7 @@ const color_disabled = 'rgb(214, 214, 214)';
 
 const changeRegion = (id_region) => {
   my_region = id_region;
-  my_region_pretty_name = region_names[my_region];
+  my_region_pretty_name = app.feature_names[my_region];
   colors = {};
   colors[my_region] = 'yellow';
   ref_value = ref_data.filter(d => d.id === my_region).map(d => d.ratio)[0];
@@ -43,7 +122,7 @@ const changeRegion = (id_region) => {
 };
 
 let my_region = 'FRH';
-let my_region_pretty_name = region_names[my_region];
+let my_region_pretty_name;
 let ref_value;
 
 let variable_name = 'ratio';
@@ -59,6 +138,8 @@ let displayed;
 let current_range = [0, 0];
 let current_range_brush = [0, 0];
 
+let current_ranks;
+
 let current_ids;
 let serie_inversed = false;
 let projection;
@@ -67,6 +148,8 @@ let nuts1_lyr;
 let g_bar;
 let colors = {};
 colors[my_region] = 'yellow';
+
+loadData();
 
 const comp = (test_value, ref_value) => {
   if (test_value < ref_value) {
@@ -79,7 +162,6 @@ const comp = (test_value, ref_value) => {
 const styles = {
   template: { stroke_width: 0 },
   countries: { stroke_width: 0.5 },
-  remote: { stroke_width: 1 },
   seaboxes: { stroke_width: 1 },
   remote: { stroke_width: 0.5 },
   seaboxes2: { stroke_width: 1 },
@@ -121,7 +203,24 @@ function prepare_dataset(full_dataset) {
   full_dataset.forEach(elem => {
     app.feature_names[elem.geo] = elem.Nom;
   });
+}
 
+function filter_no_empty() {
+  const data = app.full_dataset.map(ft => ({
+    id: ft.geo,
+    num: +ft[num],
+    denum: +ft[denum] / 1000,
+    // TX_EMP_2014: (+ft.properties[num] / +ft.properties[denum]) * 100000,
+    ratio: (+ft[num] / +ft[denum]) * 100000,
+  })).filter(ft => {
+    if (ft.id === my_region) {
+      ref_value = ft.ratio;
+    }
+    return ft.ratio;
+  });
+  data.sort((a, b) => a.ratio - b.ratio);
+  data.forEach((d, i) => d.rang = i + 1);
+  return data;
 }
 
 function loadData() {
@@ -136,6 +235,8 @@ function loadData() {
       if (error) throw error;
       const [full_dataset, nuts1, countries, remote, template, seaboxes] = results;
       prepare_dataset(full_dataset);
+      const data_no_empty = filter_no_empty();
+       my_region_pretty_name = app.feature_names[my_region];
       makeMap(nuts1, countries, remote, template, seaboxes);
       makeChart(data_no_empty);
       makeUI();
@@ -143,7 +244,6 @@ function loadData() {
       makeMapLegend();
       makeTable(data_no_empty);
   });
-
 }
 
 function makeTable(data_no_empty) {
@@ -186,7 +286,7 @@ function makeUI() {
     .attrs({
       width: 24,
       height: 24,
-      'src': 'edit-table-insert-row-above.svg',
+      src: 'img/edit-table-insert-row-above.svg',
       id: 'img_table'
     })
     .style('margin', '3px')
@@ -213,7 +313,7 @@ function makeUI() {
     .attrs({
       width: 24,
       height: 24,
-      'src': 'printer.svg',
+      src: 'img/printer.svg',
       id: 'img_printer'
     })
     .style('margin', '3px')
@@ -223,7 +323,7 @@ function makeUI() {
     .attrs({
       width: 24,
       height: 24,
-      src: 'gtk-info.svg',
+      src: 'img/gtk-info.svg',
       id: 'img_info'
     })
     .style('margin', '3px')
@@ -268,7 +368,7 @@ function makeUI() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'gimp-tool-rect-select.png',
+      src: 'img/gimp-tool-rect-select.png',
       id: 'img_rect_selec',
       class: 'active'
     })
@@ -302,7 +402,7 @@ function makeUI() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'gimp-tool-zoom.png',
+      src: 'img/gimp-tool-zoom.png',
       id: 'img_map_zoom',
     })
     .styles({
@@ -337,7 +437,7 @@ function makeUI() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'gimp-cursor.png',
+      src: 'img/gimp-cursor.png',
       id: 'img_map_select',
     })
     .styles({
