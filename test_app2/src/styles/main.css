@@ -71,10 +71,11 @@ span.small {
   background: #4f81bd;
   color: white;
   padding: 2px !important;
+  margin: 0;
 }
 
 #menu {
-  font: 'Valera Round';
+  font-family: 'Signika', sans-serif;
   color: #4f81bd;
 }
 
@@ -91,8 +92,8 @@ span.small {
 }
 
 .box {
-  margin-top: 15px;
   border: solid 1px #4f81bd;
+  margin-bottom: 15px;
 }
 
 span.square {

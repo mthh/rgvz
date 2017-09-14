@@ -22,13 +22,13 @@
     "rollup-watch": "^3.2.2"
   },
   "dependencies": {
-    "d3-geo": "^1.6.3",
+    /*"d3-geo": "^1.6.3",
     "d3-path": "^1.0.5",
     "d3-request": "^1.0.5",
     "d3-selection": "^1.0.6",
-    "d3-selection-multi": "^1.0.1",
+    "d3-selection-multi": "^1.0.1",*/
     "debug": "^2.6.6",
-    "vanilla-datatables": "^1.1.9"
+    "vanilla-datatables": "latest"
   },
   "scripts": {
     "build": "rollup -c",

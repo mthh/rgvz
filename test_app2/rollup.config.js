@@ -10,6 +10,7 @@ export default {
   entry: 'src/scripts/main.js',
   dest: 'build/js/main.min.js',
   format: 'iife',
+  moduleName: 'App',
   sourceMap: 'inline',
   plugins: [
     resolve({
@@ -30,7 +31,7 @@ export default {
       exclude: 'node_modules/**',
       ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
     }),
-    (process.env.SERVE != undefined && serve({
+    (process.env.SERVE !== undefined && serve({
       port: 11111,
       contentBase: 'build',
     })),
