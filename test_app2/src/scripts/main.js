@@ -9,8 +9,8 @@ debug('app:log');
 
 const variables = {
   'Pauvreté exclusion': {
-    'Taux d\'emploi': 'TX_EMP_2014',
-    'Taux de chomage': 'TX_CHOM_2014',
+    'Taux d\'emploi (2015)': 'TX_EMP_2014',
+    'Taux de chomage (2015)': 'TX_CHOM_2014',
   },
   'Groupe 2': {
     'Indicateur 1': 'IND_1',
@@ -55,16 +55,17 @@ const color_disabled = 'rgb(214, 214, 214)';
 export let brush_bottom, brush_top, zoom, ref_data, data, nbFt, length_dataset, mean_value;
 let focus, context;
 let displayed;
-let current_range = [0, 0];
-let current_range_brush = [0, 0];
-
 let g_bar;
 let map_elem;
 
 export const app = {
   colors: {},
-  currrent_data: [],
+  current_data: [],
   full_dataset: [],
+  current_range: [0, 0],
+  current_range_brush: [0, 0],
+  current_ids: [],
+  current_ranks: [],
 };
 
 loadData();
@@ -75,7 +76,9 @@ const changeRegion = (id_region) => {
   app.colors = {};
   app.colors[app.current_config.my_region] = 'yellow';
   // app.current_data = filter_no_empty(app);
-  app.current_config.ref_value = app.current_data.filter(d => d.id === app.current_config.my_region).map(d => d.ratio)[0];
+  app.current_config.ref_value = app.current_data
+    .filter(d => d.id === app.current_config.my_region)
+    .map(d => d.ratio)[0];
   update();
   updateMiniBars();
   updateContext(0, data.length);
@@ -131,12 +134,13 @@ function loadData() {
         my_region_pretty_name: app.feature_names['FRE'],
       };
       app.colors[app.current_config.my_region] = 'yellow';
-      createMenu(full_dataset, variables, study_zones, territorial_mesh);
+      const features_menu = full_dataset.filter(ft => ft.Nom.indexOf('FR') > -1);
+      createMenu(features_menu, variables, study_zones, territorial_mesh);
       app.current_data = filter_no_empty(app);
       map_elem = new MapSelect(nuts1, countries, remote, template, seaboxes);
       makeChart(app.current_data);
       makeUI();
-      map_elem.bindBrush(svg_bar, brush_top, brush_bottom, focus);
+      map_elem.bindBrush(svg_bar, brush_top, brush_bottom, focus, x);
       makeSourceSection();
       makeMapLegend();
       makeTable(app.current_data, app.current_config);
@@ -152,7 +156,7 @@ function makeUI() {
     .style('margin-top', '15px')
     .style('font-size', '0.75em')
     .text('Rang (1 individu)');
-  const header_bar_section =  d3.select('#bar_section')
+  const header_bar_section = d3.select('#bar_section')
     .insert('p', 'svg')
     .style('margin-bottom', '0');
   header_bar_section.insert('span')
@@ -352,7 +356,7 @@ function makeUI() {
     .on('click', () => {
       const content = [
         'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
-        ref_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
+        app.current_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
       ].join('');
       const elem = document.createElement('a');
       elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
@@ -424,7 +428,7 @@ function makeChart(ref_data) {
       .attr('class', 'focus')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-  context = svg_bar.append("g")
+  context = svg_bar.append('g')
       .attr('class', 'context')
       .attr('transform', `translate(${margin2.left}, ${margin2.top})`);
 
@@ -514,14 +518,14 @@ function makeChart(ref_data) {
       } else {
         data.sort((a, b) => a.ratio - b.ratio);
       }
-      x.domain(data.slice(current_range[0], current_range[1]).map(ft => ft.id));
+      x.domain(data.slice(app.current_range[0], app.current_range[1]).map(ft => ft.id));
       x2.domain(data.map(ft => ft.id));
       // svg_bar.select(".zoom").call(zoom.transform, d3.zoomIdentity
       //     .scale(width / (current_range[1] - current_range[0]))
       //     .translate(-current_range[0], 0));
       update();
       updateMiniBars();
-      updateContext(current_range[0], current_range[1]);
+      updateContext(app.current_range[0], app.current_range[1]);
       svg_bar.select('.brush_top').call(brush_top.move, null);
       svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
       svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
@@ -675,13 +679,13 @@ function updateContext(min, max) {
 function brushed() {
   if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'zoom') return; // ignore brush-by-zoom
   const s = d3.event.selection || x2.range();
-  current_range = [math_round(s[0] / (width / nbFt)), math_round(s[1] / (width / nbFt))];
-  x.domain(data.slice(current_range[0], current_range[1]).map(ft => ft.id));
+  app.current_range = [math_round(s[0] / (width / nbFt)), math_round(s[1] / (width / nbFt))];
+  x.domain(data.slice(app.current_range[0], app.current_range[1]).map(ft => ft.id));
   svg_bar.select('.zoom').call(zoom.transform, d3.zoomIdentity
-    .scale(width / (current_range[1] - current_range[0]))
-    .translate(-current_range[0], 0));
+    .scale(width / (app.current_range[1] - app.current_range[0]))
+    .translate(-app.current_range[0], 0));
   update();
-  updateContext(current_range[0], current_range[1]);
+  updateContext(app.current_range[0], app.current_range[1]);
   svg_bar.select('.brush_top').call(brush_top.move, null);
   brushed_top();
 }
@@ -692,18 +696,19 @@ function brushed_top() {
         && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
     svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
     const s = d3_event.selection;
-    current_range_brush = [
-      current_range[0] + math_round(s[0] / (width / displayed)) - 1,
-      current_range[0] + math_round(s[1] / (width / displayed)),
+    app.current_range_brush = [
+      app.current_range[0] + math_round(s[0] / (width / displayed)) - 1,
+      app.current_range[0] + math_round(s[1] / (width / displayed)),
     ];
-    x.domain(data.slice(current_range_brush[0] + 1, current_range_brush[1]).map(ft => ft.id));
+    x.domain(data.slice(app.current_range_brush[0] + 1, app.current_range_brush[1])
+      .map(ft => ft.id));
     app.colors = {};
     focus.selectAll('.bar')
       .style('fill', (d, i) => {
         if (d.id === app.current_config.my_region) {
           app.colors[d.id] = 'yellow';
           return 'yellow';
-        } else if (i > current_range_brush[0] && i < current_range_brush[1]) {
+        } else if (i > app.current_range_brush[0] && i < app.current_range_brush[1]) {
           const color = comp(d.ratio, app.current_config.ref_value, app.serie_inversed);
           app.colors[d.id] = color;
           return color;
@@ -734,14 +739,14 @@ function brushed_top() {
 
 function applyFilter(filter_type) {
   if (filter_type === 'no_filter') {
-    data = ref_data.slice();
+    app.current_data = app.current_data.slice();
   } else if (filter_type === 'national_FR') {
-    data = ref_data.filter(d => d.id.indexOf('FR') > -1);
+    data = app.current_data.filter(d => d.id.indexOf('FR') > -1);
   } else {
     let a = math_round(Math.random() * 50);
     let b = math_round(Math.random() * 101);
     if (a > b) [a, b] = [b, a];
-    data = ref_data.slice(a, b);
+    data = app.current_data.slice(a, b);
     if (data.filter(d => d.id === app.current_config.my_region)[0] === undefined) {
       data.push(ref_data.filter(d => d.id === app.current_config.my_region)[0]);
     }
@@ -777,13 +782,13 @@ function selectBelowMyRegion() {
   app.colors = {};
   app.colors[app.current_config.my_region] = 'yellow';
   if (!app.serie_inversed) {
-    current_range_brush = [0, my_rank];
+    app.current_range_brush = [0, my_rank];
     data.filter((d, i) => i < my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = 'red'; });
   } else {
-    current_range_brush = [my_rank, data.length];
+    app.current_range_brush = [my_rank, data.length];
     data.filter((d, i) => i > my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = 'green'; });
   }
-  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  svg_bar.select('.brush_top').call(brush_top.move, app.current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }
 
@@ -793,13 +798,13 @@ function selectAboveMyRegion() {
   app.colors = {};
   app.colors[app.current_config.my_region] = 'yellow';
   if (!app.serie_inversed) {
-    current_range_brush = [my_rank, data.length];
+    app.current_range_brush = [my_rank, data.length];
     data.filter((d, i) => i > my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = 'green'; });
   } else {
-    current_range_brush = [0, my_rank];
+    app.current_range_brush = [0, my_rank];
     data.filter((d, i) => i < my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = 'red'; });
   }
-  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  svg_bar.select('.brush_top').call(brush_top.move, app.current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }
 
@@ -820,20 +825,20 @@ function selectAboveMean() {
   app.colors = {};
   app.colors[app.current_config.my_region] = 'yellow';
   if (!app.serie_inversed) {
-    current_range_brush = [mean_rank, data.length];
+    app.current_range_brush = [mean_rank, data.length];
     data.filter(d => d.ratio > mean_value).forEach((ft) => {
       if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = 'green';
       else app.colors[ft.id] = 'red';
     });
   } else {
-    current_range_brush = [0, mean_rank + 1];
+    app.current_range_brush = [0, mean_rank + 1];
     data.filter(d => d.ratio > mean_value).forEach((ft) => {
       if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = 'red';
       else app.colors[ft.id] = 'green';
     });
   }
   app.colors[app.current_config.my_region] = 'yellow';
-  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  svg_bar.select('.brush_top').call(brush_top.move, app.current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }
 
@@ -841,19 +846,19 @@ function selectBelowMean() {
   const mean_rank = getMeanRank();
   app.colors = {};
   if (!app.serie_inversed) {
-    current_range_brush = [0, mean_rank];
+    app.current_range_brush = [0, mean_rank];
     data.filter(d => d.ratio < mean_value).forEach((ft) => {
       if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = 'red';
       else app.colors[ft.id] = 'green';
     });
   } else {
-    current_range_brush = [mean_rank + 1, data.length];
+    app.current_range_brush = [mean_rank + 1, data.length];
     data.filter(d => d.ratio < mean_value).forEach((ft) => {
       if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = 'green';
       else app.colors[ft.id] = 'red';
     });
   }
   app.colors[app.current_config.my_region] = 'yellow';
-  svg_bar.select('.brush_top').call(brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+  svg_bar.select('.brush_top').call(brush_top.move, app.current_range_brush.map(d => d * (width / nbFt)));
   updateMapRegio();
 }

@@ -164,7 +164,7 @@ class MapSelect {
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
-  bindBrush(svg_bar, brush_top, brush_bottom, focus) {
+  bindBrush(svg_bar, brush_top, brush_bottom, focus, x) {
     this.brush_map = d3.brush()
       .extent([[0, 0], [width_map, height_map]])
       .on('start brush', () => {
