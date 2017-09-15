@@ -1,17 +1,18 @@
 import DataTable from 'vanilla-datatables';
+import { color_highlight } from './options';
 
 function createTableDOM(data, opts, config) {
   const { num, denum, ratio, my_region } = config;
   const options = opts || {};
   options.id = options.id || 'myTable';
-  const doc = document,
-    nb_features = data.length,
-    column_names = Object.getOwnPropertyNames(data[0]),
-    nb_columns = column_names.length;
-  const myTable = doc.createElement('table'),
-    headers = doc.createElement('thead'),
-    body = doc.createElement('tbody'),
-    headers_row = doc.createElement('tr');
+  const doc = document;
+  const nb_features = data.length;
+  const column_names = Object.getOwnPropertyNames(data[0]);
+  const nb_columns = column_names.length;
+  const myTable = doc.createElement('table');
+  const headers = doc.createElement('thead');
+  const body = doc.createElement('tbody');
+  const headers_row = doc.createElement('tr');
   for (let i = 0; i < nb_columns; i++) {
     const cell = doc.createElement('th');
     const col_name = column_names[i];
@@ -34,7 +35,7 @@ function createTableDOM(data, opts, config) {
     const row = doc.createElement('tr');
     row.id = `row_${data[i].id}`;
     if (data[i].id === my_region) {
-      row.className = 'yellow';
+      row.className = color_highlight;
     }
     for (let j = 0; j < nb_columns; j++) {
       const cell = doc.createElement('td');

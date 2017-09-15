@@ -1,5 +1,5 @@
 import { app } from './../main';
-import { color_countries, color_sup, color_inf, color_highlight } from './options';
+import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
 import { math_round } from './helpers';
 // import { width as width_chart } from './charts/barChart_1v';
 
@@ -162,6 +162,14 @@ class MapSelect {
     this.prepareTooltip();
   }
 
+  resetColors() {
+    const id_field_geom = app.current_config.id_field_geom;
+    this.nuts1_lyr.selectAll('path')
+      .attr('fill', d => (app.current_ids.indexOf(d.properties[id_field_geom]) > -1
+        ? (app.colors[d.properties[id_field_geom]] || color_countries)
+        : color_disabled));
+  }
+
   prepareTooltip() {
     // Prep the tooltip bits, initial display is hidden
     const tooltip = svg_map.append('g')
@@ -195,7 +203,7 @@ class MapSelect {
           .style('display', 'none');
       })
       .on('mousemove', function (d) {
-        const tooltip = svg_map.select('.tooltip');
+        // const tooltip = svg_map.select('.tooltip');
         tooltip
           .select('text.id_feature')
           .text(`${d.properties[app.current_config.id_field_geom]}`);
@@ -204,7 +212,6 @@ class MapSelect {
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
       });
-
   }
 
   resetZoom() {
@@ -219,7 +226,6 @@ class MapSelect {
   }
 
   bindBrush(chart) {
-    console.log('bindBrush', focus);
     this.brush_map = d3.brush()
       .extent([[0, 0], [width_map, height_map]])
       .on('start brush', () => {
@@ -230,6 +236,13 @@ class MapSelect {
       .attr('class', 'brush_map')
       .call(this.brush_map);
   }
+
+  unbindBrush() {
+    this.brush_map = null;
+    svg_map.select('.brush_map')
+      .remove();
+  }
+
 }
 
 function makeSourceSection() {

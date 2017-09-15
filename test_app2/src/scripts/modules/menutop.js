@@ -7,34 +7,69 @@ export function makeTopMenu() {
 
   top_menu
     .append('div')
-    .attr('class', 'title_menu')
+    .attrs({ class: 'title_menu type_chart', value: 'BarChart1' })
     .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
     .html('Rang<br>(1 individu)');
 
   top_menu
     .append('div')
-    .attr('class', 'title_menu')
+    .attr('class', 'title_menu type_chart')
     .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
     .html('Rang<br>(2 individus)');
 
   top_menu
     .append('div')
-    .attr('class', 'title_menu')
+    .attrs({ class: 'title_menu type_chart', value: 'BubbleChart1' })
     .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
     .html('Rang<br>(2+ individus)');
 
   top_menu
     .append('div')
-    .attr('class', 'title_menu')
+    .attr('class', 'title_menu type_chart')
     .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
     .html('Position<br>(1 individu)');
 
   top_menu
     .append('div')
-    .attr('class', 'title_menu')
+    .attr('class', 'title_menu type_chart')
     .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
     .html('Position<br>(2 individus)');
 }
+
+export function makeHeaderMapSection() {
+  const header_map_section = d3.select('#map_section')
+    .insert('p', 'svg')
+    .attr('id', 'header_map')
+    .style('margin', '0 0 0 10px');
+
+  header_map_section.insert('img')
+    .attrs({
+      class: 'map_button active',
+      width: 20,
+      height: 20,
+      src: 'img/gimp-tool-rect-select.png',
+      id: 'img_rect_selec',
+    });
+
+  header_map_section.insert('img')
+    .attrs({
+      class: 'map_button',
+      width: 20,
+      height: 20,
+      src: 'img/gimp-tool-zoom.png',
+      id: 'img_map_zoom',
+    });
+
+  header_map_section.insert('img')
+    .attrs({
+      class: 'map_button',
+      width: 20,
+      height: 20,
+      src: 'img/gimp-cursor.png',
+      id: 'img_map_select',
+    });
+}
+
 
 export function makeHeaderChart() {
   const header_bar_section = d3.select('#bar_section')

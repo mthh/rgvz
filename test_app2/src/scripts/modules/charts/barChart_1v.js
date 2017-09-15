@@ -1,7 +1,8 @@
 import { comp, math_round, math_abs, Rect } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { app } from './../../main';
+import { applyFilter } from './../prepare_data';
+import { app, bindTopButtons } from './../../main';
 
 export const svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 30 },
@@ -10,12 +11,26 @@ export const svg_bar = d3.select('svg#svg_bar'),
   height = +svg_bar.attr('height') - margin.top - margin.bottom,
   height2 = +svg_bar.attr('height') - margin2.top - margin2.bottom;
 
-let nbFt, length_dataset, mean_value;
+let nbFt;
+let mean_value;
 let current_range_brush = [0, 0];
 let current_range = [0, 0];
 let displayed;
 
-export class BarChart {
+function getMeanRank() {
+  let mean_rank = app.current_data.map((d, i) => [d.ratio, math_abs(mean_value - d.ratio), i]);
+  mean_rank.sort((a, b) => a[1] - b[1]);
+  mean_rank = mean_rank[0];
+  if (mean_rank[1] > mean_value) {
+    mean_rank = mean_rank[2] - 1;
+  } else {
+    mean_rank = mean_rank[2];
+  }
+  return mean_rank;
+}
+
+
+export class BarChart1 {
   constructor(ref_data) {
     this.brushed = () => {
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'zoom') return; // ignore brush-by-zoom
@@ -34,6 +49,7 @@ export class BarChart {
 
     this.brushed_top = () => {
       if (!this._focus) { console.log('b'); return; }
+      if (!this.map_elem) { console.log('c'); return; }
       const d3_event = d3.event;
       if (d3_event && d3_event.selection
             && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
@@ -76,9 +92,9 @@ export class BarChart {
       y = d3.scaleLinear().range([height, 0]),
       y2 = d3.scaleLinear().range([height2, 0]);
 
-    const xAxis = d3.axisBottom(x),
-      xAxis2 = d3.axisBottom(x2),
-      yAxis = d3.axisLeft(y);
+    const xAxis = d3.axisBottom(x);
+    const xAxis2 = d3.axisBottom(x2);
+    const yAxis = d3.axisLeft(y);
 
     this.x = x;
     this.x2 = x2;
@@ -199,10 +215,10 @@ export class BarChart {
       .call(brush_top)
       .call(brush_top.move, null);
 
-    svg_bar.append('text')
-      .attrs({ x: 60, y: 40 })
+    this.completude = svg_bar.append('text')
+      .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${math_round(data.length / length_dataset * 1000) / 10}%`);
+      .text(`Complétude : ${app.completude}%`);
 
     svg_bar.append('image')
       .attrs({
@@ -214,7 +230,7 @@ export class BarChart {
         id: 'img_reverse',
       })
       .on('click', () => {
-        const data = app.current_data;
+        data = app.current_data;
         app.serie_inversed = !app.serie_inversed;
         if (data[0].ratio < data[data.length - 1].ratio) {
           data.sort((a, b) => b.ratio - a.ratio);
@@ -247,16 +263,16 @@ export class BarChart {
       .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
       .style('text-anchor', 'middle');
 
-      tooltip.append('text')
-        .attrs({
-          class: 'value_feature',
-          x: 25,
-          dy: '2.4em',
-          'font-size': '14px',
-          'font-weight': 'bold' })
-        .style('text-anchor', 'middle');
+    tooltip.append('text')
+      .attrs({
+        class: 'value_feature',
+        x: 25,
+        dy: '2.4em',
+        'font-size': '14px',
+        'font-weight': 'bold' })
+      .style('text-anchor', 'middle');
 
-    document.onkeydown = function (event) {
+    document.onkeydown = (event) => {
       if (event && event.key === 'Control') {
         svg_bar.select('.brush_top')
           .selectAll('.selection, .overlay')
@@ -266,7 +282,7 @@ export class BarChart {
           .style('display', 'none');
       }
     };
-    document.onkeyup = function (event) {
+    document.onkeyup = (event) => {
       if (event && event.key === 'Control') {
         svg_bar.select('.brush_top')
           .selectAll('.selection, .overlay')
@@ -276,6 +292,12 @@ export class BarChart {
           .style('display', null);
       }
     };
+  }
+
+  updateCompletude() {
+    console.log(app.completude);
+    this.completude
+      .text(`Complétude : ${app.completude}%`);
   }
 
   updateContext(min, max) {
@@ -396,10 +418,16 @@ export class BarChart {
     app.colors[app.current_config.my_region] = color_highlight;
     if (!app.serie_inversed) {
       current_range_brush = [my_rank, app.current_data.length];
-      app.current_data.filter((d, i) => i > my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = color_sup; });
+      app.current_data
+        .filter((d, i) => i > my_rank)
+        .map(d => d.id)
+        .forEach((ft) => { app.colors[ft] = color_sup; });
     } else {
       current_range_brush = [0, my_rank];
-      app.current_data.filter((d, i) => i < my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = color_inf; });
+      app.current_data
+        .filter((d, i) => i < my_rank)
+        .map(d => d.id)
+        .forEach((ft) => { app.colors[ft] = color_inf; });
     }
     svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
@@ -412,10 +440,16 @@ export class BarChart {
     app.colors[app.current_config.my_region] = color_highlight;
     if (!app.serie_inversed) {
       current_range_brush = [0, my_rank];
-      app.current_data.filter((d, i) => i < my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = color_inf; });
+      app.current_data
+        .filter((d, i) => i < my_rank)
+        .map(d => d.id)
+        .forEach((ft) => { app.colors[ft] = color_inf; });
     } else {
       current_range_brush = [my_rank, app.current_data.length];
-      app.current_data.filter((d, i) => i > my_rank).map(d => d.id).forEach((ft) => { app.colors[ft] = color_sup; });
+      app.current_data
+        .filter((d, i) => i > my_rank)
+        .map(d => d.id)
+        .forEach((ft) => { app.colors[ft] = color_sup; });
     }
     svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
@@ -537,14 +571,14 @@ export class BarChart {
     svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
     svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
     this.map_elem.updateLegend();
-  };
+  }
 
   changeStudyZone() {
     nbFt = app.current_data.length;
     this.x.domain(app.current_data.map(ft => ft.id));
     this.y.domain([
       d3.min(app.current_data, d => d.ratio) - 2,
-      d3.max(app.current_data, d => d.ratio)
+      d3.max(app.current_data, d => d.ratio),
     ]);
     this.x2.domain(this.x.domain());
     this.y2.domain(this.y.domain());
@@ -559,20 +593,157 @@ export class BarChart {
     this.updateMapRegio();
   }
 
+  remove() {
+    this._focus.remove();
+    this.context.remove();
+    this.map_elem.unbindBrush();
+    this.map_elem = null;
+    svg_bar.html('');
+  }
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
   }
 }
 
-function getMeanRank() {
-  let mean_rank = app.current_data.map((d, i) => [d.ratio, math_abs(mean_value - d.ratio), i]);
-  mean_rank.sort((a, b) => a[1] - b[1]);
-  mean_rank = mean_rank[0];
-  if (mean_rank[1] > mean_value) {
-    mean_rank = mean_rank[2] - 1;
-  } else {
-    mean_rank = mean_rank[2];
-  }
-  return mean_rank;
+export function bindUI_BarChart1(chart, map_elem) {
+  d3.selectAll('span.filter_v')
+    .on('click', function () {
+      if (!this.classList.contains('checked')) {
+        d3.selectAll('span.filter_v').attr('class', 'filter_v square');
+        this.classList.add('checked');
+        const filter_type = this.getAttribute('filter-value');
+        applyFilter(app, filter_type);
+        chart.updateCompletude();
+        chart.changeStudyZone();
+      }
+    });
+
+  d3.selectAll('span.target_region')
+    .on('click', function () {
+      if (!this.classList.contains('checked')) {
+        d3.selectAll('span.target_region').attr('class', 'target_region square');
+        this.classList.add('checked');
+        chart.changeRegion(this.getAttribute('value'));
+      }
+    });
+
+  d3.selectAll('span.label_chk')
+    .on('click', function () {
+      this.previousSibling.click();
+    });
+
+  const header_map_section = d3.select('#map_section > #header_map');
+
+  header_map_section.select('#img_rect_selec')
+    .on('click', function () {
+      if (!this.classList.contains('active')) {
+        this.classList.add('active');
+        // this.style.filter = '';
+        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_zoom').classList.remove('active');
+        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_select').classList.remove('active');
+        svg_map.on('.zoom', null);
+        svg_map.select('.brush_map').style('display', null);
+        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+      }
+    });
+
+  header_map_section.select('#img_map_zoom')
+    .on('click', function () {
+      if (!this.classList.contains('active')) {
+        this.classList.add('active');
+        // this.style.filter = '';
+        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
+        document.getElementById('img_rect_selec').classList.remove('active');
+        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_select').classList.remove('active');
+        svg_map.call(map_elem.zoom_map);
+        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
+        svg_map.select('.brush_map').style('display', 'none');
+        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+      }
+    });
+
+  header_map_section.select('#img_map_select')
+    .on('click', function () {
+      if (!this.classList.contains('active')) {
+        this.classList.add('active');
+        // this.style.filter = '';
+        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
+        document.getElementById('img_rect_selec').classList.remove('active');
+        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
+        document.getElementById('img_map_zoom').classList.remove('active');
+        svg_map.on('.zoom', null);
+        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
+        svg_map.select('.brush_map').style('display', 'none');
+        map_elem.nuts1_lyr.selectAll('path')
+          .on('click', function (d) {
+            const id = d.properties[app.current_config.id_field_geom];
+            if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+            if (app.colors[id] !== undefined) {
+              app.colors[id] = undefined;
+              d3.select(this).attr('fill', color_countries);
+            } else {
+              const color = comp(
+                d.properties[app.current_config.ratio],
+                app.current_config.ref_value,
+                app.serie_inversed);
+              app.colors[id] = color;
+              d3.select(this).attr('fill', color);
+            }
+            chart.update();
+          });
+      }
+    });
+
+  const header_table_section = d3.select('#map_section')
+      .insert('p', 'svg')
+      .attr('id', 'header_table')
+      .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
+
+  header_table_section.append('span')
+    .attr('class', 'button_blue')
+    .html('CSV')
+    .on('click', () => {
+      const content = [
+        'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
+        app.current_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
+      ].join('');
+      const elem = document.createElement('a');
+      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
+      elem.setAttribute('download', 'table.csv');
+      elem.style.display = 'none';
+      document.body.appendChild(elem);
+      elem.click();
+      document.body.removeChild(elem);
+    });
+
+  const buttons_under_chart = d3.select('#bar_section')
+    .append('div')
+    .attr('id', 'buttons_under_chart')
+    .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_above_mean' })
+    .text('< à la moyenne')
+    .on('click', () => chart.selectBelowMean());
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_below_mean' })
+    .text('> à la moyenne')
+    .on('click', () => chart.selectAboveMean());
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
+    .text('< à ma région')
+    .on('click', () => chart.selectBelowMyRegion());
+
+  buttons_under_chart.append('button')
+    .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
+    .text('> à ma région')
+    .on('click', () => chart.selectAboveMyRegion());
+
+  bindTopButtons(chart, map_elem);
 }

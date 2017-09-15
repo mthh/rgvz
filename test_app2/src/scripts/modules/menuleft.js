@@ -33,7 +33,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
       const code_var = variables[gp_name][name_var];
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
-      sub_entry.innerHTML = `<span value="${code_var}" class="small_square"></span><span>${var_names[j]}</span>`;
+      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span>${var_names[j]}</span>`;
       section2.appendChild(sub_entry);
     }
   }
@@ -60,7 +60,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   for (let i = 0, len_i = territorial_mesh.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const territ_level = territorial_mesh[i];
-    entry.innerHTML = `<span value="${territ_level.id}" class='square'></span><span class="label_chk">${territ_level.name}</span>`;
+    entry.innerHTML = `<span value="${territ_level.id}" class='square territ_level'></span><span class="label_chk">${territ_level.name}</span>`;
     section4.appendChild(entry);
   }
 

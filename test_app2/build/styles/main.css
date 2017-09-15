@@ -19,6 +19,7 @@
   stroke: #BEBEBE;
 }
 
+/* Style for tables : */
 .dataTable-wrapper {
   margin-top: 20px;
 }
@@ -66,6 +67,7 @@ span.small {
 .asc .dataTable-sorter::after, .desc .dataTable-sorter::before {
   opacity: 0.6 !important;
 }
+/* End of style for tables... */
 
 .title_menu {
   background: #4f81bd;
@@ -147,6 +149,7 @@ span.label_chk {
   text-decoration: none;
   vertical-align: middle;
   cursor: pointer;
+  margin: 8px;
 }
 .button_blue:hover {
   border-top-color: #28597a;
@@ -157,3 +160,33 @@ span.label_chk {
   border-top-color: #1b435e;
   background: #1b435e;
 }
+
+.map_button {
+  margin: 3px;
+  float: left;
+  filter: opacity(25%);
+}
+
+.map_button.active {
+  filter: none;
+}
+
+/* Styles for BubbleChart1 : */
+input.nb_select {
+  width: 30px;
+  -moz-appearance: textfield;
+  text-align: right;
+  border: none;
+  border-bottom-style: dashed;
+  border-bottom-width: 0.5px;
+  margin-left: 3px;
+  margin-right: 4px;
+  font-size: 1.1em;
+}
+
+input.nb_select::-webkit-inner-spin-button,
+input.nb_select::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; /* Removes leftover margin */
+}
+/* End of style for BubbleChart1 */
