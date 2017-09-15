@@ -21,8 +21,11 @@ export function filter_no_empty(app) {
     }
     return ft.ratio;
   });
-  app.serie_inversed = false; // eslint-disable-line no-param-reassign
-  filtered_data.sort((a, b) => a.ratio - b.ratio);
+  if (!app.serie_inversed) {
+    filtered_data.sort((a, b) => a.ratio - b.ratio);
+  } else {
+    filtered_data.sort((a, b) => b.ratio - a.ratio);
+  }
   filtered_data.forEach((d, i) => { d.rang = i + 1; }); // eslint-disable-line no-param-reassign
   return filtered_data;
 }

@@ -1,5 +1,12 @@
-import { app, svg_map, width_map, height_map, width as width_chart } from './../main';
-import { comp, Rect } from './helpers';
+import { app } from './../main';
+import { color_countries, color_sup, color_inf, color_highlight } from './options';
+import { math_round } from './helpers';
+// import { width as width_chart } from './charts/barChart_1v';
+
+const svg_map = d3.select('svg#svg_map'),
+  margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
+  width_map = +svg_map.attr('width') - margin_map.left - margin_map.right,
+  height_map = +svg_map.attr('height') - margin_map.top - margin_map.bottom;
 
 const styles = {
   template: { stroke_width: 0 },
@@ -10,9 +17,6 @@ const styles = {
   nuts1: { stroke_width: 0.5 },
   nuts1_no_data: { stroke_width: 0.5 },
 };
-
-const color_countries = 'rgb(147,144,252)';
-const color_disabled = 'rgb(214, 214, 214)';
 
 let projection;
 let path;
@@ -31,11 +35,10 @@ function get_bbox_layer_path(name) {
   return bbox_layer;
 }
 
-
 function fitLayer() {
   projection.scale(1).translate([0, 0]);
   const b = get_bbox_layer_path('template');
-  const s = 0.95 / Math.max((b[1][0] - b[0][0]) / width_map, (b[1][1] - b[0][1]) / height_map);
+  const s = 1 / Math.max((b[1][0] - b[0][0]) / width_map, (b[1][1] - b[0][1]) / height_map);
   const t = [(width_map - s * (b[1][0] + b[0][0])) / 2, (height_map - s * (b[1][1] + b[0][1])) / 2];
   projection.scale(s).translate(t);
   svg_map.selectAll('path').attr('d', path);
@@ -152,10 +155,56 @@ class MapSelect {
       .data(nuts1.features)
       .enter()
       .append('path')
-      .attr('fill', d => (d.properties.NUTS1_2016 !== app.current_config.my_region ? color_countries : 'yellow'))
+      .attr('fill', d => (d.properties.NUTS1_2016 !== app.current_config.my_region ? color_countries : color_highlight))
       .attr('d', path);
 
     fitLayer();
+    this.prepareTooltip();
+  }
+
+  prepareTooltip() {
+    // Prep the tooltip bits, initial display is hidden
+    const tooltip = svg_map.append('g')
+      .attr('class', 'tooltip')
+      .style('display', 'none');
+
+    tooltip.append('rect')
+      .attrs({ width: 50, height: 40, fill: 'white' })
+      .style('opacity', 0.5);
+
+    tooltip.append('text')
+      .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
+      .style('text-anchor', 'middle');
+
+    tooltip.append('text')
+      .attrs({
+        class: 'value_feature',
+        x: 25,
+        dy: '2.4em',
+        'font-size': '14px',
+        'font-weight': 'bold' })
+      .style('text-anchor', 'middle');
+
+    this.nuts1_lyr.selectAll('path')
+      .on('mouseover', () => {
+        svg_map.select('.tooltip')
+          .style('display', null);
+      })
+      .on('mouseout', () => {
+        svg_map.select('.tooltip')
+          .style('display', 'none');
+      })
+      .on('mousemove', function (d) {
+        const tooltip = svg_map.select('.tooltip');
+        tooltip
+          .select('text.id_feature')
+          .text(`${d.properties[app.current_config.id_field_geom]}`);
+        tooltip.select('text.value_feature')
+          .text(`${math_round(d.properties[app.current_config.ratio] * 10) / 10}`);
+        tooltip
+          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+      });
+
   }
 
   resetZoom() {
@@ -164,68 +213,19 @@ class MapSelect {
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
-  bindBrush(svg_bar, brush_top, brush_bottom, focus, x) {
+  updateLegend() {
+    d3.select('#svg_legend > g > .legend > text')
+      .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
+  }
+
+  bindBrush(chart) {
+    console.log('bindBrush', focus);
     this.brush_map = d3.brush()
       .extent([[0, 0], [width_map, height_map]])
       .on('start brush', () => {
         if (!d3.event || !d3.event.selection) return;
-        svg_bar.select('.brush_top').call(brush_top.move, null);
-        const [topleft, bottomright] = d3.event.selection;
-        // const transform = svg_map.node().__zoom;
-        // topleft[0] = (topleft[0] - transform.x) / transform.k;
-        // topleft[1] = (topleft[1] - transform.y) / transform.k;
-        // bottomright[0] = (bottomright[0] - transform.x) / transform.k;
-        // bottomright[1] = (bottomright[1] - transform.y) / transform.k;
-        const rect = new Rect(topleft, bottomright);
-        app.colors = {};
-        this.nuts1_lyr.selectAll('path')
-          .attr('fill', function (d) {
-            const id = d.properties.NUTS1_2016;
-            if (id === app.current_config.my_region) {
-              app.colors[id] = 'yellow';
-              return 'yellow';
-            } else if (app.current_ids.indexOf(id) < 0) {
-              return color_disabled;
-            }
-            if (!this._pts) {
-              this._pts = this.getAttribute('d').slice(1).split('L').map(pt => pt.split(',').map(a => +a));
-            }
-            const pts = this._pts;
-            for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
-              if (rect.contains(pts[ix])) {
-                const value = d.properties[app.current_config.ratio];
-                const color = comp(value, app.current_config.ref_value, app.serie_inversed);
-                app.colors[id] = color;
-                return color;
-              }
-            }
-            return color_countries;
-          });
-        focus.selectAll('.bar')
-          .style('fill', d => app.colors[d.id] || color_countries);
-        const ids = Object.keys(app.colors);
-        const ranks = ids.map(d => app.current_ids.indexOf(d.id) > -1).map(d => app.current_ranks[d]);
-        if (ranks.length > 1) {
-          const c1 = ranks[0] - 1;
-          const c2 = ranks[ranks.length - 1];
-          if (c1 < app.current_range[0] || c2 > app.current_range[1]) {
-            app.current_range = [
-              ranks[0] - 1,
-              ranks[ranks.length - 1],
-            ];
-            svg_bar.select('.brush_bottom').call(
-              brush_bottom.move,
-              [app.current_range[0] * (width_chart / app.nbFt), app.current_range[1] * (width_chart / app.nbFt)]);
-          }
-        } else {
-          app.current_range = [0, app.current_data.length];
-          svg_bar.select('.brush_bottom').call(
-            brush_bottom.move, x.range());
-        }
-          // d3.select('#myTable').selectAll('tbody > tr')
-          //   .attr('class', function(d, i) { return colors[this.id.split('row_')[1]]; });
+        chart.handle_brush_map(d3.event);
       });
-
     svg_map.append('g')
       .attr('class', 'brush_map')
       .call(this.brush_map);
@@ -251,10 +251,10 @@ function makeSourceSection() {
 
 function makeMapLegend() {
   const legend_elems = [
-    { color: 'yellow', text: `Ma région : ${app.current_config.my_region_pretty_name}` },
+    { color: color_highlight, text: `Ma région : ${app.current_config.my_region_pretty_name}` },
     { color: color_countries, text: 'Autres régions du filtre de comparaison' },
-    { color: 'green', text: 'Rang plus élevé que ma région' },
-    { color: 'red', text: 'Rang moins élevé que ma région' },
+    { color: color_sup, text: 'Rang plus élevé que ma région' },
+    { color: color_inf, text: 'Rang moins élevé que ma région' },
   ];
 
   const rect_size = 14;
@@ -289,13 +289,9 @@ function makeMapLegend() {
     .text(d => d.text);
 }
 
-function updateLegend() {
-  d3.select('#svg_legend > g > .legend > text').text(`Ma région : ${app.current_config.my_region_pretty_name}`);
-}
-
 export {
   MapSelect,
   makeSourceSection,
   makeMapLegend,
-  updateLegend,
+  svg_map,
 };
