@@ -1,7 +1,6 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { math_round } from './helpers';
-// import { width as width_chart } from './charts/barChart_1v';
+import { math_round, prepareTooltip } from './helpers';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
@@ -9,13 +8,13 @@ const svg_map = d3.select('svg#svg_map'),
   height_map = +svg_map.attr('height') - margin_map.top - margin_map.bottom;
 
 const styles = {
-  template: { stroke_width: 0 },
-  countries: { stroke_width: 0.5 },
-  seaboxes: { stroke_width: 1 },
-  remote: { stroke_width: 0.5 },
-  seaboxes2: { stroke_width: 1 },
-  nuts1: { stroke_width: 0.5 },
-  nuts1_no_data: { stroke_width: 0.5 },
+  template: { id: 'template', fill: 'rgb(247, 252, 254)', 'fill-opacity': 1 },
+  countries: { id: 'countries', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  seaboxes: { id: 'seaboxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
+  remote: { id: 'remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  seaboxes2: { id: 'seaboxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
+  nuts1_no_data: { id: 'nuts1_no_data', fill: 'white', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: 'lightgrey' },
+  nuts1: { id: 'nuts1', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
 };
 
 let projection;
@@ -59,7 +58,7 @@ function map_zoomed() {
   layers.selectAll('g')
     .transition(t)
     .style('stroke-width', function () {
-      return `${styles[this.id].stroke_width / transform.k}px`;
+      return `${styles[this.id]['stroke-width'] / transform.k}px`;
     });
 
   layers.selectAll('g')
@@ -97,8 +96,7 @@ class MapSelect {
     svg_map.call(this.zoom_map);
 
     layers.append('g')
-      .attr('id', 'template')
-      .attrs({ fill: 'rgb(247, 252, 254)', 'fill-opacity': 1 })
+      .attrs(styles.template)
       .selectAll('path')
       .data(template.features)
       .enter()
@@ -106,7 +104,7 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs({ fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' })
+      .attrs(styles.countries)
       .attr('id', 'countries')
       .selectAll('path')
       .data(countries.features)
@@ -115,8 +113,7 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs({ fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 1 })
-      .attr('id', 'seaboxes')
+      .attrs(styles.seaboxes)
       .selectAll('path')
       .data(seaboxes.features)
       .enter()
@@ -124,8 +121,7 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs({ fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' })
-      .attr('id', 'remote')
+      .attrs(styles.remote)
       .selectAll('path')
       .data(remote.features)
       .enter()
@@ -133,8 +129,7 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs({ fill: 'none', stroke: 'black', 'stroke-width': 1 })
-      .attr('id', 'seaboxes')
+      .attrs(styles.seaboxes2)
       .selectAll('path')
       .data(seaboxes.features)
       .enter()
@@ -142,16 +137,16 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs({ id: 'nuts1_no_data', fill: 'white', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: 'lightgrey' })
+      .attrs(styles.nuts1_no_data)
       .selectAll('path')
       .data(no_data_features)
       .enter()
       .append('path')
       .attr('d', path);
 
-    this.nuts1_lyr = layers.append('g')
-      .attrs({ id: 'nuts1', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' });
-    this.nuts1_lyr.selectAll('path')
+    this.target_layer = layers.append('g')
+      .attrs(styles.nuts1);
+    this.target_layer.selectAll('path')
       .data(nuts1.features)
       .enter()
       .append('path')
@@ -159,41 +154,20 @@ class MapSelect {
       .attr('d', path);
 
     fitLayer();
-    this.prepareTooltip();
+    prepareTooltip(svg_map);
+    this.bindTooltip();
   }
 
   resetColors() {
     const id_field_geom = app.current_config.id_field_geom;
-    this.nuts1_lyr.selectAll('path')
+    this.target_layer.selectAll('path')
       .attr('fill', d => (app.current_ids.indexOf(d.properties[id_field_geom]) > -1
         ? (app.colors[d.properties[id_field_geom]] || color_countries)
         : color_disabled));
   }
 
-  prepareTooltip() {
-    // Prep the tooltip bits, initial display is hidden
-    const tooltip = svg_map.append('g')
-      .attr('class', 'tooltip')
-      .style('display', 'none');
-
-    tooltip.append('rect')
-      .attrs({ width: 50, height: 40, fill: 'white' })
-      .style('opacity', 0.5);
-
-    tooltip.append('text')
-      .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
-      .style('text-anchor', 'middle');
-
-    tooltip.append('text')
-      .attrs({
-        class: 'value_feature',
-        x: 25,
-        dy: '2.4em',
-        'font-size': '14px',
-        'font-weight': 'bold' })
-      .style('text-anchor', 'middle');
-
-    this.nuts1_lyr.selectAll('path')
+  bindTooltip() {
+    this.target_layer.selectAll('path')
       .on('mouseover', () => {
         svg_map.select('.tooltip')
           .style('display', null);
@@ -203,11 +177,11 @@ class MapSelect {
           .style('display', 'none');
       })
       .on('mousemove', function (d) {
-        // const tooltip = svg_map.select('.tooltip');
+        const tooltip = svg_map.select('.tooltip');
         tooltip
           .select('text.id_feature')
           .text(`${d.properties[app.current_config.id_field_geom]}`);
-        tooltip.select('text.value_feature')
+        tooltip.select('text.value_feature1')
           .text(`${math_round(d.properties[app.current_config.ratio] * 10) / 10}`);
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
@@ -216,13 +190,17 @@ class MapSelect {
 
   resetZoom() {
     svg_map.transition()
-      .duration(750)
+      .duration(250)
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
   updateLegend() {
     d3.select('#svg_legend > g > .legend > text')
       .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
+  }
+
+  removeRectBrush() {
+    svg_map.select('.brush_map').call(this.brush_map.move, null);
   }
 
   bindBrush(chart) {
@@ -242,7 +220,6 @@ class MapSelect {
     svg_map.select('.brush_map')
       .remove();
   }
-
 }
 
 function makeSourceSection() {
@@ -288,7 +265,6 @@ function makeMapLegend() {
     .attr('transform', (d, i) => {
       const tx = -2 * rect_size;
       const ty = i * lgd_height - offset;
-      // return 'translate(' + tx + ',' + ty + ')';
       return `translate(${[tx, ty]})`;
     });
 
@@ -297,8 +273,7 @@ function makeMapLegend() {
     .styles(d => ({ fill: d.color, stroke: d.color }));
 
   legends.append('text')
-    .attr('x', rect_size + spacing)
-    .attr('y', rect_size - spacing)
+    .attrs({ x: rect_size + spacing, y: rect_size - spacing })
     .text(d => d.text);
 }
 

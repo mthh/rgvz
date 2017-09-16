@@ -1,6 +1,7 @@
 import { math_round } from './helpers';
 import { color_highlight } from './options';
 
+/* eslint-disable no-param-reassign */
 
 /**
 * Attach the full_dataset Array to the app Object and create a dictionnary
@@ -13,11 +14,11 @@ import { color_highlight } from './options';
 *
 */
 export function prepare_dataset(full_dataset, app) {
-  app.full_dataset = full_dataset; // eslint-disable-line no-param-reassign
+  app.full_dataset = full_dataset;
   // Create an Object feature_id ->  feature_name for easier lookup:
-  app.feature_names = {}; // eslint-disable-line no-param-reassign
+  app.feature_names = {};
   full_dataset.forEach((elem) => {
-    app.feature_names[elem.geo] = elem.Nom; // eslint-disable-line no-param-reassign
+    app.feature_names[elem.geo] = elem.Nom;
   });
 }
 
@@ -48,7 +49,6 @@ export function filter_no_empty(app) {
   // Filter data for empty values :
   const filtered_data = temp.filter((ft) => {
     if (ft.id === my_region) {
-      // eslint-disable-next-line no-param-reassign
       app.current_config.ref_value = ft.ratio;
     }
     return ft.ratio;
@@ -59,11 +59,9 @@ export function filter_no_empty(app) {
   } else {
     filtered_data.sort((a, b) => b.ratio - a.ratio);
   }
-  // eslint-disable-next-line no-param-reassign
   filtered_data.forEach((d, i) => { d.rang = i + 1; });
   // Compute the ratio of available values ("complétude") within
   // the study zone selected by the user:
-  // eslint-disable-next-line no-param-reassign
   app.completude = math_round((filtered_data.length / temp.length) * 1000) / 10;
   return filtered_data;
 }
@@ -77,19 +75,16 @@ export function filter_no_empty(app) {
 *
 */
 export function applyFilter(app, filter_type) {
-  // eslint-disable-next-line no-param-reassign
   app.current_data = filter_no_empty(app);
   if (filter_type === 'no_filter') {
     // eslint-disable-next-line no-unused-expressions
     null; // Don't filter anything..
   } else if (filter_type === 'filter_FR') {
-    // eslint-disable-next-line no-param-reassign
     app.current_data = app.current_data.filter(d => d.id.indexOf('FR') > -1);
   } else {
     let a = math_round(Math.random() * 50);
     let b = math_round(Math.random() * 101);
     if (a > b) [a, b] = [b, a];
-    // eslint-disable-next-line no-param-reassign
     app.current_data = app.current_data.slice(a, b);
     const maybe_my_region = app.current_data.filter(
       d => d.id === app.current_config.my_region)[0];
@@ -98,17 +93,28 @@ export function applyFilter(app, filter_type) {
         app.full_dataset.filter(d => d.geo === app.current_config.my_region)[0]);
     }
   }
-  // eslint-disable-next-line no-param-reassign
   app.current_ids = app.current_data.map(d => d.id);
-  // eslint-disable-next-line no-param-reassign
   app.current_ranks = app.current_data.map((d, i) => i + 1);
   if (!app.serie_inversed) {
     app.current_data.sort((a, b) => a.ratio - b.ratio);
   } else {
     app.current_data.sort((a, b) => b.ratio - a.ratio);
   }
-  // eslint-disable-next-line no-param-reassign
   app.colors = {};
-  // eslint-disable-next-line no-param-reassign
   app.colors[app.current_config.my_region] = color_highlight;
 }
+
+// TODO : Doc
+export function changeRegion(app, id_region) {
+  app.current_config.my_region = id_region;
+  app.current_config.my_region_pretty_name = app.feature_names[app.current_config.my_region];
+  // Reset the color to use on the chart/map:
+  app.colors = {};
+  app.colors[app.current_config.my_region] = color_highlight;
+  // app.current_data = filter_no_empty(app);
+  // Change the reference ratio value:
+  app.current_config.ref_value = app.current_data
+    .filter(d => d.id === app.current_config.my_region)
+    .map(d => d.ratio)[0];
+}
+/* eslint-enable no-param-reassign */

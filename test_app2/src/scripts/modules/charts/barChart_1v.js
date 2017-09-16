@@ -1,7 +1,7 @@
-import { comp, math_round, math_abs, Rect } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter } from './../prepare_data';
+import { applyFilter, changeRegion } from './../prepare_data';
 import { app, bindTopButtons } from './../../main';
 
 export const svg_bar = d3.select('svg#svg_bar'),
@@ -53,7 +53,7 @@ export class BarChart1 {
       const d3_event = d3.event;
       if (d3_event && d3_event.selection
             && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
-        svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
+        this.map_elem.removeRectBrush();
         const s = d3_event.selection;
         current_range_brush = [
           current_range[0] + math_round(s[0] / (width / displayed)) - 1,
@@ -78,7 +78,7 @@ export class BarChart1 {
       } else {
         if (d3_event && !d3_event.selection
             && d3_event.sourceEvent && d3_event.sourceEvent.detail !== undefined) {
-          svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
+          this.map_elem.removeRectBrush();
           app.colors = {};
           app.colors[app.current_config.my_region] = color_highlight;
           this.updateMapRegio();
@@ -246,32 +246,14 @@ export class BarChart1 {
         // this.updateMiniBars();
         this.updateContext(current_range[0], current_range[1]);
         svg_bar.select('.brush_top').call(brush_top.move, null);
-        svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
+        this.map_elem.removeRectBrush();
         svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
       });
 
-    // Prep the tooltip bits, initial display is hidden
-    const tooltip = svg_bar.append('g')
-      .attr('class', 'tooltip')
-      .style('display', 'none');
+    const tooltip = prepareTooltip(svg_bar);
 
-    tooltip.append('rect')
-      .attrs({ width: 50, height: 40, fill: 'white' })
-      .style('opacity', 0.5);
-
-    tooltip.append('text')
-      .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
-      .style('text-anchor', 'middle');
-
-    tooltip.append('text')
-      .attrs({
-        class: 'value_feature',
-        x: 25,
-        dy: '2.4em',
-        'font-size': '14px',
-        'font-weight': 'bold' })
-      .style('text-anchor', 'middle');
-
+    // Deactivate the brush rect selection on the map + on the chart
+    // when he user press the Ctrl key:
     document.onkeydown = (event) => {
       if (event && event.key === 'Control') {
         svg_bar.select('.brush_top')
@@ -336,7 +318,7 @@ export class BarChart1 {
         tooltip
           .select('text.id_feature')
           .text(`${d.id}`);
-        tooltip.select('text.value_feature')
+        tooltip.select('text.value_feature1')
           .text(`${math_round(d.ratio * 10) / 10}`);
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
@@ -405,7 +387,7 @@ export class BarChart1 {
   }
 
   updateMapRegio() {
-    this.map_elem.nuts1_lyr.selectAll('path')
+    this.map_elem.target_layer.selectAll('path')
       .attr('fill', d => (app.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
@@ -509,7 +491,7 @@ export class BarChart1 {
     // bottomright[1] = (bottomright[1] - transform.y) / transform.k;
     const rect = new Rect(topleft, bottomright);
     app.colors = {};
-    self.map_elem.nuts1_lyr.selectAll('path')
+    self.map_elem.target_layer.selectAll('path')
       .attr('fill', function (d) {
         const id = d.properties.NUTS1_2016;
         if (id === app.current_config.my_region) {
@@ -555,21 +537,13 @@ export class BarChart1 {
     }
   }
 
-  changeRegion(id_region) {
-    app.current_config.my_region = id_region;
-    app.current_config.my_region_pretty_name = app.feature_names[app.current_config.my_region];
-    app.colors = {};
-    app.colors[app.current_config.my_region] = color_highlight;
-    // app.current_data = filter_no_empty(app);
-    app.current_config.ref_value = app.current_data
-      .filter(d => d.id === app.current_config.my_region)
-      .map(d => d.ratio)[0];
+  updateChangeRegion() {
     this.update();
     // this.updateMiniBars();
     this.updateContext(0, app.current_data.length);
     this.updateMapRegio();
     svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
-    svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
+    this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
   }
 
@@ -587,7 +561,7 @@ export class BarChart1 {
     this.updateContext(0, app.current_data.length);
     // brush_bottom.extent(current_range)
     svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x2.range());
-    svg_map.select('.brush_map').call(this.map_elem.brush_map.move, null);
+    this.map_elem.removeRectBrush();
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
     this.updateMapRegio();
@@ -624,7 +598,9 @@ export function bindUI_BarChart1(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         d3.selectAll('span.target_region').attr('class', 'target_region square');
         this.classList.add('checked');
-        chart.changeRegion(this.getAttribute('value'));
+        const id_region = this.getAttribute('value');
+        changeRegion(app, id_region);
+        chart.updateChangeRegion();
       }
     });
 
@@ -646,7 +622,7 @@ export function bindUI_BarChart1(chart, map_elem) {
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').style('display', null);
-        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+        map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
 
@@ -662,7 +638,7 @@ export function bindUI_BarChart1(chart, map_elem) {
         svg_map.call(map_elem.zoom_map);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
         svg_map.select('.brush_map').style('display', 'none');
-        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+        map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
 
@@ -678,7 +654,7 @@ export function bindUI_BarChart1(chart, map_elem) {
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
         svg_map.select('.brush_map').style('display', 'none');
-        map_elem.nuts1_lyr.selectAll('path')
+        map_elem.target_layer.selectAll('path')
           .on('click', function (d) {
             const id = d.properties[app.current_config.id_field_geom];
             if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;

@@ -57,14 +57,14 @@ function createTableDOM(data, opts, config) {
 
 export function makeTable(data_no_empty, config) {
   const table = createTableDOM(data_no_empty, undefined, config);
-  document.querySelector('#map_section').append(table);
+  document.querySelector('#map_section').appendChild(table);
   const dataTable = new DataTable('#myTable');
   const t = document.querySelector('.dataTable-wrapper');
   t.style.marginTop = '20px';
   t.style.display = 'none';
   t.style.fontSize = '0.7em';
-  t.querySelector('.dataTable-top').remove();
-  Array.from(t.querySelectorAll('span.small'))
+  // t.querySelector('.dataTable-top').remove();
+  Array.prototype.slice.call(t.querySelectorAll('span.small'))
     .forEach((el) => {
       el.onclick = () => { el.parentElement.click(); }; // eslint-disable-line no-param-reassign
     });

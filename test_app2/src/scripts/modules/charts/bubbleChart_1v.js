@@ -1,7 +1,7 @@
-import { comp, math_round, math_abs, Rect, PropSizer } from './../helpers';
+import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter } from './../prepare_data';
+import { applyFilter, changeRegion } from './../prepare_data';
 import { app, bindTopButtons } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
@@ -21,38 +21,7 @@ export class BubbleChart1 {
     draw_group.append('g')
       .attrs({ class: 'axis axis--x', transform: `translate(0, ${height / 2})` });
     this.draw_group = draw_group;
-    const tooltip = svg_bar.append('g')
-      .attr('class', 'tooltip')
-      .style('display', 'none');
-
-    tooltip.append('rect')
-      .attr('width', 50)
-      .attr('height', 40)
-      .attr('fill', 'white')
-      .style('opacity', 0.5);
-
-    tooltip.append('text')
-      .attr('class', 'id_feature')
-      .attr('x', 25)
-      .attr('dy', '1.2em')
-      .style('text-anchor', 'middle')
-      .attr('font-size', '14px');
-
-    tooltip.append('text')
-      .attr('class', 'value_feature1')
-      .attr('x', 25)
-      .attr('dy', '2.4em')
-      .style('text-anchor', 'middle')
-      .attr('font-size', '14px')
-      .attr('font-weight', 'bold');
-
-    tooltip.append('text')
-      .attr('class', 'value_feature2')
-      .attr('x', 25)
-      .attr('dy', '3.4em')
-      .style('text-anchor', 'middle')
-      .attr('font-size', '14px')
-      .attr('font-weight', 'bold');
+    prepareTooltip(svg_bar);
 
     const selection_close = d3.select(svg_bar.node().parentElement)
       .append('div')
@@ -71,19 +40,37 @@ export class BubbleChart1 {
     selection_close.append('span')
       .attrs({ class: 'label_chk' })
       .html('régions les plus proches');
-
-    this.applySelection(5, 'close');
+    this.my_region_value = this.data
+        .filter(d => d.id === app.current_config.my_region)
+        .map(d => d.ratio)[0];
     this.bindMenu();
+    this.applySelection(5, 'close');
+
+    // Deactivate the rect brush selection on the map
+    // when the user press the Ctrl key:
+    document.onkeydown = (event) => {
+      if (event && event.key === 'Control') {
+        svg_map.select('.brush_map')
+          .selectAll('.selection, .overlay')
+          .style('display', 'none');
+      }
+    };
+    document.onkeyup = (event) => {
+      if (event && event.key === 'Control') {
+        svg_map.select('.brush_map')
+          .selectAll('.selection, .overlay')
+          .style('display', null);
+      }
+    };
+
   }
 
   applySelection(nb, type_selection = 'close') {
     app.colors = {};
     if (nb > 0) {
-      const my_region_value = this.data
-        .filter(d => d.id === app.current_config.my_region)
-        .map(d => d.ratio)[0];
+      const my_region_value = this.my_region_value;
       this.highlight_selection = this.data.map(d => ({
-        dist: Math.abs(d.ratio - my_region_value),
+        dist: math_abs(d.ratio - my_region_value),
         ratio: d.ratio,
         id: d.id }));
       if (type_selection === 'close') {
@@ -100,30 +87,28 @@ export class BubbleChart1 {
       this.highlight_selection = [];
     }
     app.colors[app.current_config.my_region] = color_highlight;
-    this.updateBubble();
+    this.update();
     this.updateMapRegio();
   }
 
-  updateBubble() {
+  update() {
     const data = this.data;
     const highlight_selection = this.highlight_selection;
-    const my_region_value = data
-      .filter(d => d.id === app.current_config.my_region)
-      .map(d => d.ratio)[0];
+    const my_region_value = this.my_region_value;
     let _min;
     let _max;
     if (highlight_selection.length > 0) {
       const dist_min = my_region_value - d3.min(highlight_selection, d => d.ratio);
       const dist_max = d3.max(highlight_selection, d => d.ratio) - my_region_value;
       const dist_axis = Math.max(dist_min, dist_max);
-      const margin_min_max = Math.round(dist_axis) / 8;
+      const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
     } else {
       const dist_min = my_region_value - d3.min(data, d => d.ratio);
       const dist_max = d3.max(data, d => d.ratio) - my_region_value;
       const dist_axis = Math.max(dist_min, dist_max);
-      const margin_min_max = Math.round(dist_axis) / 8;
+      const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
     }
@@ -133,11 +118,9 @@ export class BubbleChart1 {
       .domain([_min, _max])
       .range([0, width]);
 
-    // draw_group.select('.axis--x').remove();
     this.draw_group.select('g.axis--x')
       .transition()
       .duration(225)
-      // .attrs({ class: 'axis axis--x', transform: `translate(0, ${height / 2})` })
       .call(d3.axisBottom(xScale));
 
     const bubbles = this.draw_group.selectAll('.bubble')
@@ -209,21 +192,55 @@ export class BubbleChart1 {
 
   updateMapRegio() {
     if (!this.map_elem) return;
-    this.map_elem.nuts1_lyr.selectAll('path')
+    this.map_elem.target_layer.selectAll('path')
       .attr('fill', d => (app.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }
 
-  // TODO:
-  // handle_brush_map(event) {
-  //   null;
-  // }
-  //
+  handle_brush_map(event) {
+    const self = this;
+    const [topleft, bottomright] = event.selection;
+    const rect = new Rect(topleft, bottomright);
+    app.colors = {};
+    self.highlight_selection = [];
+    self.map_elem.target_layer.selectAll('path')
+      .attr('fill', function (d) {
+        const id = d.properties[app.current_config.id_field_geom];
+        if (id === app.current_config.my_region) {
+          app.colors[id] = color_highlight;
+          return color_highlight;
+        } else if (app.current_ids.indexOf(id) < 0) {
+          return color_disabled;
+        }
+        if (!this._pts) {
+          this._pts = this.getAttribute('d').slice(1).split('L').map(pt => pt.split(',').map(a => +a));
+        }
+        const pts = this._pts;
+        for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
+          if (rect.contains(pts[ix])) {
+            const value = d.properties[app.current_config.ratio];
+            const color = comp(value, app.current_config.ref_value, app.serie_inversed);
+            app.colors[id] = color;
+            self.highlight_selection.push({
+              id,
+              ratio: value,
+              dist: math_abs(value - self.my_region_value),
+            });
+            return color;
+          }
+        }
+        return color_countries;
+      });
+    self.update();
+  }
 
-  changeRegion(id_region) {
-    app.current_config.my_region = id_region;
+
+  updateChangeRegion() {
     this.applySelection(this.highlight_selection.length, 'close');
+    this.map_elem.removeRectBrush();
+    this.map_elem.updateLegend();
+    this.my_region_value = app.current_config.ref_value;
   }
 
   changeStudyZone() {
@@ -239,23 +256,24 @@ export class BubbleChart1 {
       .each(function (_, i) {
         this.value = i === 0 ? 'close' : 'distant';
       });
-    menu.selectAll('.type_selection')
-      .on('click', function () {
-        if (this.classList.contains('checked')) {
-          return;
-        }
-        menu.selectAll('.type_selection').attr('class', 'type_selection square');
-        this.classList.add('checked');
-        const value = +this.parentElement.querySelector('.nb_select').value;
-        const type = this.value;
-        self.applySelection(value, type);
-      });
-    menu.selectAll('.label_chk, .nb_select')
-      .on('click', function () {
-        this.parentElement.querySelector('.type_selection').click();
-      });
+    // menu.selectAll('.type_selection')
+    //   .on('click', function () {
+    //     if (this.classList.contains('checked')) {
+    //       return;
+    //     }
+    //     menu.selectAll('.type_selection').attr('class', 'type_selection square');
+    //     this.classList.add('checked');
+    //     const value = +this.parentElement.querySelector('.nb_select').value;
+    //     const type = this.value;
+    //     self.applySelection(value, type);
+    //   });
+    // menu.selectAll('.label_chk, .nb_select')
+    //   .on('click', function () {
+    //     this.parentElement.querySelector('.type_selection').click();
+    //   });
     menu.selectAll('.nb_select')
       .on('change', function () {
+        self.map_elem.removeRectBrush();
         const type = this.parentElement.querySelector('.type_selection').value;
         let value = +this.value;
         // if (!(value > -1 && value < 50)) {
@@ -276,6 +294,7 @@ export class BubbleChart1 {
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
+    d3.select('#menu_selection').select('.nb_select').dispatch('change');
   }
 }
 
@@ -296,7 +315,9 @@ export function bindUI_BubbleChart1(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         d3.selectAll('span.target_region').attr('class', 'target_region square');
         this.classList.add('checked');
-        chart.changeRegion(this.getAttribute('value'));
+        const id_region = this.getAttribute('value');
+        changeRegion(app, id_region);
+        chart.updateChangeRegion();
       }
     });
 
@@ -318,7 +339,7 @@ export function bindUI_BubbleChart1(chart, map_elem) {
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').style('display', null);
-        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+        map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
 
@@ -334,7 +355,7 @@ export function bindUI_BubbleChart1(chart, map_elem) {
         svg_map.call(map_elem.zoom_map);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
         svg_map.select('.brush_map').style('display', 'none');
-        map_elem.nuts1_lyr.selectAll('path').on('click', null);
+        map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
 
@@ -342,27 +363,38 @@ export function bindUI_BubbleChart1(chart, map_elem) {
     .on('click', function () {
       if (!this.classList.contains('active')) {
         this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
         document.getElementById('img_rect_selec').classList.remove('active');
-        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
         document.getElementById('img_map_zoom').classList.remove('active');
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
         svg_map.select('.brush_map').style('display', 'none');
-        map_elem.nuts1_lyr.selectAll('path')
+        map_elem.target_layer.selectAll('path')
           .on('click', function (d) {
             const id = d.properties[app.current_config.id_field_geom];
             if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
             if (app.colors[id] !== undefined) {
+              // Remove the clicked feature from the colored selection on the chart:
+              const id_to_remove = chart.highlight_selection
+                .map((ft, i) => (ft.id === id ? i : null)).filter(ft => ft);
+              chart.highlight_selection.splice(id_to_remove, 1);
+              // Change its color in the global colors object:
               app.colors[id] = undefined;
+              // Change the color on the map:
               d3.select(this).attr('fill', color_countries);
             } else {
-              const color = comp(d.properties[app.current_config.ratio], app.current_config.ref_value, app.serie_inversed);
+              const value = d.properties[app.current_config.ratio];
+              const color = comp(value, app.current_config.ref_value, app.serie_inversed);
               app.colors[id] = color;
+              // Change the color on the map:
               d3.select(this).attr('fill', color);
+              // Add the clicked feature on the colored selection on the chart:
+              chart.highlight_selection.push({
+                id,
+                ratio: value,
+                dist: math_abs(value - app.current_config.ref_value),
+              });
             }
-            // chart.update();
+            chart.update();
           });
       }
     });

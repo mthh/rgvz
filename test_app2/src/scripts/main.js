@@ -111,11 +111,12 @@ export function bindTopButtons(chart, map_elem) {
       chart.remove();
       chart = null; // eslint-disable-line no-param-reassign
       unbindUI();
+      map_elem.resetZoom();
       app.colors = {};
       app.serie_inversed = false;
-      app.current_data = filter_no_empty(app);
-      app.current_ids = app.current_data.map(d => d.id);
-      app.current_ranks = app.current_data.map((d, i) => i + 1);
+      // app.current_data = filter_no_empty(app);
+      // app.current_ids = app.current_data.map(d => d.id);
+      // app.current_ranks = app.current_data.map((d, i) => i + 1);
       resetColors();
       map_elem.resetColors();
       const value = this.getAttribute('value');
@@ -124,13 +125,14 @@ export function bindTopButtons(chart, map_elem) {
         makeTable(app.current_data, app.current_config);
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_BarChart1(chart, map_elem);
-        chart.bindMap(map_elem);
         map_elem.bindBrush(chart);
+        chart.bindMap(map_elem);
       } else if (value === 'BubbleChart1') {
         console.log('BubbleChart1');
         makeTable(app.current_data, app.current_config);
         chart = new BubbleChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_BubbleChart1(chart, map_elem);
+        map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
       }
     });
