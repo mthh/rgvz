@@ -35,18 +35,45 @@ export function prepare_dataset(full_dataset, app) {
 *    without features containing empty ratios.
 *
 */
-export function filter_no_empty(app) {
+export function filter_no_empty(app, filter_id) {
   // Fetch the name(s) of the ratio (and associated num and denum variable),
   // the name of the targeted region and the current level :
-  const { num, denum, ratio, my_region, current_level } = app.current_config;
+  const { num, denum, ratio, my_region, current_level, id_field, filter } = app.current_config;
   // Prepare the data:
-  const temp = app.full_dataset.filter(ft => +ft.level === current_level).map(ft => ({
-    id: ft.geo,
-    name: ft.Nom,
-    num: +ft[num],
-    denum: +ft[denum] / 1000,
-    ratio: +ft[ratio],
-  }));
+  let temp;
+  if (filter_id) {
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level && filter_id.indexOf(ft[id_field]) > -1)
+      .map(ft => ({
+        id: ft[id_field],
+        name: ft.Nom,
+        num: +ft[num],
+        denum: +ft[denum] / 1000,
+        ratio: +ft[ratio],
+      }));
+  } else if (filter) {
+    const { key, value } = filter;
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level && ft[key] === value)
+      .map(ft => ({
+        id: ft[id_field],
+        name: ft.Nom,
+        num: +ft[num],
+        denum: +ft[denum] / 1000,
+        ratio: +ft[ratio],
+      }));
+  } else {
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level)
+      .map(ft => ({
+        id: ft[id_field],
+        name: ft.Nom,
+        num: +ft[num],
+        denum: +ft[denum] / 1000,
+        ratio: +ft[ratio],
+      }));
+  }
+
   // Filter data for empty values :
   const filtered_data = temp.filter((ft) => {
     if (ft.id === my_region) {
@@ -61,41 +88,47 @@ export function filter_no_empty(app) {
     filtered_data.sort((a, b) => b.ratio - a.ratio);
   }
   filtered_data.forEach((d, i) => { d.rang = i + 1; });
+
+  //
+  app.current_data = filtered_data;
+  // Store the ids and the ranks of the current features in two arrays for easier acces:
+  app.current_ids = filtered_data.map(d => d.id);
+  app.current_ranks = filtered_data.map((d, i) => i + 1);
+
   // Compute the ratio of available values ("complétude") within
   // the study zone selected by the user:
   app.completude = math_round((filtered_data.length / temp.length) * 1000) / 10;
-  return filtered_data;
+  // return filtered_data;
 }
 
 
 /**
-* Apply a filter (ie. restrict the study zone) on the dataset to be used.
+* Set and apply a new filter (ie. restrict the study zone) on the dataset to be used.
 *
 * @param {String} filter_type - The name of the filter to use.
 * @return {void}
 *
 */
 export function applyFilter(app, filter_type) {
-  app.current_data = filter_no_empty(app);
-  if (filter_type === 'no_filter') {
-    // eslint-disable-next-line no-unused-expressions
-    null; // Don't filter anything..
-  } else if (filter_type === 'filter_FR') {
-    app.current_data = app.current_data.filter(d => d.id.indexOf('FR') > -1);
+  if (filter_type === 'filter_FR') {
+    app.current_config.filter = { key: 'PAYS', value: 'FR' };
+    filter_no_empty(app);
+  } else if (filter_type === 'no_filter') {
+    app.current_config.filter = null;
+    filter_no_empty(app);
   } else {
-    let a = math_round(Math.random() * 50);
-    let b = math_round(Math.random() * 101);
-    if (a > b) [a, b] = [b, a];
-    app.current_data = app.current_data.slice(a, b);
+    app.current_config.filter = { key: 'type_test', value: `3` };
+    filter_no_empty(app);
     const maybe_my_region = app.current_data.filter(
       d => d.id === app.current_config.my_region)[0];
     if (maybe_my_region === undefined) {
       app.current_data.push(
         app.full_dataset.filter(d => d.geo === app.current_config.my_region)[0]);
+      app.current_ids = app.current_data.map(d => d.id);
+      app.current_ranks = app.current_data.map((d, i) => i + 1);
     }
   }
-  app.current_ids = app.current_data.map(d => d.id);
-  app.current_ranks = app.current_data.map((d, i) => i + 1);
+
   if (!app.serie_inversed) {
     app.current_data.sort((a, b) => a.ratio - b.ratio);
   } else {
@@ -121,10 +154,12 @@ export function changeRegion(app, id_region) {
 
 export function changeVariable(app, code_ratio) {
   const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
+  app.colors = {};
+  app.colors[app.current_config.my_region] = color_highlight;
   app.current_config.num = variable_info.num;
   app.current_config.denum = variable_info.denum;
   app.current_config.ratio = variable_info.ratio;
   app.current_config.ratio_pretty_name = variable_info.name;
-  app.current_data = filter_no_empty(app);
+  filter_no_empty(app);
 }
 /* eslint-enable no-param-reassign */

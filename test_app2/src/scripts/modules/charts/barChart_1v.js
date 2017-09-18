@@ -1,12 +1,11 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter, changeRegion, changeVariable } from './../prepare_data';
-import { app, bindTopButtons } from './../../main';
+import { app } from './../../main';
 
 export const svg_bar = d3.select('svg#svg_bar'),
-  margin = { top: 10, right: 20, bottom: 100, left: 30 },
-  margin2 = { top: 430, right: 20, bottom: 15, left: 30 },
+  margin = { top: 10, right: 20, bottom: 100, left: 40 },
+  margin2 = { top: 430, right: 20, bottom: 15, left: 40 },
   width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom,
   height2 = +svg_bar.attr('height') - margin2.top - margin2.bottom;
@@ -282,6 +281,33 @@ export class BarChart1 {
           .style('display', null);
       }
     };
+
+    // Create the menu under the chart allowing to use some useful selections
+    // (above or below the mean value and above or below my_region)
+    const buttons_under_chart = d3.select('#bar_section')
+      .append('div')
+      .attr('id', 'buttons_under_chart')
+      .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
+
+    buttons_under_chart.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_above_mean' })
+      .text('< à la moyenne')
+      .on('click', () => this.selectBelowMean());
+
+    buttons_under_chart.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_below_mean' })
+      .text('> à la moyenne')
+      .on('click', () => this.selectAboveMean());
+
+    buttons_under_chart.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
+      .text('< à ma région')
+      .on('click', () => this.selectBelowMyRegion());
+
+    buttons_under_chart.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
+      .text('> à ma région')
+      .on('click', () => this.selectAboveMyRegion());
   }
 
   updateCompletude() {
@@ -500,7 +526,7 @@ export class BarChart1 {
     app.colors = {};
     self.map_elem.target_layer.selectAll('path')
       .attr('fill', function (d) {
-        const id = d.properties.NUTS1_2016;
+        const id = d.properties[app.current_config.id_field_geom];
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
@@ -508,7 +534,7 @@ export class BarChart1 {
           return color_disabled;
         }
         if (!this._pts) {
-          this._pts = this.getAttribute('d').slice(1).split('L').map(pt => pt.split(',').map(a => +a));
+          this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
         }
         const pts = this._pts;
         for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
@@ -542,6 +568,23 @@ export class BarChart1 {
       svg_bar.select('.brush_bottom').call(
         self.brush_bottom.move, self.x.range());
     }
+  }
+
+  handleClickMap(d, parent) {
+    const id = d.properties[app.current_config.id_field_geom];
+    if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (app.colors[id] !== undefined) {
+      app.colors[id] = undefined;
+      d3.select(parent).attr('fill', color_countries);
+    } else {
+      const color = comp(
+        d.properties[app.current_config.ratio],
+        app.current_config.ref_value,
+        app.serie_inversed);
+      app.colors[id] = color;
+      d3.select(parent).attr('fill', color);
+    }
+    this.update();
   }
 
   updateChangeRegion() {
@@ -598,157 +641,4 @@ export class BarChart1 {
   bindMap(map_elem) {
     this.map_elem = map_elem;
   }
-}
-
-export function bindUI_BarChart1(chart, map_elem) {
-  d3.selectAll('span.filter_v')
-    .on('click', function () {
-      if (!this.classList.contains('checked')) {
-        d3.selectAll('span.filter_v').attr('class', 'filter_v square');
-        this.classList.add('checked');
-        const filter_type = this.getAttribute('filter-value');
-        applyFilter(app, filter_type);
-        chart.updateCompletude();
-        chart.changeStudyZone();
-      }
-    });
-
-  d3.selectAll('span.target_region')
-    .on('click', function () {
-      if (!this.classList.contains('checked')) {
-        d3.selectAll('span.target_region').attr('class', 'target_region square');
-        this.classList.add('checked');
-        const id_region = this.getAttribute('value');
-        changeRegion(app, id_region);
-        chart.updateChangeRegion();
-      }
-    });
-
-  d3.selectAll('span.target_variable')
-    .on('click', function () {
-      if (!this.classList.contains('checked')) {
-        d3.selectAll('span.target_variable')
-          .attr('class', 'target_variable small_square');
-        this.classList.add('checked');
-        const code_variable = this.getAttribute('value');
-        changeVariable(app, code_variable);
-        d3.select('#bar_section > p > .title_variable')
-          .html(app.current_config.ratio_pretty_name);
-        chart.changeStudyZone();
-        chart.updateCompletude();
-      }
-    });
-
-  d3.selectAll('span.label_chk')
-    .on('click', function () {
-      this.previousSibling.click();
-    });
-
-  const header_map_section = d3.select('#map_section > #header_map');
-
-  header_map_section.select('#img_rect_selec')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        document.getElementById('img_map_zoom').classList.remove('active');
-        document.getElementById('img_map_select').classList.remove('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').style('display', null);
-        map_elem.target_layer.selectAll('path').on('click', null);
-      }
-    });
-
-  header_map_section.select('#img_map_zoom')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        document.getElementById('img_rect_selec').classList.remove('active');
-        document.getElementById('img_map_select').classList.remove('active');
-        svg_map.call(map_elem.zoom_map);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
-        map_elem.target_layer.selectAll('path').on('click', null);
-      }
-    });
-
-  header_map_section.select('#img_map_select')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
-        document.getElementById('img_rect_selec').classList.remove('active');
-        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
-        document.getElementById('img_map_zoom').classList.remove('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
-        map_elem.target_layer.selectAll('path')
-          .on('click', function (d) {
-            const id = d.properties[app.current_config.id_field_geom];
-            if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
-            if (app.colors[id] !== undefined) {
-              app.colors[id] = undefined;
-              d3.select(this).attr('fill', color_countries);
-            } else {
-              const color = comp(
-                d.properties[app.current_config.ratio],
-                app.current_config.ref_value,
-                app.serie_inversed);
-              app.colors[id] = color;
-              d3.select(this).attr('fill', color);
-            }
-            chart.update();
-          });
-      }
-    });
-
-  const header_table_section = d3.select('#map_section')
-      .insert('p', 'svg')
-      .attr('id', 'header_table')
-      .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
-
-  header_table_section.append('span')
-    .attr('class', 'button_blue')
-    .html('CSV')
-    .on('click', () => {
-      const content = [
-        'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
-        app.current_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
-      ].join('');
-      const elem = document.createElement('a');
-      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
-      elem.setAttribute('download', 'table.csv');
-      elem.style.display = 'none';
-      document.body.appendChild(elem);
-      elem.click();
-      document.body.removeChild(elem);
-    });
-
-  const buttons_under_chart = d3.select('#bar_section')
-    .append('div')
-    .attr('id', 'buttons_under_chart')
-    .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
-
-  buttons_under_chart.append('button')
-    .attrs({ class: 'button_blue', id: 'btn_above_mean' })
-    .text('< à la moyenne')
-    .on('click', () => chart.selectBelowMean());
-
-  buttons_under_chart.append('button')
-    .attrs({ class: 'button_blue', id: 'btn_below_mean' })
-    .text('> à la moyenne')
-    .on('click', () => chart.selectAboveMean());
-
-  buttons_under_chart.append('button')
-    .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
-    .text('< à ma région')
-    .on('click', () => chart.selectBelowMyRegion());
-
-  buttons_under_chart.append('button')
-    .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
-    .text('> à ma région')
-    .on('click', () => chart.selectAboveMyRegion());
-
-  bindTopButtons(chart, map_elem);
 }

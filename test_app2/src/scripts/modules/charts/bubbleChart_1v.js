@@ -1,8 +1,7 @@
-import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip } from './../helpers';
+import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter, changeRegion, changeVariable } from './../prepare_data';
-import { app, bindTopButtons } from './../../main';
+import { app } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
@@ -29,6 +28,12 @@ export class BubbleChart1 {
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
 
+    // Create the "completude" text:
+    this.completude = svg_bar.append('text')
+      .attrs({ id: 'chart_completude', x: 60, y: 40 })
+      .styles({ 'font-family': '\'Signika\', sans-serif' })
+      .text(`Complétude : ${app.completude}%`);
+
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
     const selection_close = d3.select(svg_bar.node().parentElement)
@@ -38,6 +43,7 @@ export class BubbleChart1 {
       .append('p');
 
     selection_close.append('span')
+      .property('value', 'close')
       .attrs({ value: 'close', class: 'type_selection square checked' });
     selection_close.append('span')
       .attrs({ class: 'label_chk' })
@@ -133,7 +139,7 @@ export class BubbleChart1 {
       .call(d3.axisBottom(xScale));
 
     const bubbles = this.draw_group.selectAll('.bubble')
-      .data(data);
+      .data(data, d => d.id);
 
     bubbles
       .transition()
@@ -223,13 +229,13 @@ export class BubbleChart1 {
           return color_disabled;
         }
         if (!this._pts) {
-          this._pts = this.getAttribute('d').slice(1).split('L').map(pt => pt.split(',').map(a => +a));
+          this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
         }
         const pts = this._pts;
         for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
           if (rect.contains(pts[ix])) {
             const value = d.properties[app.current_config.ratio];
-            const color = comp(value, app.current_config.ref_value, app.serie_inversed);
+            const color = comp(value, self.my_region_value, app.serie_inversed);
             app.colors[id] = color;
             self.highlight_selection.push({
               id,
@@ -244,6 +250,33 @@ export class BubbleChart1 {
     self.update();
   }
 
+  handleClickMap(d, parent) {
+    const id = d.properties[app.current_config.id_field_geom];
+    if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (app.colors[id] !== undefined) {
+      // Remove the clicked feature from the colored selection on the chart:
+      const id_to_remove = this.highlight_selection
+        .map((ft, i) => (ft.id === id ? i : null)).filter(ft => ft);
+      this.highlight_selection.splice(id_to_remove, 1);
+      // Change its color in the global colors object:
+      app.colors[id] = undefined;
+      // Change the color on the map:
+      d3.select(parent).attr('fill', color_countries);
+    } else {
+      const value = d.properties[app.current_config.ratio];
+      const color = comp(value, app.current_config.ref_value, app.serie_inversed);
+      app.colors[id] = color;
+      // Change the color on the map:
+      d3.select(parent).attr('fill', color);
+      // Add the clicked feature on the colored selection on the chart:
+      this.highlight_selection.push({
+        id,
+        ratio: value,
+        dist: math_abs(value - app.current_config.ref_value),
+      });
+    }
+    this.update();
+  }
 
   updateChangeRegion() {
     this.map_elem.removeRectBrush();
@@ -253,45 +286,35 @@ export class BubbleChart1 {
   }
 
   changeStudyZone() {
+    this.map_elem.removeRectBrush();
+    this.map_elem.updateLegend();
     this.data = app.current_data.slice().sort(
       (a, b) => b[app.current_config.num] - a[app.current_config.num]);
-    this.applySelection(this.highlight_selection.length, 'close');
+    this.my_region_value = app.current_config.ref_value;
+    const temp = this.highlight_selection.length;
+    this.highlight_selection = [];
+    this.applySelection(temp, 'close');
   }
 
   bindMenu() {
     const self = this;
     const menu = d3.select('#menu_selection');
-    menu.selectAll('.type_selection')
-      .each(function (_, i) {
-        this.value = i === 0 ? 'close' : 'distant';
-      });
-    // menu.selectAll('.type_selection')
-    //   .on('click', function () {
-    //     if (this.classList.contains('checked')) {
-    //       return;
-    //     }
-    //     menu.selectAll('.type_selection').attr('class', 'type_selection square');
-    //     this.classList.add('checked');
-    //     const value = +this.parentElement.querySelector('.nb_select').value;
-    //     const type = this.value;
-    //     self.applySelection(value, type);
-    //   });
-    // menu.selectAll('.label_chk, .nb_select')
-    //   .on('click', function () {
-    //     this.parentElement.querySelector('.type_selection').click();
-    //   });
-    menu.selectAll('.nb_select')
-      .on('change', function () {
-        self.map_elem.removeRectBrush();
-        const type = this.parentElement.querySelector('.type_selection').value;
-        let value = +this.value;
-        // if (!(value > -1 && value < 50)) {
-        if (!(value > -1)) {
-          this.value = 5;
-          value = 5;
-        }
-        self.applySelection(value, type);
-      });
+    const applychange = function () {
+      self.map_elem.removeRectBrush();
+      const type = this.parentElement.querySelector('.type_selection').value;
+      let value = +this.value;
+      if (!(value > -1)) {
+        this.value = 5;
+        value = 5;
+      }
+      self.applySelection(value, type);
+    };
+    menu.select('.nb_select')
+      .on('change', applychange);
+    menu.select('.nb_select')
+      .on('wheel', applychange);
+    menu.select('.nb_select')
+      .on('keyup', applychange);
   }
 
   remove() {
@@ -305,143 +328,4 @@ export class BubbleChart1 {
     this.map_elem = map_elem;
     d3.select('#menu_selection').select('.nb_select').dispatch('change');
   }
-}
-
-export function bindUI_BubbleChart1(chart, map_elem) {
-  d3.selectAll('span.filter_v')
-    .on('click', function () {
-      if (!this.classList.contains('checked')) {
-        d3.selectAll('span.filter_v').attr('class', 'filter_v square');
-        this.classList.add('checked');
-        const filter_type = this.getAttribute('filter-value');
-        applyFilter(app, filter_type);
-        chart.changeStudyZone();
-      }
-    });
-
-  d3.selectAll('span.target_region')
-    .on('click', function () {
-      if (!this.classList.contains('checked')) {
-        d3.selectAll('span.target_region').attr('class', 'target_region square');
-        this.classList.add('checked');
-        const id_region = this.getAttribute('value');
-        changeRegion(app, id_region);
-        chart.updateChangeRegion();
-      }
-    });
-
-    d3.selectAll('span.target_variable')
-      .on('click', function () {
-        if (!this.classList.contains('checked')) {
-          d3.selectAll('span.target_variable')
-            .attr('class', 'target_variable small_square');
-          this.classList.add('checked');
-          const code_variable = this.getAttribute('value');
-          changeVariable(app, code_variable);
-          d3.select('#bar_section > p > .title_variable')
-            .html(app.current_config.ratio_pretty_name);
-          chart.update();
-        }
-      });
-
-  d3.selectAll('span.label_chk')
-    .on('click', function () {
-      this.previousSibling.click();
-    });
-
-  const header_map_section = d3.select('#map_section > #header_map');
-
-  header_map_section.select('#img_rect_selec')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
-        document.getElementById('img_map_zoom').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
-        document.getElementById('img_map_select').classList.remove('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').style('display', null);
-        map_elem.target_layer.selectAll('path').on('click', null);
-      }
-    });
-
-  header_map_section.select('#img_map_zoom')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
-        document.getElementById('img_rect_selec').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
-        document.getElementById('img_map_select').classList.remove('active');
-        svg_map.call(map_elem.zoom_map);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
-        map_elem.target_layer.selectAll('path').on('click', null);
-      }
-    });
-
-  header_map_section.select('#img_map_select')
-    .on('click', function () {
-      if (!this.classList.contains('active')) {
-        this.classList.add('active');
-        document.getElementById('img_rect_selec').classList.remove('active');
-        document.getElementById('img_map_zoom').classList.remove('active');
-        svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
-        map_elem.target_layer.selectAll('path')
-          .on('click', function (d) {
-            const id = d.properties[app.current_config.id_field_geom];
-            if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
-            if (app.colors[id] !== undefined) {
-              // Remove the clicked feature from the colored selection on the chart:
-              const id_to_remove = chart.highlight_selection
-                .map((ft, i) => (ft.id === id ? i : null)).filter(ft => ft);
-              chart.highlight_selection.splice(id_to_remove, 1);
-              // Change its color in the global colors object:
-              app.colors[id] = undefined;
-              // Change the color on the map:
-              d3.select(this).attr('fill', color_countries);
-            } else {
-              const value = d.properties[app.current_config.ratio];
-              const color = comp(value, app.current_config.ref_value, app.serie_inversed);
-              app.colors[id] = color;
-              // Change the color on the map:
-              d3.select(this).attr('fill', color);
-              // Add the clicked feature on the colored selection on the chart:
-              chart.highlight_selection.push({
-                id,
-                ratio: value,
-                dist: math_abs(value - app.current_config.ref_value),
-              });
-            }
-            chart.update();
-          });
-      }
-    });
-
-  const header_table_section = d3.select('#map_section')
-      .insert('p', 'svg')
-      .attr('id', 'header_table')
-      .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
-
-  header_table_section.append('span')
-    .attr('class', 'button_blue')
-    .html('CSV')
-    .on('click', () => {
-      const content = [
-        'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
-        app.current_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
-      ].join('');
-      const elem = document.createElement('a');
-      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
-      elem.setAttribute('download', 'table.csv');
-      elem.style.display = 'none';
-      document.body.appendChild(elem);
-      elem.click();
-      document.body.removeChild(elem);
-    });
-  bindTopButtons(chart, map_elem);
 }

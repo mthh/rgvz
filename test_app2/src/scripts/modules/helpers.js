@@ -111,6 +111,20 @@ const removeDuplicates = function removeDuplicates(arr) {
   return tmp;
 };
 
+const getSvgPathType = (path) => {
+  if (path.indexOf('M ') > -1 && path.indexOf(' L ') > -1) {
+    return 2;
+  }
+  return 1;
+};
+
+const svgPathToCoords = (path, type_path) => {
+  if (type_path === 1) {
+    return path.slice(1).split('L').map(pt => pt.split(',').map(a => +a));
+  }
+  return path.slice(2).split(' L ').map(pt => pt.split(' ').map(a => +a));
+};
+
 export {
   comp,
   math_abs,
@@ -120,4 +134,6 @@ export {
   unbindUI,
   prepareTooltip,
   removeDuplicates,
+  getSvgPathType,
+  svgPathToCoords,
 };

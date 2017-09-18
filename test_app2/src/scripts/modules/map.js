@@ -1,6 +1,6 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { math_round, prepareTooltip } from './helpers';
+import { math_round, prepareTooltip, getSvgPathType } from './helpers';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
@@ -150,9 +150,9 @@ class MapSelect {
       .data(nuts1.features)
       .enter()
       .append('path')
-      .attr('fill', d => (d.properties.NUTS1_2016 !== app.current_config.my_region ? color_countries : color_highlight))
+      .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
       .attr('d', path);
-
+    app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
     fitLayer();
     prepareTooltip(svg_map);
     this.bindTooltip();

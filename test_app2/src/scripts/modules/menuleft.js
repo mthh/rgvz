@@ -30,7 +30,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   for (let i = 0, len_i = groups_var.length; i < len_i; i++) {
     const gp_name = groups_var[i];
     const entry = document.createElement('p');
-    entry.innerHTML = `<span class='square'></span><span class="label_chk">${gp_name}</span>`;
+    entry.innerHTML = `<span class='square'></span><span>${gp_name}</span>`;
     section2.appendChild(entry);
     const var_names = variables.filter(d => d.group === gp_name);
     for (let j = 0, len_j = var_names.length; j < len_j; j++) {
@@ -38,7 +38,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
       const code_var = var_names[j].ratio;
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
-      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span>${name_var}</span>`;
+      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span class="label_chk">${name_var}</span>`;
       section2.appendChild(sub_entry);
     }
   }

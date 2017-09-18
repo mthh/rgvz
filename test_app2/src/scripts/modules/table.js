@@ -54,8 +54,8 @@ function createTableDOM(data, opts, config) {
   return myTable;
 }
 
-
 export function makeTable(data_no_empty, config) {
+  d3.select('.dataTable-wrapper').remove();
   const table = createTableDOM(data_no_empty, undefined, config);
   document.querySelector('#map_section').appendChild(table);
   const dataTable = new DataTable('#myTable');
