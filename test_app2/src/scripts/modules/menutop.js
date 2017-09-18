@@ -86,8 +86,7 @@ export function makeHeaderChart() {
       'margin-left': '40px',
       float: 'left',
     })
-    .attr('class', 'title_variable')
-    .html(app.current_config.ratio_pretty_name);
+    .attr('class', 'title_variable');
 
   header_bar_section.insert('img')
     .attrs({

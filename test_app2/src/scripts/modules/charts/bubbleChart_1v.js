@@ -1,7 +1,7 @@
 import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter, changeRegion } from './../prepare_data';
+import { applyFilter, changeRegion, changeVariable } from './../prepare_data';
 import { app, bindTopButtons } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
@@ -21,8 +21,16 @@ export class BubbleChart1 {
     draw_group.append('g')
       .attrs({ class: 'axis axis--x', transform: `translate(0, ${height / 2})` });
     this.draw_group = draw_group;
+
+    // Set the variable name as title of the chart:
+    d3.select('#bar_section > p > .title_variable')
+      .html(app.current_config.ratio_pretty_name);
+
+    // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
 
+    // Create the section containing the input element allowing to chose
+    // how many "close" regions we want to highlight.
     const selection_close = d3.select(svg_bar.node().parentElement)
       .append('div')
       .attr('id', 'menu_selection')
@@ -47,7 +55,7 @@ export class BubbleChart1 {
     this.applySelection(5, 'close');
 
     // Deactivate the rect brush selection on the map
-    // when the user press the Ctrl key:
+    // while the user press the Ctrl key:
     document.onkeydown = (event) => {
       if (event && event.key === 'Control') {
         svg_map.select('.brush_map')
@@ -55,6 +63,8 @@ export class BubbleChart1 {
           .style('display', 'none');
       }
     };
+    // Reactivate the rect brush selection on the map
+    // when the user doesn't press the Ctrl key anymore
     document.onkeyup = (event) => {
       if (event && event.key === 'Control') {
         svg_map.select('.brush_map')
@@ -62,7 +72,6 @@ export class BubbleChart1 {
           .style('display', null);
       }
     };
-
   }
 
   applySelection(nb, type_selection = 'close') {
@@ -237,10 +246,10 @@ export class BubbleChart1 {
 
 
   updateChangeRegion() {
-    this.applySelection(this.highlight_selection.length, 'close');
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
     this.my_region_value = app.current_config.ref_value;
+    this.applySelection(this.highlight_selection.length, 'close');
   }
 
   changeStudyZone() {
@@ -320,6 +329,20 @@ export function bindUI_BubbleChart1(chart, map_elem) {
         chart.updateChangeRegion();
       }
     });
+
+    d3.selectAll('span.target_variable')
+      .on('click', function () {
+        if (!this.classList.contains('checked')) {
+          d3.selectAll('span.target_variable')
+            .attr('class', 'target_variable small_square');
+          this.classList.add('checked');
+          const code_variable = this.getAttribute('value');
+          changeVariable(app, code_variable);
+          d3.select('#bar_section > p > .title_variable')
+            .html(app.current_config.ratio_pretty_name);
+          chart.update();
+        }
+      });
 
   d3.selectAll('span.label_chk')
     .on('click', function () {

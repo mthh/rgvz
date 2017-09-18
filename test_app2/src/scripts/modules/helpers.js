@@ -88,7 +88,7 @@ class Rect {
   }
 }
 
-const PropSizer = function (fixed_value, fixed_size) {
+const PropSizer = function PropSizer(fixed_value, fixed_size) {
   this.fixed_value = fixed_value;
   const sqrt = Math.sqrt;
   const abs = Math.abs;
@@ -101,6 +101,15 @@ const PropSizer = function (fixed_value, fixed_size) {
   this.get_value = size => Math.pow(size * PI, 2) / this.smax * this.fixed_value;
 };
 
+const removeDuplicates = function removeDuplicates(arr) {
+  const tmp = [];
+  for (let i = 0, len_arr = arr.length; i < len_arr; i++) {
+    if (tmp.indexOf(arr[i]) === -1) {
+      tmp.push(arr[i]);
+    }
+  }
+  return tmp;
+};
 
 export {
   comp,
@@ -110,4 +119,5 @@ export {
   PropSizer,
   unbindUI,
   prepareTooltip,
+  removeDuplicates,
 };

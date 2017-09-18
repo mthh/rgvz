@@ -1,7 +1,7 @@
 import { comp, math_round, math_abs, Rect, prepareTooltip } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { applyFilter, changeRegion } from './../prepare_data';
+import { applyFilter, changeRegion, changeVariable } from './../prepare_data';
 import { app, bindTopButtons } from './../../main';
 
 export const svg_bar = d3.select('svg#svg_bar'),
@@ -12,12 +12,11 @@ export const svg_bar = d3.select('svg#svg_bar'),
   height2 = +svg_bar.attr('height') - margin2.top - margin2.bottom;
 
 let nbFt;
-let mean_value;
 let current_range_brush = [0, 0];
 let current_range = [0, 0];
 let displayed;
 
-function getMeanRank() {
+function getMeanRank(mean_value) {
   let mean_rank = app.current_data.map((d, i) => [d.ratio, math_abs(mean_value - d.ratio), i]);
   mean_rank.sort((a, b) => a[1] - b[1]);
   mean_rank = mean_rank[0];
@@ -109,7 +108,7 @@ export class BarChart1 {
     app.current_ids = data.map(d => d.id);
     app.current_ranks = data.map((d, i) => i + 1);
     nbFt = data.length;
-    mean_value = d3.mean(data.map(d => d.ratio));
+    this.mean_value = d3.mean(data.map(d => d.ratio));
 
     svg_bar.append('defs')
       .append('clipPath')
@@ -118,12 +117,16 @@ export class BarChart1 {
       .attrs({ width, height });
 
     const focus = svg_bar.append('g')
-      .attr('class', 'focus')
-      .attr('transform', `translate(${margin.left}, ${margin.top})`);
+      .attrs({
+        class: 'focus',
+        transform: `translate(${margin.left}, ${margin.top})`,
+      });
 
     const context = svg_bar.append('g')
-      .attr('class', 'context')
-      .attr('transform', `translate(${margin2.left}, ${margin2.top})`);
+      .attrs({
+        class: 'context',
+        transform: `translate(${margin2.left}, ${margin2.top})`,
+      });
 
     this._focus = focus;
     this.context = context;
@@ -170,21 +173,21 @@ export class BarChart1 {
 
     const groupe_line_mean = focus.append('g').attr('class', 'mean');
     groupe_line_mean.append('text')
-      .attrs({ x: 60, y: y(mean_value) + 20 })
+      .attrs({ x: 60, y: y(this.mean_value) + 20 })
       .styles({
         display: 'none',
         fill: 'red',
         'fill-opacity': '0.8',
         'font-family': '\'Signika\', sans-serif',
       })
-      .text('Valeur moyenne');
+      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
 
     groupe_line_mean.append('line')
       .attrs({
         x1: 0,
         x2: width,
-        y1: y(mean_value),
-        y2: y(mean_value),
+        y1: y(this.mean_value),
+        y2: y(this.mean_value),
         'stroke-dasharray': '10, 5',
         'stroke-width': '2px',
         class: 'mean_line',
@@ -192,7 +195,7 @@ export class BarChart1 {
       .style('stroke', 'red');
 
     groupe_line_mean.append('line')
-      .attrs({ x1: 0, x2: width, y1: y(mean_value), y2: y(mean_value), 'stroke-width': '14px' })
+      .attrs({ x1: 0, x2: width, y1: y(this.mean_value), y2: y(this.mean_value), 'stroke-width': '14px', class: 'transp_mean_line' })
       .style('stroke', 'transparent')
       .on('mouseover', () => {
         groupe_line_mean.select('text')
@@ -250,6 +253,11 @@ export class BarChart1 {
         svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
       });
 
+    // Set the variable name as title of the chart
+    d3.select('#bar_section > p > .title_variable')
+      .html(app.current_config.ratio_pretty_name);
+
+    // Prepare the tooltip displayed on mouseover:
     const tooltip = prepareTooltip(svg_bar);
 
     // Deactivate the brush rect selection on the map + on the chart
@@ -277,7 +285,6 @@ export class BarChart1 {
   }
 
   updateCompletude() {
-    console.log(app.completude);
     this.completude
       .text(`Complétude : ${app.completude}%`);
   }
@@ -339,8 +346,8 @@ export class BarChart1 {
 
     this._focus.select('.mean_line')
       .attrs({
-        y1: this.y(mean_value),
-        y2: this.y(mean_value),
+        y1: this.y(this.mean_value),
+        y2: this.y(this.mean_value),
       });
 
     const axis_x = this._focus.select('.axis--x')
@@ -438,18 +445,18 @@ export class BarChart1 {
   }
 
   selectAboveMean() {
-    const mean_rank = getMeanRank();
+    const mean_rank = getMeanRank(this.mean_value);
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
     if (!app.serie_inversed) {
       current_range_brush = [mean_rank, app.current_data.length];
-      app.current_data.filter(d => d.ratio > mean_value).forEach((ft) => {
+      app.current_data.filter(d => d.ratio > this.mean_value).forEach((ft) => {
         if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = color_sup;
         else app.colors[ft.id] = color_inf;
       });
     } else {
       current_range_brush = [0, mean_rank + 1];
-      app.current_data.filter(d => d.ratio > mean_value).forEach((ft) => {
+      app.current_data.filter(d => d.ratio > this.mean_value).forEach((ft) => {
         if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = color_inf;
         else app.colors[ft.id] = color_sup;
       });
@@ -460,17 +467,17 @@ export class BarChart1 {
   }
 
   selectBelowMean() {
-    const mean_rank = getMeanRank();
+    const mean_rank = getMeanRank(this.mean_value);
     app.colors = {};
     if (!app.serie_inversed) {
       current_range_brush = [0, mean_rank];
-      app.current_data.filter(d => d.ratio < mean_value).forEach((ft) => {
+      app.current_data.filter(d => d.ratio < this.mean_value).forEach((ft) => {
         if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = color_inf;
         else app.colors[ft.id] = color_sup;
       });
     } else {
       current_range_brush = [mean_rank + 1, app.current_data.length];
-      app.current_data.filter(d => d.ratio < mean_value).forEach((ft) => {
+      app.current_data.filter(d => d.ratio < this.mean_value).forEach((ft) => {
         if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = color_sup;
         else app.colors[ft.id] = color_inf;
       });
@@ -546,6 +553,18 @@ export class BarChart1 {
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
   }
+  updateMeanValue() {
+    this.mean_value = d3.mean(app.current_data.map(d => d.ratio));
+    const y = this.y;
+    const grp_mean = this._focus.select('.mean');
+    grp_mean.select('text')
+      .attr('y', y(this.mean_value) + 20)
+      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
+    grp_mean.select('.mean_line')
+      .attrs({ y1: y(this.mean_value), y2: y(this.mean_value) });
+    grp_mean.select('.transp_mean_line')
+      .attrs({ y1: y(this.mean_value), y2: y(this.mean_value) });
+  }
 
   changeStudyZone() {
     nbFt = app.current_data.length;
@@ -556,6 +575,7 @@ export class BarChart1 {
     ]);
     this.x2.domain(this.x.domain());
     this.y2.domain(this.y.domain());
+    this.updateMeanValue();
     this.update();
     // this.updateMiniBars();
     this.updateContext(0, app.current_data.length);
@@ -604,6 +624,21 @@ export function bindUI_BarChart1(chart, map_elem) {
       }
     });
 
+  d3.selectAll('span.target_variable')
+    .on('click', function () {
+      if (!this.classList.contains('checked')) {
+        d3.selectAll('span.target_variable')
+          .attr('class', 'target_variable small_square');
+        this.classList.add('checked');
+        const code_variable = this.getAttribute('value');
+        changeVariable(app, code_variable);
+        d3.select('#bar_section > p > .title_variable')
+          .html(app.current_config.ratio_pretty_name);
+        chart.changeStudyZone();
+        chart.updateCompletude();
+      }
+    });
+
   d3.selectAll('span.label_chk')
     .on('click', function () {
       this.previousSibling.click();
@@ -615,10 +650,7 @@ export function bindUI_BarChart1(chart, map_elem) {
     .on('click', function () {
       if (!this.classList.contains('active')) {
         this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
         document.getElementById('img_map_zoom').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').style('display', null);
@@ -630,10 +662,7 @@ export function bindUI_BarChart1(chart, map_elem) {
     .on('click', function () {
       if (!this.classList.contains('active')) {
         this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
         document.getElementById('img_rect_selec').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.call(map_elem.zoom_map);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);

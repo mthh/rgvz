@@ -1,3 +1,5 @@
+import { removeDuplicates } from './helpers';
+
 const createMenu = function createMenu(names, variables, study_zones, territorial_mesh) {
   // First section, regions names:
   const title_section1 = document.createElement('p');
@@ -21,19 +23,22 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   title_section2.innerHTML = 'Mon/mes indicateurs';
   const section2 = document.createElement('div');
   section2.className = 'box';
-  const groups_var = Object.keys(variables);
+
+  // Filter the "variables" variable to fetch the group names :
+  const groups_var = removeDuplicates(variables.map(d => d.group));
+
   for (let i = 0, len_i = groups_var.length; i < len_i; i++) {
     const gp_name = groups_var[i];
     const entry = document.createElement('p');
     entry.innerHTML = `<span class='square'></span><span class="label_chk">${gp_name}</span>`;
     section2.appendChild(entry);
-    const var_names = Object.keys(variables[gp_name]);
+    const var_names = variables.filter(d => d.group === gp_name);
     for (let j = 0, len_j = var_names.length; j < len_j; j++) {
-      const name_var = var_names[j];
-      const code_var = variables[gp_name][name_var];
+      const name_var = var_names[j].name;
+      const code_var = var_names[j].ratio;
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
-      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span>${var_names[j]}</span>`;
+      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span>${name_var}</span>`;
       section2.appendChild(sub_entry);
     }
   }

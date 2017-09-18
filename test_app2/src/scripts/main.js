@@ -11,16 +11,14 @@ import { unbindUI } from './modules/helpers';
 
 debug('app:log');
 
-const variables = {
-  'Pauvreté exclusion': {
-    'Taux d\'emploi (2015)': 'TX_EMP_2014',
-    'Taux de chomage (2015)': 'PC_CHOM_1524_2015',
-  },
-  'Groupe 2': {
-    'Indicateur 1': 'IND_1',
-    'Indicateur 2': 'IND_2',
-  },
-};
+export const variables = [
+  { ratio: 'PC_CHOM_1524_2015', num: 'CHOM_1524_2015', denum: 'ACT_1524_2015', name: 'Taux de chomage des jeunes (2015)', group: 'Pauvreté exclusion' },
+  { ratio: 'PC_CHOM_1574_2015', num: 'CHOM_1574_2015', denum: 'ACT_1574_2015', name: 'Taux de chomage (2015)', group: 'Pauvreté exclusion' },
+  { ratio: 'IND1', num: '', denum: '', name: 'Indicateur 1 (xxxx)', group: 'Groupe 2' },
+  { ratio: 'IND2', num: '', denum: '', name: 'Indicateur 2 (xxxx)', group: 'Groupe 2' },
+  { ratio: 'IND3', num: '', denum: '', name: 'Indicateur 3 (xxxx)', group: 'Groupe 2' },
+  { ratio: 'IND4', num: '', denum: '', name: 'Indicateur 4 (xxxx)', group: 'Groupe 2' },
+];
 
 const study_zones = [
   { id: 'no_filter', name: 'UE28' },

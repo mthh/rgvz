@@ -1,5 +1,6 @@
 import { math_round } from './helpers';
 import { color_highlight } from './options';
+import { variables } from './../main';
 
 /* eslint-disable no-param-reassign */
 
@@ -116,5 +117,14 @@ export function changeRegion(app, id_region) {
   app.current_config.ref_value = app.current_data
     .filter(d => d.id === app.current_config.my_region)
     .map(d => d.ratio)[0];
+}
+
+export function changeVariable(app, code_ratio) {
+  const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
+  app.current_config.num = variable_info.num;
+  app.current_config.denum = variable_info.denum;
+  app.current_config.ratio = variable_info.ratio;
+  app.current_config.ratio_pretty_name = variable_info.name;
+  app.current_data = filter_no_empty(app);
 }
 /* eslint-enable no-param-reassign */
