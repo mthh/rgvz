@@ -1,12 +1,13 @@
 import debug from 'debug';
 import { createMenu } from './modules/menuleft';
+import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { makeTable } from './modules/table';
 import { prepare_dataset, filter_no_empty, applyFilter, changeRegion, addVariable, removeVariable } from './modules/prepare_data';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
-import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
+import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { unbindUI } from './modules/helpers';
 
 debug('app:log');
@@ -113,20 +114,40 @@ function bindUI_chart_1v(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
+        const name_variable = variables.filter(d => d.ratio === code_variable)[0].name;
         addVariable(app, code_variable);
-        d3.select('#bar_section > p > .title_variable')
-          .html(app.current_config.ratio_pretty_name);
         makeTable(app.current_data, app.current_config);
-        chart.changeVariable(code_variable);
-        chart.changeStudyZone();
-        chart.updateCompletude();
+        chart.addVariable(code_variable, name_variable);
       } else {
+        const last_one = Array.prototype.slice.call(
+          document.querySelectorAll('span.target_variable')).filter(
+            elem => !!elem.classList.contains('checked')).length === 1;
+        if (last_one) {
+          return;
+        }
         this.classList.remove('checked');
         const code_variable = this.getAttribute('value');
         removeVariable(app, code_variable);
         makeTable(app.current_data, app.current_config);
-        chart.changeStudyZone();
-        chart.updateCompletude();
+        chart.removeVariable(code_variable);
+      }
+      const nb_var = Array.prototype.slice.call(
+        document.querySelectorAll('span.target_variable')).filter(
+          elem => !!elem.classList.contains('checked')).length;
+      // Allow all kind of vizu with 1 variable:
+      d3.selectAll('.chart_t1')
+        .attr('class', 'type_chart chart_t1');
+      if (nb_var === 2) { // Allow all kind of vizu with 2 variables:
+        d3.selectAll('.chart_t2')
+          .attr('class', 'type_chart chart_t2');
+        d3.selectAll('.chart_t3')
+          .attr('class', 'type_chart chart_t3 disabled');
+      }
+      if (nb_var > 2) { // Allow all kind of vizu with 3 variables:
+        d3.selectAll('.chart_t2')
+          .attr('class', 'type_chart chart_t2');
+        d3.selectAll('.chart_t3')
+          .attr('class', 'type_chart chart_t3');
       }
     });
 
@@ -214,8 +235,9 @@ function bindUI_chart_1v(chart, map_elem) {
 *
 */
 export function bindTopButtons(chart, map_elem) {
-  d3.selectAll('.type_chart.title_menu')
+  d3.selectAll('.type_chart')
     .on('click', function () {
+      if (this.classList.contains('disabled')) return;
       chart.remove();
       chart = null; // eslint-disable-line no-param-reassign
       unbindUI();
@@ -238,7 +260,15 @@ export function bindTopButtons(chart, map_elem) {
         bindUI_chart_1v(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
+      } else if (value === 'ScatterPlot2') {
+        console.log('ScatterPlot2');
+        makeTable(app.current_data, app.current_config);
+        chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
+        bindUI_chart_1v(chart, map_elem);
+        map_elem.bindBrush(chart);
+        chart.bindMap(map_elem);
       }
+
     });
 }
 

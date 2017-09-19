@@ -69,6 +69,7 @@ span.small {
 }
 /* End of style for tables... */
 
+/* Styles for the left menu */
 .title_menu {
   background: #4f81bd;
   color: white;
@@ -126,6 +127,40 @@ span.square.checked, span.small_square.checked {
 span.label_chk {
   cursor: pointer;
 }
+
+/* End on styles for left menu */
+
+/* Styles for top menu */
+.title_section {
+  color: #4f81bd;
+  font-size: 18px;
+}
+
+.type_comparaison {
+  border: solid 1px #4f81bd;
+  margin-bottom: 15px;
+  float: left;
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+.title_type_comp {
+  color: #4f81bd;
+  font-size: 18px;
+  margin: 0;
+}
+
+.type_chart {
+  margin: 0 5px;
+  cursor: pointer;
+  color: #4f81bd;
+}
+
+.type_chart.disabled {
+  color: lightgray;
+  cursor: disabled;
+}
+/* End of styles for top menu */
 
 .button_blue {
   border-top: 1px solid #96d1f8;

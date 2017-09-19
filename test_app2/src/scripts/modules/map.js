@@ -164,10 +164,13 @@ class MapSelect {
         tooltip
           .select('text.id_feature')
           .text(`${d.properties[app.current_config.id_field_geom]}`);
-        tooltip.select('text.value_feature1')
-          .text(`${math_round(d.properties[app.current_config.ratio] * 10) / 10}`);
+        let _ix, nb_val;
+        for (_ix = 0, nb_val = Math.min(app.current_config.ratio.length, 5); _ix < nb_val; _ix++) {
+          tooltip.select(`text.value_feature${_ix + 1}`)
+            .text(`${app.current_config.ratio_pretty_name[_ix]}: ${math_round(d.properties[app.current_config.ratio[_ix]] * 10) / 10}`);
+        }
         tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 - _ix * 12]})`);
       });
   }
 

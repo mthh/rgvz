@@ -16,12 +16,12 @@ function createTableDOM(data, opts, config) {
   for (let i = 0; i < nb_columns; i++) {
     const cell = doc.createElement('th');
     const col_name = column_names[i];
-    if (col_name === 'num') {
-      cell.innerHTML = `Num<br><span class="small">${num}`;
-    } else if (col_name === 'denum') {
-      cell.innerHTML = `Denum<br><span class="small">${denum}`;
-    } else if (col_name === 'ratio') {
-      cell.innerHTML = `Ratio<br><span class="small">${ratio}`;
+    if (num.indexOf(col_name) > -1) {
+      cell.innerHTML = `Num<br><span class="small">${col_name}`;
+    } else if (denum.indexOf(col_name) > -1) {
+      cell.innerHTML = `Denum<br><span class="small">${col_name}`;
+    } else if (ratio.indexOf(col_name) > -1) {
+      cell.innerHTML = `Ratio<br><span class="small">${col_name}`;
     } else if (col_name === 'rang') {
       cell.innerHTML = 'Rang ';
     } else {
@@ -63,7 +63,7 @@ export function makeTable(data_no_empty, config) {
   t.style.marginTop = '20px';
   t.style.display = 'none';
   t.style.fontSize = '0.7em';
-  // t.querySelector('.dataTable-top').remove();
+  t.querySelector('.dataTable-top').remove();
   Array.prototype.slice.call(t.querySelectorAll('span.small'))
     .forEach((el) => {
       el.onclick = () => { el.parentElement.click(); }; // eslint-disable-line no-param-reassign

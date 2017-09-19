@@ -71,14 +71,6 @@ export function filter_no_empty(app, filter_id) {
   // Filter data for empty values :
   const filtered_data = temp.filter(
     ft => ratio.map(v => !!ft[v]).every(v => v === true));
-  console.log(filtered_data);
-  // // Sort the serie according to the current "inversed" state on the displayed chart:
-  // if (!app.serie_inversed) {
-  //   filtered_data.sort((a, b) => a.ratio - b.ratio);
-  // } else {
-  //   filtered_data.sort((a, b) => b.ratio - a.ratio);
-  // }
-  // filtered_data.forEach((d, i) => { d.rang = i + 1; });
 
   //
   app.current_data = filtered_data;
@@ -154,8 +146,7 @@ export function addVariable(app, code_ratio) {
 }
 
 export function removeVariable(app, code_ratio) {
-  const ix = app.current_config.ratio.map(
-    (d, i) => [d, i]).filter(d => d[0] === code_ratio)[1];
+  const ix = app.current_config.ratio.indexOf(code_ratio);
   app.current_config.num.splice(ix, 1);
   app.current_config.denum.splice(ix, 1);
   app.current_config.ratio.splice(ix, 1);

@@ -4,36 +4,82 @@ import { app } from './../main';
 export function makeTopMenu() {
   const top_menu = d3.select('#menutop')
     .styles({ 'font-family': "'Signika', sans-serif", 'font-size': '0.80em', padding: '0.3px' });
+  const width_left = `${document.querySelector('#menu').getBoundingClientRect().width + 25}px`;
+  const t = document.querySelector('#bar_section').getBoundingClientRect().width;
+  const width_central_chart = `${t}px`;
+  const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 35}px`;
+  const width_type_comp = `${(t - 80) / 3 - 2}px`;
+  top_menu
+    .append('div')
+    .attrs({ class: 'title_section' })
+    .styles({ width: width_left, float: 'left', margin: '0 3px' })
+    .html('SÉLECTION');
+
+  const type_chart = top_menu
+    .append('div')
+    .attr('class', 'top_section')
+    .styles({ width: width_central_chart, float: 'left', margin: '0 3px', 'text-align': 'center' });
+
+  const position = type_chart
+    .append('div')
+    .attr('class', 'type_comparaison')
+    .styles({ width: width_type_comp });
+
+  position.append('p')
+    .attr('class', 'title_type_comp')
+    .html('POSITION');
+
+  position.append('span')
+    .attrs({ class: 'type_chart chart_t1', value: 'BarChart1' })
+    .html('1 ind.');
+
+  position.append('span')
+  .attrs({ class: 'type_chart chart_t2 disabled', value: 'ScatterPlot2' })
+    .html('2 ind.');
+
+  position.append('span')
+    .attr('class', 'type_chart chart_t3 disabled')
+    .html('+3 ind.');
+
+  const ressemblance = type_chart
+    .append('div')
+    .attr('class', 'type_comparaison')
+    .styles({ width: width_type_comp });
+
+  ressemblance.append('p')
+    .attr('class', 'title_type_comp')
+    .html('RESSEMBLANCES');
+
+  ressemblance.append('span')
+    .attrs({ class: 'type_chart chart_t1', value: 'BubbleChart1' })
+    .html('1 ind.');
+
+  ressemblance.append('span')
+    .attr('class', 'type_chart chart_t2 disabled')
+    .html('+2 ind.');
+
+  const inegalite = type_chart
+    .append('div')
+    .attr('class', 'type_comparaison')
+    .styles({ width: width_type_comp });
+
+  inegalite.append('p')
+    .attr('class', 'title_type_comp')
+    .html('INÉGALITÉS');
+
+  inegalite.append('span')
+    .attr('class', 'type_chart chart_t1 disabled')
+    .html('1 ind.');
+
+  inegalite.append('span')
+    .attr('class', 'type_chart chart_t2 disabled')
+    .html('+2 ind.');
 
   top_menu
     .append('div')
-    .attrs({ class: 'title_menu type_chart', value: 'BarChart1' })
-    .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
-    .html('Rang<br>(1 individu)');
-
-  top_menu
-    .append('div')
-    .attr('class', 'title_menu type_chart')
-    .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
-    .html('Rang<br>(2 individus)');
-
-  top_menu
-    .append('div')
-    .attrs({ class: 'title_menu type_chart', value: 'BubbleChart1' })
-    .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
-    .html('Rang<br>(2+ individus)');
-
-  top_menu
-    .append('div')
-    .attr('class', 'title_menu type_chart')
-    .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
-    .html('Position<br>(1 individu)');
-
-  top_menu
-    .append('div')
-    .attr('class', 'title_menu type_chart')
-    .styles({ width: '80px', float: 'left', margin: '0 3px', cursor: 'pointer' })
-    .html('Position<br>(2 individus)');
+    .attrs({ class: 'title_section' })
+    .styles({ width: width_map, float: 'left', margin: '0 0 0 20px' })
+    .html('QUELLES REGIONS ?');
 }
 
 export function makeHeaderMapSection() {
@@ -74,19 +120,9 @@ export function makeHeaderMapSection() {
 export function makeHeaderChart() {
   const header_bar_section = d3.select('#bar_section')
     .insert('p', 'svg')
+    .attr('id', 'header_chart')
     .style('margin-bottom', '0')
     .style('clear', 'both');
-
-  header_bar_section.insert('span')
-    .styles({
-      'font-family': '\'Signika\', sans-serif',
-      'font-weight': '800',
-      'font-size': '14px',
-      'margin-top': '12px',
-      'margin-left': '40px',
-      float: 'left',
-    })
-    .attr('class', 'title_variable');
 
   header_bar_section.insert('img')
     .attrs({

@@ -1,3 +1,5 @@
+import { color_inf, color_sup } from './options';
+
 const math_abs = Math.abs;
 const math_round = Math.round;
 
@@ -28,6 +30,24 @@ function prepareTooltip(parent_svg_elem) {
       class: 'value_feature2',
       x: 25,
       dy: '3.5em',
+      'font-size': '14px',
+      'font-weight': 'bold' })
+    .style('text-anchor', 'middle');
+
+  tooltip.append('text')
+    .attrs({
+      class: 'value_feature3',
+      x: 25,
+      dy: '4.6em',
+      'font-size': '14px',
+      'font-weight': 'bold' })
+    .style('text-anchor', 'middle');
+
+  tooltip.append('text')
+    .attrs({
+      class: 'value_feature4',
+      x: 25,
+      dy: '5.7em',
       'font-size': '14px',
       'font-weight': 'bold' })
     .style('text-anchor', 'middle');
@@ -63,12 +83,38 @@ function unbindUI() {
   document.onkeydown = null;
 }
 
+/**
+*
+*
+*
+*
+*/
 const comp = (test_value, ref_value, serie_inversed) => {
   if (test_value < ref_value) {
-    return serie_inversed ? 'green' : 'red';
-  } else {
-    return serie_inversed ? 'red' : 'green';
+    return serie_inversed ? color_sup : color_inf;
   }
+  return serie_inversed ? color_inf : color_sup;
+};
+
+
+/**
+*
+*
+*
+*
+*/
+const comp2 = (val1, val2, ref_val1, ref_val2, xInversed, yInversed) => {
+  if ((val1 < ref_val1 && !xInversed) || (val1 > ref_val1 && xInversed)) { // val1 is inferior:
+    if (val2 < ref_val2) {
+      return yInversed ? 'rgb(160, 30, 160)' : color_inf;
+    }
+    return yInversed ? color_inf : 'rgb(160, 30, 160)';
+  }
+  // val1 is superior :
+  if (val2 > ref_val2) {
+    return !yInversed ? color_sup : 'rgb(160, 30, 160)';
+  }
+  return !yInversed ? 'rgb(160, 30, 160)' : color_sup;
 };
 
 class Rect {
@@ -125,8 +171,36 @@ const svgPathToCoords = (path, type_path) => {
   return path.slice(2).split(' L ').map(pt => pt.split(' ').map(a => +a));
 };
 
+function computePercentileRank(obj, field_name, result_field_name) {
+  const values = obj.map(d => d[field_name]);
+  const len_values = values.length;
+  const getPR = (v) => {
+    let count = 0;
+    for (let i = 0; i < len_values; i++) {
+      if (values[i] <= v) {
+        count += 1;
+      }
+    }
+    return 100 * count / len_values;
+  };
+  for (let ix = 0; ix < len_values; ix++) {
+    obj[ix][result_field_name] = getPR(values[ix]);
+  }
+}
+
+const _getPR = (v, serie) => {
+  let count = 0;
+  for (let i = 0; i < serie.length; i++) {
+    if (serie[i] <= v) {
+      count += 1;
+    }
+  }
+  return 100 * count / serie.length;
+};
+
 export {
   comp,
+  comp2,
   math_abs,
   math_round,
   Rect,
@@ -136,4 +210,6 @@ export {
   removeDuplicates,
   getSvgPathType,
   svgPathToCoords,
+  computePercentileRank,
+  _getPR,
 };

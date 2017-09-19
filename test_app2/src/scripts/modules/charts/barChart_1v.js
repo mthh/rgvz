@@ -104,13 +104,13 @@ export class BarChart1 {
     this.xAxis = xAxis;
     this.yAxis = yAxis;
     this.xAxis2 = xAxis2;
-
-    const ratio_to_use = app.current_config.ratio[0];
+    const self = this;
+    const available_ratios = app.current_config.ratio;
+    const ratio_to_use = available_ratios[0];
     this.ratio_to_use = ratio_to_use;
+
     this.data = ref_data.slice();
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
-    console.log(ratio_to_use);
-    console.log(this.data);
     // app.current_ids = data.map(d => d.id);
     this.current_ranks = this.data.map((d, i) => i + 1);
     nbFt = this.data.length;
@@ -260,10 +260,6 @@ export class BarChart1 {
         svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
       });
 
-    // Set the variable name as title of the chart
-    d3.select('#bar_section > p > .title_variable')
-      .html(app.current_config.ratio_pretty_name[0]);
-
     // Prepare the tooltip displayed on mouseover:
     const tooltip = prepareTooltip(svg_bar);
 
@@ -289,6 +285,34 @@ export class BarChart1 {
           .style('display', null);
       }
     };
+
+    //
+    const header_bar_section = d3.select('#header_chart');
+
+    this.selec_var = header_bar_section
+      .insert('select', '#img_table')
+      .attrs({ class: 'title_variable' })
+      .styles({
+        'font-family': '\'Signika\', sans-serif',
+        'font-weight': '800',
+        'font-size': '14px',
+        'margin-top': '12px',
+        'margin-left': '40px',
+        float: 'left',
+      });
+
+    for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
+      this.selec_var.append('option')
+        .attr('value', available_ratios[i])
+        .text(app.current_config.ratio_pretty_name[i]);
+    }
+
+    this.selec_var.on('change', function () {
+      const code_variable = this.value;
+      self.changeVariable(code_variable);
+      self.changeStudyZone();
+      self.updateCompletude();
+    });
 
     // Create the menu under the chart allowing to use some useful selections
     // (above or below the mean value and above or below my_region)
@@ -517,9 +541,6 @@ export class BarChart1 {
     const mean_rank = getMeanRank(this.mean_value, this.ratio_to_use);
     const ratio_to_use = this.ratio_to_use;
     const ref_value = this.ref_value;
-    console.log(mean_rank);
-    console.log(this.mean_value);
-    console.log(ref_value);
     app.colors = {};
     if (!this.serie_inversed) {
       current_range_brush = [0, mean_rank];
@@ -619,7 +640,6 @@ export class BarChart1 {
   }
 
   updateChangeRegion() {
-    console.log(app)
     this.ref_value = this.data.filter(
       ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
     this.update();
@@ -676,6 +696,26 @@ export class BarChart1 {
     this.updateMapRegio();
   }
 
+  addVariable(code_variable, name_variable) {
+    // Add the variable to the input element allowing to choose variables:
+    this.selec_var.append('option')
+      .attr('value', code_variable)
+      .text(name_variable);
+
+    // And use it immediatly:
+    this.selec_var.node().value = code_variable;
+    this.selec_var.dispatch('change');
+  }
+
+  removeVariable(code_variable) {
+    // Add the variable to the input element allowing to choose variables:
+    this.selec_var.select(`option[value=${code_variable}]`).remove();
+    if (this.ratio_to_use === code_variable) {
+      this.selec_var.node().value = this.selec_var.select('option').node().value;
+      this.selec_var.dispatch('change');
+    }
+  }
+
   changeVariable(code_variable) {
     this.ratio_to_use = code_variable;
   }
@@ -683,6 +723,7 @@ export class BarChart1 {
   remove() {
     this._focus.remove();
     this.context.remove();
+    this.selec_var.remove();
     this.map_elem.unbindBrush();
     this.map_elem = null;
     svg_bar.html('');

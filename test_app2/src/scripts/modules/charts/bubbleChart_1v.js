@@ -1,7 +1,7 @@
 import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { svg_map } from './../map';
-import { app } from './../../main';
+import { app, variables } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
@@ -11,8 +11,16 @@ const width = +svg_bar.attr('width') - margin.left - margin.right,
 
 export class BubbleChart1 {
   constructor(ref_data) {
+    const self = this;
+    const available_ratios = app.current_config.ratio;
+    const available_nums = app.current_config.num;
+    const ratio_to_use = available_ratios[0];
+    const stock_to_use = available_nums[0];
+    this.ratio_to_use = ratio_to_use;
+    this.stock_to_use = stock_to_use;
+
     this.data = ref_data.slice().sort(
-      (a, b) => b[app.current_config.num] - a[app.current_config.num]);
+      (a, b) => b[stock_to_use] - a[stock_to_use]);
     this.highlight_selection = [];
     const draw_group = svg_bar
       .append('g')
@@ -20,10 +28,6 @@ export class BubbleChart1 {
     draw_group.append('g')
       .attrs({ class: 'axis axis--x', transform: `translate(0, ${height / 2})` });
     this.draw_group = draw_group;
-
-    // Set the variable name as title of the chart:
-    d3.select('#bar_section > p > .title_variable')
-      .html(app.current_config.ratio_pretty_name);
 
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
@@ -56,9 +60,37 @@ export class BubbleChart1 {
       .html('régions les plus proches');
     this.my_region_value = this.data
         .filter(d => d.id === app.current_config.my_region)
-        .map(d => d.ratio)[0];
+        .map(d => d[ratio_to_use])[0];
     this.bindMenu();
     this.applySelection(5, 'close');
+
+    //
+    const header_bar_section = d3.select('#header_chart');
+
+    this.selec_var = header_bar_section
+      .insert('select', '#img_table')
+      .attrs({ class: 'title_variable' })
+      .styles({
+        'font-family': '\'Signika\', sans-serif',
+        'font-weight': '800',
+        'font-size': '14px',
+        'margin-top': '12px',
+        'margin-left': '40px',
+        float: 'left',
+      });
+
+    for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
+      this.selec_var.append('option')
+        .attr('value', available_ratios[i])
+        .text(app.current_config.ratio_pretty_name[i]);
+    }
+
+    this.selec_var.on('change', function () {
+      const code_variable = this.value;
+      self.changeVariable(code_variable);
+      self.changeStudyZone();
+      self.updateCompletude();
+    });
 
     // Deactivate the rect brush selection on the map
     // while the user press the Ctrl key:
@@ -84,9 +116,11 @@ export class BubbleChart1 {
     app.colors = {};
     if (nb > 0) {
       const my_region_value = this.my_region_value;
+      const ratio_to_use = this.ratio_to_use;
+
       this.highlight_selection = this.data.map(d => ({
-        dist: math_abs(d.ratio - my_region_value),
-        ratio: d.ratio,
+        dist: math_abs(d[ratio_to_use] - my_region_value),
+        ratio: d[ratio_to_use],
         id: d.id }));
       if (type_selection === 'close') {
         this.highlight_selection.sort((a, b) => a.dist - b.dist);
@@ -107,9 +141,13 @@ export class BubbleChart1 {
   }
 
   update() {
-    const data = this.data;
-    const highlight_selection = this.highlight_selection;
-    const my_region_value = this.my_region_value;
+    const self = this;
+    const data = self.data;
+    const highlight_selection = self.highlight_selection;
+    const my_region_value = self.my_region_value;
+    const ratio_to_use = self.ratio_to_use;
+    const stock_to_use = self.stock_to_use;
+
     let _min;
     let _max;
     if (highlight_selection.length > 0) {
@@ -120,15 +158,15 @@ export class BubbleChart1 {
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
     } else {
-      const dist_min = my_region_value - d3.min(data, d => d.ratio);
-      const dist_max = d3.max(data, d => d.ratio) - my_region_value;
+      const dist_min = my_region_value - d3.min(data, d => d[ratio_to_use]);
+      const dist_max = d3.max(data, d => d[ratio_to_use]) - my_region_value;
       const dist_axis = Math.max(dist_min, dist_max);
       const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
     }
 
-    const prop_sizer = new PropSizer(d3.max(data, d => d.num), 30);
+    const prop_sizer = new PropSizer(d3.max(data, d => d[stock_to_use]), 30);
     const xScale = d3.scaleLinear()
       .domain([_min, _max])
       .range([0, width]);
@@ -145,13 +183,13 @@ export class BubbleChart1 {
       .transition()
       .duration(225)
       .attrs((d) => {
-        let x_value = xScale(d.ratio);
+        let x_value = xScale(d[ratio_to_use]);
         if (x_value > width) x_value = width + 200;
         else if (x_value < 0) x_value = -200;
         return {
           cx: x_value,
           cy: height / 2,
-          r: prop_sizer.scale(d.num),
+          r: prop_sizer.scale(d[stock_to_use]),
         };
       })
       .styles(d => ({
@@ -167,14 +205,14 @@ export class BubbleChart1 {
       .transition()
       .duration(225)
       .attrs((d) => {
-        let x_value = xScale(d.ratio);
+        let x_value = xScale(d[ratio_to_use]);
         if (x_value > width) x_value = width + 200;
         else if (x_value < 0) x_value = -200;
         return {
           class: 'bubble',
           cx: x_value,
           cy: height / 2,
-          r: prop_sizer.scale(d.num),
+          r: prop_sizer.scale(d[stock_to_use]),
         };
       });
 
@@ -189,13 +227,15 @@ export class BubbleChart1 {
       })
       .on('mousemove', function (d) {
         const tooltip = svg_bar.select('.tooltip');
+        const _ratio_to_use = self.ratio_to_use;
+        const _stock_to_use = self.stock_to_use;
         tooltip
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
-          .text(`Ratio: ${Math.round(d.ratio)}`);
+          .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
         tooltip.select('text.value_feature2')
-          .text(`Stock: ${Math.round(d.num)}`);
+          .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
       });
@@ -217,6 +257,7 @@ export class BubbleChart1 {
     const self = this;
     const [topleft, bottomright] = event.selection;
     const rect = new Rect(topleft, bottomright);
+    const ratio_to_use = this.ratio_to_use;
     app.colors = {};
     self.highlight_selection = [];
     self.map_elem.target_layer.selectAll('path')
@@ -234,7 +275,7 @@ export class BubbleChart1 {
         const pts = this._pts;
         for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
           if (rect.contains(pts[ix])) {
-            const value = d.properties[app.current_config.ratio];
+            const value = d.properties[ratio_to_use];
             const color = comp(value, self.my_region_value, this.serie_inversed);
             app.colors[id] = color;
             self.highlight_selection.push({
@@ -263,7 +304,7 @@ export class BubbleChart1 {
       // Change the color on the map:
       d3.select(parent).attr('fill', color_countries);
     } else {
-      const value = d.properties[app.current_config.ratio];
+      const value = d.properties[this.ratio_to_use];
       const color = comp(value, this.my_region_value, this.serie_inversed);
       app.colors[id] = color;
       // Change the color on the map:
@@ -290,12 +331,38 @@ export class BubbleChart1 {
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
     this.data = app.current_data.slice().sort(
-      (a, b) => b[app.current_config.num] - a[app.current_config.num]);
+      (a, b) => b[this.stock_to_use] - a[this.stock_to_use]);
     this.my_region_value = this.data.filter(
       d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
     this.applySelection(temp, 'close');
+  }
+
+  changeVariable(code_variable) {
+    this.ratio_to_use = code_variable;
+    this.stock_to_use = variables.filter(d => d.ratio === code_variable)[0].num;
+  }
+
+
+  addVariable(code_variable, name_variable) {
+    // Add the variable to the input element allowing to choose variables:
+    this.selec_var.append('option')
+      .attr('value', code_variable)
+      .text(name_variable);
+
+    // And use it immediatly:
+    this.selec_var.node().value = code_variable;
+    this.selec_var.dispatch('change');
+  }
+
+  removeVariable(code_variable) {
+    // Add the variable to the input element allowing to choose variables:
+    this.selec_var.select(`option[value=${code_variable}]`).remove();
+    if (this.ratio_to_use === code_variable) {
+      this.selec_var.node().value = this.selec_var.select('option').node().value;
+      this.selec_var.dispatch('change');
+    }
   }
 
   bindMenu() {
@@ -322,6 +389,7 @@ export class BubbleChart1 {
   remove() {
     this.map_elem.unbindBrush();
     this.map_elem = null;
+    this.selec_var.remove();
     d3.select('#menu_selection').remove();
     svg_bar.html('');
   }
