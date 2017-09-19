@@ -1,7 +1,7 @@
 import debug from 'debug';
 import { createMenu } from './modules/menuleft';
 import { makeTable } from './modules/table';
-import { prepare_dataset, filter_no_empty, applyFilter, changeRegion, changeVariable } from './modules/prepare_data';
+import { prepare_dataset, filter_no_empty, applyFilter, changeRegion, addVariable, removeVariable } from './modules/prepare_data';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
@@ -39,18 +39,17 @@ export const app = {
   current_data: [],
   full_dataset: [],
   current_ids: [],
-  current_ranks: [],
-  serie_inversed: false,
 };
 
 function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, level = 'NUTS1') {
   app.current_config = {
     id_field: 'geo',
+    name_field: 'Nom',
     id_field_geom: 'NUTS1_2016',
-    num: 'CHOM_1524_2015',
-    denum: 'ACT_1524_2015',
-    ratio: variable,
-    ratio_pretty_name: 'Taux de chômage des jeunes (2015)',
+    num: ['CHOM_1524_2015'],
+    denum: ['ACT_1524_2015'],
+    ratio: [variable],
+    ratio_pretty_name: ['Taux de chômage des jeunes (2015)'],
     current_level: 1,
     my_region: code,
     my_region_pretty_name: app.feature_names[code],
@@ -114,14 +113,20 @@ function bindUI_chart_1v(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
-        changeVariable(app, code_variable);
+        addVariable(app, code_variable);
         d3.select('#bar_section > p > .title_variable')
           .html(app.current_config.ratio_pretty_name);
         makeTable(app.current_data, app.current_config);
+        chart.changeVariable(code_variable);
         chart.changeStudyZone();
         chart.updateCompletude();
       } else {
-
+        this.classList.remove('checked');
+        const code_variable = this.getAttribute('value');
+        removeVariable(app, code_variable);
+        makeTable(app.current_data, app.current_config);
+        chart.changeStudyZone();
+        chart.updateCompletude();
       }
     });
 
@@ -216,7 +221,6 @@ export function bindTopButtons(chart, map_elem) {
       unbindUI();
       map_elem.resetZoom();
       app.colors = {};
-      app.serie_inversed = false;
       resetColors();
       map_elem.resetColors();
       const value = this.getAttribute('value');

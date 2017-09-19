@@ -235,7 +235,7 @@ export class BubbleChart1 {
         for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
           if (rect.contains(pts[ix])) {
             const value = d.properties[app.current_config.ratio];
-            const color = comp(value, self.my_region_value, app.serie_inversed);
+            const color = comp(value, self.my_region_value, this.serie_inversed);
             app.colors[id] = color;
             self.highlight_selection.push({
               id,
@@ -264,7 +264,7 @@ export class BubbleChart1 {
       d3.select(parent).attr('fill', color_countries);
     } else {
       const value = d.properties[app.current_config.ratio];
-      const color = comp(value, app.current_config.ref_value, app.serie_inversed);
+      const color = comp(value, this.my_region_value, this.serie_inversed);
       app.colors[id] = color;
       // Change the color on the map:
       d3.select(parent).attr('fill', color);
@@ -272,7 +272,7 @@ export class BubbleChart1 {
       this.highlight_selection.push({
         id,
         ratio: value,
-        dist: math_abs(value - app.current_config.ref_value),
+        dist: math_abs(value - this.my_region_value),
       });
     }
     this.update();
@@ -281,7 +281,8 @@ export class BubbleChart1 {
   updateChangeRegion() {
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
-    this.my_region_value = app.current_config.ref_value;
+    this.my_region_value = this.data.filter(
+      d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     this.applySelection(this.highlight_selection.length, 'close');
   }
 
@@ -290,7 +291,8 @@ export class BubbleChart1 {
     this.map_elem.updateLegend();
     this.data = app.current_data.slice().sort(
       (a, b) => b[app.current_config.num] - a[app.current_config.num]);
-    this.my_region_value = app.current_config.ref_value;
+    this.my_region_value = this.data.filter(
+      d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
     this.applySelection(temp, 'close');

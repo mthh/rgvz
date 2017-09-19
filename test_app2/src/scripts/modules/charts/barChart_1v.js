@@ -15,8 +15,9 @@ let current_range_brush = [0, 0];
 let current_range = [0, 0];
 let displayed;
 
-function getMeanRank(mean_value) {
-  let mean_rank = app.current_data.map((d, i) => [d.ratio, math_abs(mean_value - d.ratio), i]);
+function getMeanRank(mean_value, ratio_to_use) {
+  let mean_rank = app.current_data.map(
+    (d, i) => [d[ratio_to_use], math_abs(mean_value - d[ratio_to_use]), i]);
   mean_rank.sort((a, b) => a[1] - b[1]);
   mean_rank = mean_rank[0];
   if (mean_rank[1] > mean_value) {
@@ -35,7 +36,7 @@ export class BarChart1 {
       if (!this.x) { console.log('a'); return; }
       const s = d3.event.selection || this.x2.range();
       current_range = [math_round(s[0] / (width / nbFt)), math_round(s[1] / (width / nbFt))];
-      this.x.domain(app.current_data.slice(current_range[0], current_range[1]).map(ft => ft.id));
+      this.x.domain(this.data.slice(current_range[0], current_range[1]).map(ft => ft.id));
       svg_bar.select('.zoom').call(this.zoom.transform, d3.zoomIdentity
         .scale(width / (current_range[1] - current_range[0]))
         .translate(-current_range[0], 0));
@@ -49,6 +50,8 @@ export class BarChart1 {
       if (!this._focus) { console.log('b'); return; }
       if (!this.map_elem) { console.log('c'); return; }
       const d3_event = d3.event;
+      const ratio_to_use = this.ratio_to_use;
+      const ref_value = this.ref_value;
       if (d3_event && d3_event.selection
             && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
         this.map_elem.removeRectBrush();
@@ -57,7 +60,7 @@ export class BarChart1 {
           current_range[0] + math_round(s[0] / (width / displayed)) - 1,
           current_range[0] + math_round(s[1] / (width / displayed)),
         ];
-        this.x.domain(app.current_data.slice(current_range_brush[0] + 1, current_range_brush[1])
+        this.x.domain(this.data.slice(current_range_brush[0] + 1, current_range_brush[1])
           .map(ft => ft.id));
         app.colors = {};
         this._focus.selectAll('.bar')
@@ -66,7 +69,7 @@ export class BarChart1 {
               app.colors[d.id] = color_highlight;
               return color_highlight;
             } else if (i > current_range_brush[0] && i < current_range_brush[1]) {
-              const color = comp(d.ratio, app.current_config.ref_value, app.serie_inversed);
+              const color = comp(d[ratio_to_use], ref_value, this.serie_inversed);
               app.colors[d.id] = color;
               return color;
             }
@@ -102,13 +105,18 @@ export class BarChart1 {
     this.yAxis = yAxis;
     this.xAxis2 = xAxis2;
 
-    let data = ref_data;
-    data.sort((a, b) => a.ratio - b.ratio);
-    app.current_ids = data.map(d => d.id);
-    app.current_ranks = data.map((d, i) => i + 1);
-    nbFt = data.length;
-    this.mean_value = d3.mean(data.map(d => d.ratio));
-
+    const ratio_to_use = app.current_config.ratio[0];
+    this.ratio_to_use = ratio_to_use;
+    this.data = ref_data.slice();
+    this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
+    console.log(ratio_to_use);
+    console.log(this.data);
+    // app.current_ids = data.map(d => d.id);
+    this.current_ranks = this.data.map((d, i) => i + 1);
+    nbFt = this.data.length;
+    this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
+    this.ref_value = this.data.filter(
+      ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
     svg_bar.append('defs')
       .append('clipPath')
       .attr('id', 'clip')
@@ -130,10 +138,10 @@ export class BarChart1 {
     this._focus = focus;
     this.context = context;
 
-    x.domain(data.map(ft => ft.id));
+    x.domain(this.data.map(ft => ft.id));
     y.domain([
-      d3.min(data, d => d.ratio) - 2,
-      d3.max(data, d => d.ratio),
+      d3.min(this.data, d => d[ratio_to_use]) - 2,
+      d3.max(this.data, d => d[ratio_to_use]),
     ]);
     x2.domain(x.domain());
     y2.domain(y.domain());
@@ -232,15 +240,15 @@ export class BarChart1 {
         id: 'img_reverse',
       })
       .on('click', () => {
-        data = app.current_data;
-        app.serie_inversed = !app.serie_inversed;
-        if (data[0].ratio < data[data.length - 1].ratio) {
-          data.sort((a, b) => b.ratio - a.ratio);
+        // this.data = app.current_data.slice();
+        if (!this.serie_inversed) {
+          this.data.sort((a, b) => b[this.ratio_to_use] - a[this.ratio_to_use]);
         } else {
-          data.sort((a, b) => a.ratio - b.ratio);
+          this.data.sort((a, b) => a[this.ratio_to_use] - b[this.ratio_to_use]);
         }
-        x.domain(data.slice(current_range[0], current_range[1]).map(ft => ft.id));
-        x2.domain(data.map(ft => ft.id));
+        this.serie_inversed = !this.serie_inversed;
+        x.domain(this.data.slice(current_range[0], current_range[1]).map(ft => ft.id));
+        x2.domain(this.data.map(ft => ft.id));
         // svg_bar.select(".zoom").call(zoom.transform, d3.zoomIdentity
         //     .scale(width / (current_range[1] - current_range[0]))
         //     .translate(-current_range[0], 0));
@@ -254,7 +262,7 @@ export class BarChart1 {
 
     // Set the variable name as title of the chart
     d3.select('#bar_section > p > .title_variable')
-      .html(app.current_config.ratio_pretty_name);
+      .html(app.current_config.ratio_pretty_name[0]);
 
     // Prepare the tooltip displayed on mouseover:
     const tooltip = prepareTooltip(svg_bar);
@@ -322,15 +330,18 @@ export class BarChart1 {
 
   update() {
     displayed = 0;
-
+    const ratio_to_use = this.ratio_to_use;
+    const self = this;
     const bar = this.g_bar.selectAll('.bar')
-      .data(app.current_data);
+      .data(this.data);
 
     bar
-      .attr('x', d => this.x(d.id))
-      .attr('width', this.x.bandwidth())
-      .attr('y', d => this.y(d.ratio))
-      .attr('height', d => height - this.y(d.ratio))
+      .attrs(d => ({
+        x: this.x(d.id),
+        y: this.y(d[ratio_to_use]),
+        width: this.x.bandwidth(),
+        height: height - this.y(d[ratio_to_use]),
+      }))
       .style('fill', d => app.colors[d.id] || color_countries)
       .style('display', (d) => {
         const to_display = this.x(d.id) != null;
@@ -352,7 +363,7 @@ export class BarChart1 {
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
-          .text(`${math_round(d.ratio * 10) / 10}`);
+          .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
       });
@@ -360,21 +371,17 @@ export class BarChart1 {
     bar.enter()
       .insert('rect', '.mean')
       .attr('class', 'bar')
-      .attr('x', d => this.x(d.id))
-      .attr('width', this.x.bandwidth())
-      .attr('y', d => this.y(d.ratio))
-      .attr('height', d => height - this.y(d.ratio));
+      .attrs(d => ({
+        x: this.x(d.id),
+        y: this.y(d[ratio_to_use]),
+        width: this.x.bandwidth(),
+        height: height - this.y(d[ratio_to_use]),
+      }));
 
     bar.exit().remove();
 
     this._focus.select('.axis--y')
       .call(this.yAxis);
-
-    this._focus.select('.mean_line')
-      .attrs({
-        y1: this.y(this.mean_value),
-        y2: this.y(this.mean_value),
-      });
 
     const axis_x = this._focus.select('.axis--x')
       .attr('font-size', () => (displayed > 75 ? 6 : 10))
@@ -397,14 +404,15 @@ export class BarChart1 {
 
 
   updateMiniBars() {
+    const ratio_to_use = this.ratio_to_use;
     const mini_bars = this.context.selectAll('.bar')
-      .data(app.current_data);
+      .data(this.data);
 
     mini_bars
       .attr('x', d => this.x2(d.id))
       .attr('width', this.x2.bandwidth())
-      .attr('y', d => this.y2(d.ratio))
-      .attr('height', d => height2 - this.y2(d.ratio))
+      .attr('y', d => this.y2(d[ratio_to_use]))
+      .attr('height', d => height2 - this.y2(d[ratio_to_use]))
       .style('fill', d => (d.id !== app.current_config.my_region ? color_countries : color_highlight));
 
     mini_bars
@@ -413,8 +421,8 @@ export class BarChart1 {
       .attr('class', 'bar')
       .attr('x', d => this.x2(d.id))
       .attr('width', this.x2.bandwidth())
-      .attr('y', d => this.y2(d.ratio))
-      .attr('height', d => height2 - this.y2(d.ratio))
+      .attr('y', d => this.y2(d[ratio_to_use]))
+      .attr('height', d => height2 - this.y2(d[ratio_to_use]))
       .style('fill', d => (d.id !== app.current_config.my_region ? color_countries : color_highlight));
     mini_bars.exit().remove();
   }
@@ -427,93 +435,116 @@ export class BarChart1 {
   }
 
   selectAboveMyRegion() {
-    const my_rank = app.current_data.map((d, i) => [d.id, i])
+    const my_rank = this.data.map((d, i) => [d.id, i])
       .filter(d => d[0] === app.current_config.my_region)[0][1];
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
-    if (!app.serie_inversed) {
-      current_range_brush = [my_rank, app.current_data.length];
-      app.current_data
+    if (!this.serie_inversed) {
+      current_range_brush = [my_rank, this.data.length];
+      this.data
         .filter((d, i) => i > my_rank)
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_sup; });
     } else {
       current_range_brush = [0, my_rank];
-      app.current_data
+      this.data
         .filter((d, i) => i < my_rank)
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_inf; });
     }
-    svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    svg_bar.select('.brush_bottom').call(
+      this.brush_bottom.move, this.x2.range());
+    this.update();
+    // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
   }
 
   selectBelowMyRegion() {
-    const my_rank = app.current_data.map((d, i) => [d.id, i])
+    const my_rank = this.data.map((d, i) => [d.id, i])
       .filter(d => d[0] === app.current_config.my_region)[0][1];
+
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
-    if (!app.serie_inversed) {
+    if (!this.serie_inversed) {
       current_range_brush = [0, my_rank];
-      app.current_data
+      this.data
         .filter((d, i) => i < my_rank)
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_inf; });
     } else {
-      current_range_brush = [my_rank, app.current_data.length];
-      app.current_data
+      current_range_brush = [my_rank, this.data.length];
+      this.data
         .filter((d, i) => i > my_rank)
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_sup; });
     }
-    svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    svg_bar.select('.brush_bottom').call(
+      this.brush_bottom.move, this.x2.range());
+    this.update();
+    // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
   }
 
   selectAboveMean() {
-    const mean_rank = getMeanRank(this.mean_value);
+    const mean_rank = getMeanRank(this.mean_value, this.ratio_to_use);
+    const ratio_to_use = this.ratio_to_use;
+    const ref_value = this.ref_value;
+
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
-    if (!app.serie_inversed) {
-      current_range_brush = [mean_rank, app.current_data.length];
-      app.current_data.filter(d => d.ratio > this.mean_value).forEach((ft) => {
-        if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = color_sup;
+    if (!this.serie_inversed) {
+      current_range_brush = [mean_rank, this.data.length];
+      this.data.filter(d => d[ratio_to_use] > this.mean_value).forEach((ft) => {
+        if (ft[ratio_to_use] > ref_value) app.colors[ft.id] = color_sup;
         else app.colors[ft.id] = color_inf;
       });
     } else {
       current_range_brush = [0, mean_rank + 1];
-      app.current_data.filter(d => d.ratio > this.mean_value).forEach((ft) => {
-        if (ft.ratio > app.current_config.ref_value) app.colors[ft.id] = color_inf;
+      this.data.filter(d => d[ratio_to_use] > this.mean_value).forEach((ft) => {
+        if (ft[ratio_to_use] > ref_value) app.colors[ft.id] = color_inf;
         else app.colors[ft.id] = color_sup;
       });
     }
     app.colors[app.current_config.my_region] = color_highlight;
-    svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    svg_bar.select('.brush_bottom').call(
+      this.brush_bottom.move, this.x2.range());
+    this.update();
+    // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
   }
 
   selectBelowMean() {
-    const mean_rank = getMeanRank(this.mean_value);
+    const mean_rank = getMeanRank(this.mean_value, this.ratio_to_use);
+    const ratio_to_use = this.ratio_to_use;
+    const ref_value = this.ref_value;
+    console.log(mean_rank);
+    console.log(this.mean_value);
+    console.log(ref_value);
     app.colors = {};
-    if (!app.serie_inversed) {
+    if (!this.serie_inversed) {
       current_range_brush = [0, mean_rank];
-      app.current_data.filter(d => d.ratio < this.mean_value).forEach((ft) => {
-        if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = color_inf;
+      this.data.filter(d => d[ratio_to_use] < this.mean_value).forEach((ft) => {
+        if (ft[ratio_to_use] < ref_value) app.colors[ft.id] = color_inf;
         else app.colors[ft.id] = color_sup;
       });
     } else {
-      current_range_brush = [mean_rank + 1, app.current_data.length];
-      app.current_data.filter(d => d.ratio < this.mean_value).forEach((ft) => {
-        if (ft.ratio < app.current_config.ref_value) app.colors[ft.id] = color_sup;
+      current_range_brush = [mean_rank + 1, this.data.length];
+      this.data.filter(d => d[ratio_to_use] < this.mean_value).forEach((ft) => {
+        if (ft[ratio_to_use] < ref_value) app.colors[ft.id] = color_sup;
         else app.colors[ft.id] = color_inf;
       });
     }
     app.colors[app.current_config.my_region] = color_highlight;
-    svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    svg_bar.select('.brush_bottom').call(
+      this.brush_bottom.move, this.x2.range());
+    this.update();
+    // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
   }
 
   handle_brush_map(event) {
+    const ratio_to_use = this.ratio_to_use;
+    const ref_value = this.ref_value;
     const self = this;
     svg_bar.select('.brush_top').call(self.brush_top.move, null);
     const [topleft, bottomright] = event.selection;
@@ -539,8 +570,8 @@ export class BarChart1 {
         const pts = this._pts;
         for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
           if (rect.contains(pts[ix])) {
-            const value = d.properties[app.current_config.ratio];
-            const color = comp(value, app.current_config.ref_value, app.serie_inversed);
+            const value = d.properties[ratio_to_use];
+            const color = comp(value, ref_value, this.serie_inversed);
             app.colors[id] = color;
             return color;
           }
@@ -550,7 +581,7 @@ export class BarChart1 {
     self._focus.selectAll('.bar')
       .style('fill', d => app.colors[d.id] || color_countries);
     const ids = Object.keys(app.colors);
-    const ranks = ids.map(d => app.current_ids.indexOf(d.id) > -1).map(d => app.current_ranks[d]);
+    const ranks = ids.map(d => app.current_ids.indexOf(d.id) > -1).map(d => this.current_ranks[d]);
     if (ranks.length > 1) {
       const c1 = ranks[0] - 1;
       const c2 = ranks[ranks.length - 1];
@@ -564,7 +595,7 @@ export class BarChart1 {
           [current_range[0] * (width / nbFt), current_range[1] * (width / nbFt)]);
       }
     } else {
-      current_range = [0, app.current_data.length];
+      current_range = [0, this.data.length];
       svg_bar.select('.brush_bottom').call(
         self.brush_bottom.move, self.x.range());
     }
@@ -578,9 +609,9 @@ export class BarChart1 {
       d3.select(parent).attr('fill', color_countries);
     } else {
       const color = comp(
-        d.properties[app.current_config.ratio],
-        app.current_config.ref_value,
-        app.serie_inversed);
+        d.properties[this.ratio_to_use],
+        this.ref_value,
+        this.serie_inversed);
       app.colors[id] = color;
       d3.select(parent).attr('fill', color);
     }
@@ -588,18 +619,23 @@ export class BarChart1 {
   }
 
   updateChangeRegion() {
+    console.log(app)
+    this.ref_value = this.data.filter(
+      ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
     this.update();
     // this.updateMiniBars();
-    this.updateContext(0, app.current_data.length);
+    this.updateContext(0, this.data.length);
     this.updateMapRegio();
     svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
   }
+
   updateMeanValue() {
-    this.mean_value = d3.mean(app.current_data.map(d => d.ratio));
     const y = this.y;
+    const ratio_to_use = this.ratio_to_use;
     const grp_mean = this._focus.select('.mean');
+    this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
     grp_mean.select('text')
       .attr('y', y(this.mean_value) + 20)
       .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
@@ -610,24 +646,38 @@ export class BarChart1 {
   }
 
   changeStudyZone() {
-    nbFt = app.current_data.length;
-    this.x.domain(app.current_data.map(ft => ft.id));
+    const ratio_to_use = this.ratio_to_use;
+    this.data = app.current_data.slice();
+    if (this.serie_inversed) {
+      this.data.sort((a, b) => b[ratio_to_use] - a[ratio_to_use]);
+    } else {
+      this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
+    }
+    nbFt = this.data.length;
+    this.ref_value = this.data.filter(
+      ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
+    this.x.domain(this.data.map(ft => ft.id));
+    const min_serie = d3.min(this.data, d => d[ratio_to_use]);
+    const max_serie = d3.max(this.data, d => d[ratio_to_use]);
+    const offset_y = (max_serie - min_serie) / 20;
     this.y.domain([
-      d3.min(app.current_data, d => d.ratio) - 2,
-      d3.max(app.current_data, d => d.ratio),
+      min_serie - offset_y, max_serie,
     ]);
     this.x2.domain(this.x.domain());
     this.y2.domain(this.y.domain());
     this.updateMeanValue();
     this.update();
-    // this.updateMiniBars();
-    this.updateContext(0, app.current_data.length);
-    // brush_bottom.extent(current_range)
+    this.updateContext(0, this.data.length);
+
     svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x2.range());
     this.map_elem.removeRectBrush();
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
     this.updateMapRegio();
+  }
+
+  changeVariable(code_variable) {
+    this.ratio_to_use = code_variable;
   }
 
   remove() {

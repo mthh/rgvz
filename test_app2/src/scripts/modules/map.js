@@ -13,7 +13,6 @@ const styles = {
   seaboxes: { id: 'seaboxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
   remote: { id: 'remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
   seaboxes2: { id: 'seaboxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
-  nuts1_no_data: { id: 'nuts1_no_data', fill: 'white', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: 'lightgrey' },
   nuts1: { id: 'nuts1', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
 };
 
@@ -76,14 +75,6 @@ class MapSelect {
       .fitExtent([[0, 0], [width_map, height_map]], template)
       .reflectY(true);
 
-    nuts1.features.forEach((ft) => {
-      ft.properties.ratio = ( // eslint-disable-line no-param-reassign
-        +ft.properties[app.current_config.num] / +ft.properties[app.current_config.denum]) * 100000;
-    });
-    const no_data_features = nuts1.features.filter(ft => isNaN(ft.properties.ratio));
-    // eslint-disable-next-line no-param-reassign
-    nuts1.features = nuts1.features.filter(ft => !isNaN(ft.properties.ratio));
-
     path = d3.geoPath().projection(projection);
     const layers = svg_map.append('g')
       .attr('id', 'layers');
@@ -135,14 +126,6 @@ class MapSelect {
       .enter()
       .append('path')
       .attrs({ d: path });
-
-    layers.append('g')
-      .attrs(styles.nuts1_no_data)
-      .selectAll('path')
-      .data(no_data_features)
-      .enter()
-      .append('path')
-      .attr('d', path);
 
     this.target_layer = layers.append('g')
       .attrs(styles.nuts1);
