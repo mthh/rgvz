@@ -74,13 +74,6 @@ export function filterLevelVar(app, filter_id) {
 
   //
   app.current_data = temp;
-  // Store the ids and the ranks of the current features in two arrays for easier acces:
-  app.current_ids = temp.map(d => d.id);
-
-  // Compute the ratio of available values ("complétude") within
-  // the study zone selected by the user:
-  // app.completude = math_round((filtered_data.length / temp.length) * 1000) / 10;
-  // return filtered_data;
 }
 
 
@@ -141,11 +134,39 @@ export function removeVariable(app, code_ratio) {
 }
 
 // TODO:
-export function calcCompletudeSubset(vars) {
+export function calcCompletudeSubset(app, vars) {
+  const {
+    current_level, id_field, filter_key, my_region,
+  } = app.current_config;
+
   // Compute the length of the dataset (within the "study zone" if any):
+  let temp;
+  if (filter_key) {
+    const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
+  } else {
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level);
+  }
+  const total_length = temp.length;
 
   // Compute the length of the dataset if we filter empty features
   // on all the variables of "vars":
+  temp = temp.map((ft) => {
+    const props_feature = {
+      id: ft[id_field],
+    };
+    for (let i = 0, len_i = vars.length; i < len_i; i++) {
+      props_feature[vars[i]] = +ft[vars[i]];
+    }
+    return props_feature;
+  }).filter(ft => vars.map(ratio_name => !!ft[ratio_name]).every(v => v === true));
+  const filtered_length = temp.length;
+
+  // Return the ratio of available values ("complétude") within
+  // the study zone selected by the user:
+  return Math.round((filtered_length / total_length) * 1000) / 10;
 }
 
 export function calcPopCompletudeSubset(vars) {

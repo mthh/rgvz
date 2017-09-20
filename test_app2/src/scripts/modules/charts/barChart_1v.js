@@ -1,7 +1,8 @@
 import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
+import { calcCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
-import { app } from './../../main';
+import { app, resetColors } from './../../main';
 
 export const svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 40 },
@@ -112,6 +113,7 @@ export class BarChart1 {
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     this.current_ids = this.data.map(d => d.id);
+    resetColors(this.current_ids);
     this.current_ranks = this.data.map((d, i) => i + 1);
     nbFt = this.data.length;
     this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
@@ -225,10 +227,12 @@ export class BarChart1 {
       .call(brush_top)
       .call(brush_top.move, null);
 
+    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+
     this.completude = svg_bar.append('text')
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${app.completude}%`);
+      .text(`Complétude : ${this.completude_value}%`);
 
     svg_bar.append('image')
       .attrs({
@@ -316,35 +320,37 @@ export class BarChart1 {
 
     // Create the menu under the chart allowing to use some useful selections
     // (above or below the mean value and above or below my_region)
-    const buttons_under_chart = d3.select('#bar_section')
+    const menu_selection = d3.select('#bar_section')
       .append('div')
-      .attr('id', 'buttons_under_chart')
+      .attr('id', 'menu_selection')
       .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
 
-    buttons_under_chart.append('button')
+    menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_mean' })
       .text('< à la moyenne')
       .on('click', () => this.selectBelowMean());
 
-    buttons_under_chart.append('button')
+    menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_below_mean' })
       .text('> à la moyenne')
       .on('click', () => this.selectAboveMean());
 
-    buttons_under_chart.append('button')
+    menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
       .text('< à ma région')
       .on('click', () => this.selectBelowMyRegion());
 
-    buttons_under_chart.append('button')
+    menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
       .text('> à ma région')
       .on('click', () => this.selectAboveMyRegion());
   }
 
   updateCompletude() {
+    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+
     this.completude
-      .text(`Complétude : ${app.completude}%`);
+      .text(`Complétude : ${this.completude_value}%`);
   }
 
   updateContext(min, max) {
@@ -741,5 +747,6 @@ export class BarChart1 {
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
+    this.map_elem.resetColors(this.current_ids);
   }
 }

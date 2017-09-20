@@ -40,7 +40,7 @@ function createTableDOM(data, opts, config) {
     for (let j = 0; j < nb_columns; j++) {
       const cell = doc.createElement('td');
       const col_name = column_names[j];
-      if (col_name === 'num' || col_name === 'denum' || col_name === 'ratio') {
+      if (num.indexOf(col_name) > -1 || denum.indexOf(col_name) > -1 || ratio.indexOf(col_name) > -1) {
         cell.innerHTML = Math.round(data[i][col_name] * 100) / 10;
       } else {
         cell.innerHTML = data[i][col_name];

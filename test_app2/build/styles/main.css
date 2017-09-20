@@ -119,6 +119,16 @@ span.small_square {
   cursor: pointer;
 }
 
+span.small_square.disabled {
+  height: 5px;
+  border: 1px solid lightgray;
+  content: " ";
+  padding-left: 8px;
+  margin-right: 4px;
+  font-size: 0.6em;
+  cursor: not-allowed;
+}
+
 span.square.checked, span.small_square.checked {
   background: #4f81bd;
   cursor: pointer;
@@ -126,6 +136,11 @@ span.square.checked, span.small_square.checked {
 
 span.label_chk {
   cursor: pointer;
+}
+
+span.label_chk.disabled {
+  color: lightgray;
+  cursor: not-allowed;
 }
 
 /* End on styles for left menu */
@@ -158,10 +173,11 @@ span.label_chk {
 
 .type_chart.disabled {
   color: lightgray;
-  cursor: disabled;
+  cursor: not-allowed;
 }
 /* End of styles for top menu */
 
+/* Styles for buttons (used in various place) */
 .button_blue {
   border-top: 1px solid #96d1f8;
   background: #65a9d7;
@@ -195,7 +211,9 @@ span.label_chk {
   border-top-color: #1b435e;
   background: #1b435e;
 }
+/* End of styles for buttons */
 
+/* Styles for buttons on the top of the map */
 .map_button {
   margin: 3px;
   float: left;
@@ -205,6 +223,52 @@ span.label_chk {
 .map_button.active {
   filter: none;
 }
+/* End of styles of buttons on the top of the map */
+
+/* Styles for context-menu */
+.context-menu {
+	font-family: Arial, sans;
+	position: absolute;
+	background: white;
+	border: 1px solid #c3c3c3;
+	border-radius: 5px;
+	box-shadow: 0 5px 5px #c3c3c3;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	min-width: 200px;
+	font-size: 12pt;
+}
+
+.context-menu ul {
+	list-style: none;
+	padding-left: 0;
+	margin: 0;
+}
+
+.context-menu li {
+	position: relative;
+	padding-left: 20px;
+	padding-right: 30px;
+	cursor: default;
+}
+
+.context-menu li:hover {
+	//background: #b1b1ff;
+    background: rgba(145, 209, 230, 0.52);
+    color: rgb(0,0,0);
+}
+
+.context-menu li span.arrow {
+	position: absolute;
+	font-size: 0.8em;
+	right: 10px;
+}
+
+.context-menu li div.context-menu {
+	left: 100%;
+	top: -5px;
+}
+/* End of styles for context-menu */
 
 /* Styles for BubbleChart1 : */
 input.nb_select {

@@ -1,7 +1,8 @@
 import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
+import { calcCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
-import { app, variables } from './../../main';
+import { app, variables, resetColors } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
@@ -21,6 +22,7 @@ export class BubbleChart1 {
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice()
       .sort((a, b) => b[stock_to_use] - a[stock_to_use]);
     this.current_ids = this.data.map(d => d.id);
+    resetColors(this.current_ids);
     this.highlight_selection = [];
     const draw_group = svg_bar
       .append('g')
@@ -32,11 +34,14 @@ export class BubbleChart1 {
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
 
-    // Create the "completude" text:
+    // Compute the "complétude" value for this ratio:
+    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+
+    // Create the "complétude" text:
     this.completude = svg_bar.append('text')
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${app.completude}%`);
+      .text(`Complétude : ${this.completude_value}%`);
 
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
@@ -241,8 +246,10 @@ export class BubbleChart1 {
       });
   }
   updateCompletude() {
+    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+
     this.completude
-      .text(`Complétude : ${app.completude}%`);
+      .text(`Complétude : ${this.completude_value}%`);
   }
 
   updateMapRegio() {
@@ -400,12 +407,12 @@ export class BubbleChart1 {
     this.map_elem.unbindBrush();
     this.map_elem = null;
     this.selec_var.remove();
-    d3.select('#menu_selection').remove();
     svg_bar.html('');
   }
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
+    this.map_elem.resetColors(this.current_ids);
     d3.select('#menu_selection').select('.nb_select').dispatch('change');
   }
 }

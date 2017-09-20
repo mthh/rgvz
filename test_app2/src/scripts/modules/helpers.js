@@ -73,7 +73,7 @@ function unbindUI() {
     .on('click', null);
 
   // Remove the selection menu (or buttons) under the chart:
-  d3.select('#bar_section > #buttons_under_chart').remove();
+  d3.select('#bar_section > #menu_selection').remove();
 
   // Removes the current behavior corresponding to clicking on the top menu:
   d3.selectAll('.type_chart.title_menu').on('click', null);

@@ -141,10 +141,10 @@ class MapSelect {
     this.bindTooltip();
   }
 
-  resetColors() {
+  resetColors(current_ids) {
     const id_field_geom = app.current_config.id_field_geom;
     this.target_layer.selectAll('path')
-      .attr('fill', d => (app.current_ids.indexOf(d.properties[id_field_geom]) > -1
+      .attr('fill', d => (current_ids.indexOf(d.properties[id_field_geom]) > -1
         ? (app.colors[d.properties[id_field_geom]] || color_countries)
         : color_disabled));
   }

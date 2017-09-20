@@ -39,7 +39,6 @@ export const app = {
   colors: {},
   current_data: [],
   full_dataset: [],
-  current_ids: [],
 };
 
 function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, level = 'NUTS1') {
@@ -66,13 +65,12 @@ function setDefaultConfigMenu(code = 'FRE', variable = 'PC_CHOM_1524_2015', leve
 }
 
 
-function resetColors() {
-  const ids = app.current_ids;
-  const my_region = app.current_config.my_region;
+export function resetColors(current_ids) {
   app.colors = {};
-  for (let i = 0, len_i = ids.length; i < len_i; i++) {
-    app.colors[ids[i]] = ids[i] === my_region ? color_highlight : color_countries;
-  }
+  // for (let i = 0, len_i = current_ids.length; i < len_i; i++) {
+  //   app.colors[current_ids[i]] = color_countries;
+  // }
+  app.colors[app.current_config.my_region] = color_highlight;
 }
 
 /**
@@ -84,7 +82,7 @@ function resetColors() {
 * @return {void}
 *
 */
-function bindUI_chart_1v(chart, map_elem) {
+function bindUI_chart(chart, map_elem) {
   d3.selectAll('span.filter_v')
     .on('click', function () {
       if (!this.classList.contains('checked')) {
@@ -105,12 +103,14 @@ function bindUI_chart_1v(chart, map_elem) {
         this.classList.add('checked');
         const id_region = this.getAttribute('value');
         changeRegion(app, id_region);
+        updateAvailablesRatios(id_region);
         chart.updateChangeRegion();
       }
     });
 
   d3.selectAll('span.target_variable')
     .on('click', function () {
+      if (this.classList.contains('disabled')) return;
       if (!this.classList.contains('checked')) {
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
@@ -134,16 +134,19 @@ function bindUI_chart_1v(chart, map_elem) {
       const nb_var = Array.prototype.slice.call(
         document.querySelectorAll('span.target_variable')).filter(
           elem => !!elem.classList.contains('checked')).length;
-      // Allow all kind of vizu with 1 variable:
-      d3.selectAll('.chart_t1')
-        .attr('class', 'type_chart chart_t1');
-      if (nb_var === 2) { // Allow all kind of vizu with 2 variables:
+      if (nb_var === 1) { // Allow all kind of vizu with 1 variable:
+        d3.selectAll('.chart_t1')
+          .attr('class', 'type_chart chart_t1');
+        d3.selectAll('.chart_t2')
+          .attr('class', 'type_chart chart_t2 disabled');
+        d3.selectAll('.chart_t3')
+          .attr('class', 'type_chart chart_t3 disabled');
+      } else if (nb_var === 2) { // Allow all kind of vizu with 2 variables:
         d3.selectAll('.chart_t2')
           .attr('class', 'type_chart chart_t2');
         d3.selectAll('.chart_t3')
           .attr('class', 'type_chart chart_t3 disabled');
-      }
-      if (nb_var > 2) { // Allow all kind of vizu with 3 variables:
+      } else if (nb_var > 2) { // Allow all kind of vizu with 3 variables:
         d3.selectAll('.chart_t2')
           .attr('class', 'type_chart chart_t2');
         d3.selectAll('.chart_t3')
@@ -237,32 +240,36 @@ export function bindTopButtons(chart, map_elem) {
       unbindUI();
       map_elem.resetZoom();
       app.colors = {};
-      resetColors();
-      map_elem.resetColors();
       const value = this.getAttribute('value');
       if (value === 'BarChart1') {
         console.log('BarChart1');
         makeTable(app.current_data, app.current_config);
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart_1v(chart, map_elem);
+        bindUI_chart(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
       } else if (value === 'BubbleChart1') {
         console.log('BubbleChart1');
         makeTable(app.current_data, app.current_config);
         chart = new BubbleChart1(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart_1v(chart, map_elem);
+        bindUI_chart(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         console.log('ScatterPlot2');
         makeTable(app.current_data, app.current_config);
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart_1v(chart, map_elem);
+        bindUI_chart(chart, map_elem);
+        map_elem.bindBrush(chart);
+        chart.bindMap(map_elem);
+      } else if (value === 'RadarChart3') {
+        console.log('RadarChart3');
+        makeTable(app.current_data, app.current_config);
+        chart = new ScatterPlot2(app.current_data);
+        bindUI_chart(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
       }
-
     });
 }
 
@@ -293,11 +300,28 @@ function loadData() {
       makeHeaderMapSection();
       makeSourceSection();
       makeMapLegend();
-      bindUI_chart_1v(chart, map_elem);
-      chart.bindMap(map_elem);
+      bindUI_chart(chart, map_elem);
       map_elem.bindBrush(chart);
+      chart.bindMap(map_elem);
     });
 }
 
+function updateAvailablesRatios(my_region) {
+  const data_my_feature = app.full_dataset.filter(
+    ft => ft[app.current_config.id_field] === my_region)[0];
+  const menu = document.querySelector('#menu');
+  const lines = menu.querySelectorAll('.target_variable');
+  for (let i = 0, nb_lines = lines.length; i < nb_lines; i++) {
+    const code_variable = lines[i].getAttribute('value');
+    if (data_my_feature[code_variable] !== undefined
+        && data_my_feature[code_variable] !== 'NA') {
+      lines[i].classList.remove('disabled');
+      lines[i].nextSibling.classList.remove('disabled');
+    } else {
+      lines[i].classList.add('disabled');
+      lines[i].nextSibling.classList.add('disabled');
+    }
+  }
+}
 
 loadData();
