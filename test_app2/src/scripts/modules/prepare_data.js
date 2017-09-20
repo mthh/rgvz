@@ -35,11 +35,11 @@ export function prepare_dataset(full_dataset, app) {
 *    without features containing empty ratios.
 *
 */
-export function filter_no_empty(app, filter_id) {
+export function filterLevelVar(app, filter_id) {
   // Fetch the name(s) of the ratio (and associated num and denum variable),
   // the name of the targeted region and the current level :
   const {
-    num, denum, ratio, current_level, id_field, filter, name_field,
+    num, denum, ratio, current_level, id_field, filter_key, name_field, my_region,
   } = app.current_config;
 
   const all_variables = ratio.concat(num).concat(denum);
@@ -49,10 +49,10 @@ export function filter_no_empty(app, filter_id) {
   if (filter_id) {
     temp = app.full_dataset
       .filter(ft => +ft.level === current_level && filter_id.indexOf(ft[id_field]) > -1);
-  } else if (filter) {
-    const { key, value } = filter;
+  } else if (filter_key) {
+    const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && ft[key] === value);
+      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
       .filter(ft => +ft.level === current_level);
@@ -68,18 +68,18 @@ export function filter_no_empty(app, filter_id) {
     return props_feature;
   });
 
-  // Filter data for empty values :
-  const filtered_data = temp.filter(
-    ft => ratio.map(v => !!ft[v]).every(v => v === true));
+  // // Filter data for empty values :
+  // const filtered_data = temp.filter(
+  //   ft => ratio.map(v => !!ft[v]).every(v => v === true));
 
   //
-  app.current_data = filtered_data;
+  app.current_data = temp;
   // Store the ids and the ranks of the current features in two arrays for easier acces:
-  app.current_ids = filtered_data.map(d => d.id);
+  app.current_ids = temp.map(d => d.id);
 
   // Compute the ratio of available values ("complétude") within
   // the study zone selected by the user:
-  app.completude = math_round((filtered_data.length / temp.length) * 1000) / 10;
+  // app.completude = math_round((filtered_data.length / temp.length) * 1000) / 10;
   // return filtered_data;
 }
 
@@ -93,28 +93,16 @@ export function filter_no_empty(app, filter_id) {
 */
 export function applyFilter(app, filter_type) {
   if (filter_type === 'filter_FR') {
-    app.current_config.filter = { key: 'PAYS', value: 'FR' };
-    filter_no_empty(app);
+    app.current_config.filter_key = 'PAYS';
+    filterLevelVar(app);
   } else if (filter_type === 'no_filter') {
-    app.current_config.filter = null;
-    filter_no_empty(app);
+    app.current_config.filter_key = undefined;
+    filterLevelVar(app);
   } else {
-    app.current_config.filter = { key: 'type_test', value: `3` };
-    filter_no_empty(app);
-    const maybe_my_region = app.current_data.filter(
-      d => d.id === app.current_config.my_region)[0];
-    if (maybe_my_region === undefined) {
-      app.current_data.push(
-        app.full_dataset.filter(d => d.geo === app.current_config.my_region)[0]);
-      app.current_ids = app.current_data.map(d => d.id);
-    }
+    app.current_config.filter_key = 'type_test';
+    filterLevelVar(app);
   }
 
-  // if (!app.serie_inversed) {
-  //   app.current_data.sort((a, b) => a.ratio - b.ratio);
-  // } else {
-  //   app.current_data.sort((a, b) => b.ratio - a.ratio);
-  // }
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
 }
@@ -123,15 +111,13 @@ export function applyFilter(app, filter_type) {
 export function changeRegion(app, id_region) {
   app.current_config.my_region = id_region;
   app.current_config.my_region_pretty_name = app.feature_names[app.current_config.my_region];
+  if (app.current_config.filter_key !== undefined) {
+    filterLevelVar(app);
+  }
+  console.log(app);
   // Reset the color to use on the chart/map:
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
-  // app.current_data = filter_no_empty(app);
-  // Change the reference ratio value:
-
-  // app.current_config.ref_value = app.current_data
-  //   .filter(d => d.id === app.current_config.my_region)
-  //   .map(d => d.ratio)[0];
 }
 
 export function addVariable(app, code_ratio) {
@@ -142,7 +128,7 @@ export function addVariable(app, code_ratio) {
   app.current_config.denum.push(variable_info.denum);
   app.current_config.ratio.push(variable_info.ratio);
   app.current_config.ratio_pretty_name.push(variable_info.name);
-  filter_no_empty(app);
+  filterLevelVar(app);
 }
 
 export function removeVariable(app, code_ratio) {
@@ -151,7 +137,21 @@ export function removeVariable(app, code_ratio) {
   app.current_config.denum.splice(ix, 1);
   app.current_config.ratio.splice(ix, 1);
   app.current_config.ratio_pretty_name.splice(ix, 1);
-  filter_no_empty(app);
+  filterLevelVar(app);
 }
 
+// TODO:
+export function calcCompletudeSubset(vars) {
+  // Compute the length of the dataset (within the "study zone" if any):
+
+  // Compute the length of the dataset if we filter empty features
+  // on all the variables of "vars":
+}
+
+export function calcPopCompletudeSubset(vars) {
+  // Compute the total population stock of the data (within the "study zone" if any):
+
+  // Compute the population stock of the dataset if we filter empty features
+  // on all the variables of "vars":
+}
 /* eslint-enable no-param-reassign */

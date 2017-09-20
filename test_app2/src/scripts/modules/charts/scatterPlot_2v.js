@@ -4,7 +4,7 @@ import { svg_map } from './../map';
 import { app, variables } from './../../main';
 
 const svg_bar = d3.select('#svg_bar');
-const margin = { top: 20, right: 20, bottom: 40, left: 30 };
+const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
@@ -18,12 +18,14 @@ export class ScatterPlot2 {
     this.rank_variable2 = `pr_${this.variable2}`;
     this.pretty_name1 = app.current_config.ratio_pretty_name[0];
     this.pretty_name2 = app.current_config.ratio_pretty_name[1];
-    this.data = ref_data.map((d) => {
-      const res = { id: d.id };
-      res[this.variable1] = d[this.variable1];
-      res[this.variable2] = d[this.variable2];
-      return res;
-    });
+    this.data = ref_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
+      .map((d) => {
+        const res = { id: d.id };
+        res[this.variable1] = d[this.variable1];
+        res[this.variable2] = d[this.variable2];
+        return res;
+      });
+    this.current_ids = this.data.map(d => d.id);
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
@@ -40,12 +42,10 @@ export class ScatterPlot2 {
 
     this.xInversed = false;
     this.yInversed = false;
-    this.ref_value1 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable1];
-    this.ref_value2 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable2];
-    // const zoom = d3.zoom()
-    //   .scaleExtent([1, 5])
-    //   .translateExtent([[0, 0], [width, height]])
-    //   .on('zoom', () => { this.zoomed(d3.event.transform); });
+    this.ref_value1 = this.data.filter(
+      d => d.id === app.current_config.my_region)[0][this.variable1];
+    this.ref_value2 = this.data.filter(
+      d => d.id === app.current_config.my_region)[0][this.variable2];
 
     this.plot = svg_bar.append('g')
       .attr('transform', `translate(${[margin.left, margin.top]})`);
@@ -65,22 +65,12 @@ export class ScatterPlot2 {
          .attr('id', 'scatterplot')
          .attr('clip-path', 'url(#clip)');
 
-    // const underlying_rect = this.scatter
-    //      .append('rect')
-    //      .attrs({ width, height, x: 0, y: 0 })
-    //      .style('fill', 'transparent')
-    //      .call(zoom);
-
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.mean_variable1 = _getPR(
       d3.mean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
     this.mean_variable2 = _getPR(
       d3.mean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
-
-    // underlying_rect.on('dblclick.zoom', () => {
-    //   this.zoomed(d3.zoomTransform({ x: 0, y: 0, k: 1 }));
-    // });
 
     this.makeGrid();
 
@@ -90,6 +80,7 @@ export class ScatterPlot2 {
     groupe_line_mean.append('line')
       .attr('clip-path', 'url(#clip)')
       .attrs({
+        id: 'mean_x',
         x1: this.x(this.mean_variable1),
         x2: this.x(this.mean_variable1),
         y1: 0,
@@ -101,6 +92,7 @@ export class ScatterPlot2 {
     groupe_line_mean.append('line')
       .style('stroke', 'red')
       .attrs({
+        id: 'mean_y',
         x1: 0,
         x2: width,
         y1: this.y(this.mean_variable2),
@@ -143,9 +135,11 @@ export class ScatterPlot2 {
         for (let i = 0; i < this.nbFt; i++) {
           self.data[i][self.rank_variable1] = 100 - self.data[i][self.rank_variable1];
         }
-        this.scatter.selectAll('circle')
-          .transition()
-          .attr('cx', d => self.x(d[self.rank_variable1]));
+        if (this.last_map_selection) {
+          this.map_elem.callBrush(this.last_map_selection);
+        } else {
+          this.update();
+        }
       });
     svg_bar.append('text')
       .attr('id', 'title-axis-y')
@@ -170,10 +164,11 @@ export class ScatterPlot2 {
         for (let i = 0; i < this.nbFt; i++) {
           this.data[i][this.rank_variable2] = 100 - this.data[i][this.rank_variable2];
         }
-        this.update();
-        // this.scatter.selectAll('circle')
-        //   .transition()
-        //   .attr('cy', d => this.y(d[this.rank_variable2]));
+        if (this.last_map_selection) {
+          this.map_elem.callBrush(this.last_map_selection);
+        } else {
+          this.update();
+        }
       });
 
 
@@ -234,7 +229,7 @@ export class ScatterPlot2 {
     const rank_variable2 = this.rank_variable2;
     const x = this.x;
     const y = this.y;
-    const default_color = 'lightgray';
+    const default_color = 'gray';
     const dots = this.scatter.selectAll('.dot')
       .data(data, d => d.id);
 
@@ -282,9 +277,9 @@ export class ScatterPlot2 {
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
-          .text(`Ratio: ${Math.round(d[_var1] * 10) / 10}`);
+          .text(`Variable 1 : ${Math.round(d[_var1] * 10) / 10}`);
         tooltip.select('text.value_feature2')
-          .text(`Stock: ${Math.round(d[_var2] * 10) / 10}`);
+          .text(`Variable 2 : ${Math.round(d[_var2] * 10) / 10}`);
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
       });
@@ -298,14 +293,19 @@ export class ScatterPlot2 {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (app.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }
 
   handle_brush_map(event) {
+    if (!event || !event.selection) {
+      this.last_map_selection = undefined;
+      return;
+    }
     const self = this;
     const [topleft, bottomright] = event.selection;
+    this.last_map_selection = [topleft, bottomright];
     const rect = new Rect(topleft, bottomright);
     app.colors = {};
     self.map_elem.target_layer.selectAll('path')
@@ -314,7 +314,7 @@ export class ScatterPlot2 {
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
-        } else if (app.current_ids.indexOf(id) < 0) {
+        } else if (self.current_ids.indexOf(id) < 0) {
           return color_disabled;
         }
         if (!this._pts) {
@@ -340,7 +340,7 @@ export class ScatterPlot2 {
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
-    if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       // Remove the clicked feature from the colored selection on the chart:
 
@@ -360,26 +360,65 @@ export class ScatterPlot2 {
     this.update();
   }
 
+  updateMeanValue() {
+    this.mean_variable1 = _getPR(
+      d3.mean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
+    this.mean_variable2 = _getPR(
+      d3.mean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
+    const grp_mean = this.plot.select('g.mean');
+    grp_mean.select('#mean_x')
+      .transition()
+      .duration(225)
+      .attrs({
+        x1: this.x(this.mean_variable1),
+        x2: this.x(this.mean_variable1),
+      });
+    grp_mean.select('#mean_y')
+      .transition()
+      .duration(225)
+      .attrs({
+        y1: this.y(this.mean_variable2),
+        y2: this.y(this.mean_variable2),
+      });
+  }
+
   updateChangeRegion() {
-    this.ref_value1 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable1];
-    this.ref_value2 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable2];
-    this.map_elem.removeRectBrush();
-    this.map_elem.updateLegend();
-    this.map_elem.resetColors();
-    this.update();
+    if (app.current_config.filter_key !== undefined) {
+      this.changeStudyZone();
+    } else {
+      this.ref_value1 = this.data.filter(
+        d => d.id === app.current_config.my_region)[0][this.variable1];
+      this.ref_value2 = this.data.filter(
+        d => d.id === app.current_config.my_region)[0][this.variable2];
+      this.map_elem.removeRectBrush();
+      this.map_elem.updateLegend();
+      this.map_elem.resetColors();
+      this.update();
+    }
   }
 
   changeStudyZone() {
-    this.map_elem.removeRectBrush();
-    this.map_elem.updateLegend();
-    this.data = app.current_data.slice().sort(
-      (a, b) => b[this.stock_to_use] - a[this.stock_to_use]);
-    this.ref_value1 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable1];
-    this.ref_value2 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable2];
+    this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
+      .map((d) => {
+        const res = { id: d.id };
+        res[this.variable1] = d[this.variable1];
+        res[this.variable2] = d[this.variable2];
+        return res;
+      });
+    this.current_ids = this.data.map(d => d.id);
+    this.nbFt = this.data.length;
+    computePercentileRank(this.data, this.variable1, this.rank_variable1);
+    computePercentileRank(this.data, this.variable2, this.rank_variable2);
+
+    this.xInversed = false;
+    this.yInversed = false;
+    // this.ref_value1 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable1];
+    // this.ref_value2 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable2];
+
+    this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
+    this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
+    this.updateMeanValue();
+    this.updateMapRegio();
     this.update();
   }
 
@@ -389,11 +428,11 @@ export class ScatterPlot2 {
   }
 
   addVariable(code_variable, name_variable) {
-
+    // TODO: Add the new variable to the x and y menus
   }
 
   removeVariable(code_variable) {
-
+    // TODO: Remove the variable from the x and y menus
   }
 
   remove() {

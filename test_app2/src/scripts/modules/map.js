@@ -189,11 +189,14 @@ class MapSelect {
     svg_map.select('.brush_map').call(this.brush_map.move, null);
   }
 
+  callBrush(selection) {
+    svg_map.select('.brush_map').call(this.brush_map.move, selection);
+  }
+
   bindBrush(chart) {
     this.brush_map = d3.brush()
       .extent([[0, 0], [width_map, height_map]])
       .on('start brush', () => {
-        if (!d3.event || !d3.event.selection) return;
         chart.handle_brush_map(d3.event);
       });
     svg_map.append('g')

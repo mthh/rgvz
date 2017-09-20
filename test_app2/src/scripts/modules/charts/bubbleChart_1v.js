@@ -18,9 +18,9 @@ export class BubbleChart1 {
     const stock_to_use = available_nums[0];
     this.ratio_to_use = ratio_to_use;
     this.stock_to_use = stock_to_use;
-
-    this.data = ref_data.slice().sort(
-      (a, b) => b[stock_to_use] - a[stock_to_use]);
+    this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice()
+      .sort((a, b) => b[stock_to_use] - a[stock_to_use]);
+    this.current_ids = this.data.map(d => d.id);
     this.highlight_selection = [];
     const draw_group = svg_bar
       .append('g')
@@ -248,14 +248,19 @@ export class BubbleChart1 {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (app.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }
 
   handle_brush_map(event) {
+    if (!event || !event.selection) {
+      this.last_map_selection = undefined;
+      return;
+    }
     const self = this;
     const [topleft, bottomright] = event.selection;
+    this.last_map_selection = [topleft, bottomright];
     const rect = new Rect(topleft, bottomright);
     const ratio_to_use = this.ratio_to_use;
     app.colors = {};
@@ -266,7 +271,7 @@ export class BubbleChart1 {
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
-        } else if (app.current_ids.indexOf(id) < 0) {
+        } else if (self.current_ids.indexOf(id) < 0) {
           return color_disabled;
         }
         if (!this._pts) {
@@ -293,7 +298,7 @@ export class BubbleChart1 {
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
-    if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       // Remove the clicked feature from the colored selection on the chart:
       const id_to_remove = this.highlight_selection
@@ -320,18 +325,23 @@ export class BubbleChart1 {
   }
 
   updateChangeRegion() {
-    this.map_elem.removeRectBrush();
-    this.map_elem.updateLegend();
-    this.my_region_value = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
-    this.applySelection(this.highlight_selection.length, 'close');
+    if (app.current_config.filter_key !== undefined) {
+      this.changeStudyZone();
+    } else {
+      this.map_elem.removeRectBrush();
+      this.map_elem.updateLegend();
+      this.my_region_value = this.data.filter(
+        d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
+      this.applySelection(this.highlight_selection.length, 'close');
+    }
   }
 
   changeStudyZone() {
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
-    this.data = app.current_data.slice().sort(
-      (a, b) => b[this.stock_to_use] - a[this.stock_to_use]);
+    this.data = app.current_data.filter(ft => !!ft[this.ratio_to_use]).slice()
+      .sort((a, b) => b[this.stock_to_use] - a[this.stock_to_use]);
+    this.current_ids = this.data.map(d => d.id);
     this.my_region_value = this.data.filter(
       d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     const temp = this.highlight_selection.length;

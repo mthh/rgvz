@@ -2,7 +2,7 @@ import debug from 'debug';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { makeTable } from './modules/table';
-import { prepare_dataset, filter_no_empty, applyFilter, changeRegion, addVariable, removeVariable } from './modules/prepare_data';
+import { prepare_dataset, filterLevelVar, applyFilter, changeRegion, addVariable, removeVariable } from './modules/prepare_data';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
@@ -162,10 +162,7 @@ function bindUI_chart_1v(chart, map_elem) {
     .on('click', function () {
       if (!this.classList.contains('active')) {
         this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_map_zoom').style.filter = 'opacity(25%)';
         document.getElementById('img_map_zoom').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.on('.zoom', null);
         svg_map.select('.brush_map').style('display', null);
@@ -177,10 +174,7 @@ function bindUI_chart_1v(chart, map_elem) {
     .on('click', function () {
       if (!this.classList.contains('active')) {
         this.classList.add('active');
-        // this.style.filter = '';
-        // document.getElementById('img_rect_selec').style.filter = 'opacity(25%)';
         document.getElementById('img_rect_selec').classList.remove('active');
-        // document.getElementById('img_map_select').style.filter = 'opacity(25%)';
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.call(map_elem.zoom_map);
         svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
@@ -292,7 +286,7 @@ function loadData() {
       makeTopMenu();
       makeHeaderChart();
       setDefaultConfigMenu('FRB', 'PC_CHOM_1524_2015', 'NUTS1');
-      filter_no_empty(app);
+      filterLevelVar(app);
       const map_elem = new MapSelect(nuts1, countries, remote, template, seaboxes);
       const chart = new BarChart1(app.current_data);
       makeTable(app.current_data, app.current_config);

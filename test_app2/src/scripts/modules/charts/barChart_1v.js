@@ -109,9 +109,9 @@ export class BarChart1 {
     const ratio_to_use = available_ratios[0];
     this.ratio_to_use = ratio_to_use;
 
-    this.data = ref_data.slice();
+    this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
-    // app.current_ids = data.map(d => d.id);
+    this.current_ids = this.data.map(d => d.id);
     this.current_ranks = this.data.map((d, i) => i + 1);
     nbFt = this.data.length;
     this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
@@ -453,7 +453,7 @@ export class BarChart1 {
 
   updateMapRegio() {
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (app.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }
@@ -564,11 +564,16 @@ export class BarChart1 {
   }
 
   handle_brush_map(event) {
+    if (!event || !event.selection) {
+      this.last_map_selection = undefined;
+      return;
+    }
     const ratio_to_use = this.ratio_to_use;
     const ref_value = this.ref_value;
     const self = this;
     svg_bar.select('.brush_top').call(self.brush_top.move, null);
     const [topleft, bottomright] = event.selection;
+    this.last_map_selection = [topleft, bottomright];
     // const transform = svg_map.node().__zoom;
     // topleft[0] = (topleft[0] - transform.x) / transform.k;
     // topleft[1] = (topleft[1] - transform.y) / transform.k;
@@ -582,7 +587,7 @@ export class BarChart1 {
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
-        } else if (app.current_ids.indexOf(id) < 0) {
+        } else if (self.current_ids.indexOf(id) < 0) {
           return color_disabled;
         }
         if (!this._pts) {
@@ -602,7 +607,7 @@ export class BarChart1 {
     self._focus.selectAll('.bar')
       .style('fill', d => app.colors[d.id] || color_countries);
     const ids = Object.keys(app.colors);
-    const ranks = ids.map(d => app.current_ids.indexOf(d.id) > -1).map(d => this.current_ranks[d]);
+    const ranks = ids.map(d => this.current_ids.indexOf(d.id) > -1).map(d => this.current_ranks[d]);
     if (ranks.length > 1) {
       const c1 = ranks[0] - 1;
       const c2 = ranks[ranks.length - 1];
@@ -624,7 +629,7 @@ export class BarChart1 {
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
-    if (app.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       app.colors[id] = undefined;
       d3.select(parent).attr('fill', color_countries);
@@ -640,15 +645,19 @@ export class BarChart1 {
   }
 
   updateChangeRegion() {
-    this.ref_value = this.data.filter(
-      ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
-    this.update();
-    // this.updateMiniBars();
-    this.updateContext(0, this.data.length);
-    this.updateMapRegio();
-    svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
-    this.map_elem.removeRectBrush();
-    this.map_elem.updateLegend();
+    if (app.current_config.filter_key !== undefined) {
+      this.changeStudyZone();
+    } else {
+      this.ref_value = this.data.filter(
+        ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
+      this.update();
+      // this.updateMiniBars();
+      this.updateContext(0, this.data.length);
+      this.updateMapRegio();
+      svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
+      this.map_elem.removeRectBrush();
+      this.map_elem.updateLegend();
+    }
   }
 
   updateMeanValue() {
@@ -667,7 +676,8 @@ export class BarChart1 {
 
   changeStudyZone() {
     const ratio_to_use = this.ratio_to_use;
-    this.data = app.current_data.slice();
+    this.data = app.current_data.filter(ft => !!ft[ratio_to_use]);
+
     if (this.serie_inversed) {
       this.data.sort((a, b) => b[ratio_to_use] - a[ratio_to_use]);
     } else {
