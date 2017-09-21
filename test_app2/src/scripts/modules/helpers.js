@@ -84,9 +84,13 @@ function unbindUI() {
 }
 
 /**
+* Function to compare the value of a feature to the reference value (i.e. the value of "my region")
+* and return the appropriate color (serie may be inversed)
 *
-*
-*
+* @param {Number} test_value - The value to be compared to the value of "my region".
+* @param {Number} ref_value - The value of my region.
+* @param {Boolean} serie_inversed - Whether the serie is inversed or not in the current chart.
+* @return {String} - A string containing the color to be used for this value.
 *
 */
 const comp = (test_value, ref_value, serie_inversed) => {
@@ -98,9 +102,16 @@ const comp = (test_value, ref_value, serie_inversed) => {
 
 
 /**
+* Function to compare the value of a feature to the reference value (i.e. the value of "my region")
+* and return the appropriate color (serie may be inversed)
 *
-*
-*
+* @param {Number} val1 - The value to be compared to the value of "my region" for the 1st variable.
+* @param {Number} val2 - The value to be compared to the value of "my region" for the 2nd variable.
+* @param {Number} ref_val1 - The value of my region for he first variable.
+* @param {Number} ref_val2 - The value of my region for the second variable.
+* @param {Boolean} xInversed - Whether the serie is inversed on the x axis in the current chart.
+* @param {Boolean} yInversed - Whether the serie is inversed on the y axis in the current chart.
+* @return {String} - A string containing the color to be used for theses values.
 *
 */
 const comp2 = (val1, val2, ref_val1, ref_val2, xInversed, yInversed) => {

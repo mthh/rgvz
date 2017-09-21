@@ -58,7 +58,7 @@ function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, 
     // The name of the field of the dataset containing the name of each feature:
     name_field: 'Nom',
     // The name of the field of the dataset containing the population of each feature:
-    pop_field: '',
+    pop_field: 'POP_T_2015',
     // The name of the field of the geojson layer containing the ID of each feature
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
@@ -73,6 +73,8 @@ function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, 
     my_region: code,
     // The name of the region currently in use:
     my_region_pretty_name: app.feature_names[code],
+    // How many ratio on the current chart:
+    nb_var: 1,
   };
   app.colors[app.current_config.my_region] = color_highlight;
 }
@@ -125,8 +127,18 @@ function bindUI_chart(chart, map_elem) {
         this.classList.add('checked');
         const id_region = this.getAttribute('value');
         changeRegion(app, id_region);
-        updateAvailablesRatios(id_region);
-        chart.updateChangeRegion();
+        // Update the availables ratio on the left menu
+        // (this may change the current selected ratio(s) as some variables are
+        // not available for some features) and fetch the number of selected
+        // variables after that:
+        const new_nb_var = updateAvailablesRatios(id_region);
+        if (new_nb_var >= app.current_config.nb_var) {
+          chart.updateChangeRegion();
+        } else {
+          // If there fewer selected variables than requested by the current chart,
+          // redraw the first (default) kind of chart:
+          d3.select('span.chart_t1[value="BarChart1"]').dispatch('click');
+        }
       }
     });
 
@@ -150,11 +162,15 @@ function bindUI_chart(chart, map_elem) {
         if (last_one) {
           return;
         }
-        this.classList.remove('checked');
         const code_variable = this.getAttribute('value');
-        removeVariable(app, code_variable);
-        makeTable(app.current_data, app.current_config);
-        chart.removeVariable(code_variable);
+        // We also don't want to allow the user to remove the variable if,
+        // after having removed it, there is not enough variables left for the current representation:
+        const res = chart.removeVariable(code_variable);
+        if (res !== false) {
+          this.classList.remove('checked');
+          removeVariable(app, code_variable);
+          makeTable(app.current_data, app.current_config);
+        }
       }
       const nb_var = Array.prototype.slice.call(
         document.querySelectorAll('span.target_variable')).filter(
@@ -332,6 +348,36 @@ function loadData() {
     });
 }
 
+/**
+* Function to select the first variable on the left menu
+* (triggered after changing region, if not more variable was selected)
+*
+* @return {void}
+*/
+function selectFirstAvailableVar() {
+  const menu = document.querySelector('#menu');
+  const v = menu.querySelectorAll('.target_variable');
+  for (let i = 0; i < v.length; i++) {
+    if (!v[i].classList.contains('disabled')) {
+      v[i].classList.add('checked');
+      return v[i].getAttribute('value');
+    }
+  }
+}
+
+/**
+* Function to update the availables ratios in the left menu (after changing region)
+* If a selected variable is not available anymore it will be deselected.
+* If there selected variable (all the previously selected variables are unavailable for this region)
+* the first variable on the menu will be selected.
+* If the new number of selected feature is inferior to the number of variables on the current
+* chart, a new chart (suitable for only 1 variable) will be selected.
+*
+*
+* @param {String} my_region - The ID of the newly selected region.
+* @return {Number} - The new number of selected ratios.
+*
+*/
 function updateAvailablesRatios(my_region) {
   const data_my_feature = app.full_dataset.filter(
     ft => ft[app.current_config.id_field] === my_region)[0];
@@ -351,10 +397,17 @@ function updateAvailablesRatios(my_region) {
   }
   const new_var = menu.querySelectorAll('.target_variable.checked');
   if (new_var.length !== app.current_config.ratio.length) {
-    const new_var_names = Array.prototype.slice.call(
-      new_var).map(elem => elem.getAttribute('value'));
+    let new_var_names;
+    if (new_var.length === 0) {
+      const name = selectFirstAvailableVar();
+      new_var_names = [name];
+    } else {
+      new_var_names = Array.prototype.slice.call(
+        new_var).map(elem => elem.getAttribute('value'));
+    }
     resetVariables(app, new_var_names);
   }
+  return new_var.length;
 }
 
 loadData();

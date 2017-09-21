@@ -1,6 +1,6 @@
 import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
-import { calcCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, resetColors } from './../../main';
 
@@ -89,6 +89,7 @@ export class BarChart1 {
           .style('fill', d => app.colors[d.id] || color_countries);
       }
     };
+    app.current_config.nb_var = 1;
     const x = d3.scaleBand().range([0, width]).padding(0.1),
       x2 = d3.scaleBand().range([0, width]).padding(0.1),
       y = d3.scaleLinear().range([height, 0]),
@@ -113,7 +114,7 @@ export class BarChart1 {
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     this.current_ids = this.data.map(d => d.id);
-    resetColors(this.current_ids);
+    resetColors();
     this.current_ranks = this.data.map((d, i) => i + 1);
     nbFt = this.data.length;
     this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
@@ -140,7 +141,7 @@ export class BarChart1 {
     this._focus = focus;
     this.context = context;
 
-    x.domain(this.data.map(ft => ft.id));
+    x.domain(this.current_ids);
     y.domain([
       d3.min(this.data, d => d[ratio_to_use]) - 2,
       d3.max(this.data, d => d[ratio_to_use]),
@@ -227,7 +228,7 @@ export class BarChart1 {
       .call(brush_top)
       .call(brush_top.move, null);
 
-    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
     this.completude = svg_bar.append('text')
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
@@ -347,7 +348,7 @@ export class BarChart1 {
   }
 
   updateCompletude() {
-    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
     this.completude
       .text(`Complétude : ${this.completude_value}%`);
@@ -661,7 +662,6 @@ export class BarChart1 {
       this.ref_value = this.data.filter(
         ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
       this.update();
-      // this.updateMiniBars();
       this.updateContext(0, this.data.length);
       this.updateMapRegio();
       svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
@@ -693,10 +693,11 @@ export class BarChart1 {
     } else {
       this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     }
+    this.current_ids = this.data.map(d => d.id);
     nbFt = this.data.length;
     this.ref_value = this.data.filter(
       ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
-    this.x.domain(this.data.map(ft => ft.id));
+    this.x.domain(this.current_ids);
     const min_serie = d3.min(this.data, d => d[ratio_to_use]);
     const max_serie = d3.max(this.data, d => d[ratio_to_use]);
     const offset_y = (max_serie - min_serie) / 20;

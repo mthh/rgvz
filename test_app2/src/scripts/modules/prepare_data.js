@@ -187,10 +187,43 @@ export function calcCompletudeSubset(app, vars) {
   return Math.round((filtered_length / total_length) * 1000) / 10;
 }
 
-export function calcPopCompletudeSubset(vars) {
-  // Compute the total population stock of the data (within the "study zone" if any):
+export function calcPopCompletudeSubset(app, vars) {
+  const {
+    current_level, id_field, filter_key, my_region, pop_field,
+  } = app.current_config;
 
+  // Compute the total population stock of the data (within the "study zone" if any):
+  let temp;
+  if (filter_key) {
+    const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
+  } else {
+    temp = app.full_dataset
+      .filter(ft => +ft.level === current_level);
+  }
+  let total_pop = 0;
+  for (let i = 0, len = temp.length; i < len; i++) {
+    total_pop += isNaN(+temp[i][pop_field]) ? 0 : +temp[i][pop_field];
+  }
   // Compute the population stock of the dataset if we filter empty features
   // on all the variables of "vars":
+  temp = temp.map((ft) => {
+    const props_feature = {
+      id: ft[id_field],
+      pop: +ft[pop_field],
+    };
+    for (let i = 0, len_i = vars.length; i < len_i; i++) {
+      props_feature[vars[i]] = +ft[vars[i]];
+    }
+    return props_feature;
+  }).filter(ft => vars.map(ratio_name => !!ft[ratio_name]).every(v => v === true));
+  let subset_pop = 0;
+  for (let i = 0, len = temp.length; i < len; i++) {
+    subset_pop += isNaN(temp[i].pop) ? 0 : temp[i].pop;
+  }
+  // Return the ratio of population values ("complétude") within
+  // the study zone selected by the user:
+  return Math.round((subset_pop / total_pop) * 1000) / 10;
 }
 /* eslint-enable no-param-reassign */

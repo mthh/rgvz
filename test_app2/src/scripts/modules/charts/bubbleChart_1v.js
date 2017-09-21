@@ -1,6 +1,6 @@
 import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
-import { calcCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, variables, resetColors } from './../../main';
 
@@ -12,6 +12,7 @@ const width = +svg_bar.attr('width') - margin.left - margin.right,
 
 export class BubbleChart1 {
   constructor(ref_data) {
+    app.current_config.nb_var = 1;
     const self = this;
     const available_ratios = app.current_config.ratio;
     const available_nums = app.current_config.num;
@@ -22,7 +23,7 @@ export class BubbleChart1 {
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice()
       .sort((a, b) => b[stock_to_use] - a[stock_to_use]);
     this.current_ids = this.data.map(d => d.id);
-    resetColors(this.current_ids);
+    resetColors();
     this.highlight_selection = [];
     const draw_group = svg_bar
       .append('g')
@@ -35,7 +36,7 @@ export class BubbleChart1 {
     prepareTooltip(svg_bar);
 
     // Compute the "complétude" value for this ratio:
-    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
     // Create the "complétude" text:
     this.completude = svg_bar.append('text')
@@ -246,7 +247,7 @@ export class BubbleChart1 {
       });
   }
   updateCompletude() {
-    this.completude_value = calcCompletudeSubset(app, [this.ratio_to_use]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
     this.completude
       .text(`Complétude : ${this.completude_value}%`);

@@ -1,6 +1,6 @@
 import { comp, math_round, math_abs, Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
-import { calcCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, variables, resetColors } from './../../main';
 import ContextMenu from './../contextMenu';
@@ -13,6 +13,7 @@ const width = +svg_bar.attr('width') - margin.left - margin.right,
 
 export class ScatterPlot2 {
   constructor(ref_data) {
+    app.current_config.nb_var = 2;
     const self = this;
     this.variable1 = app.current_config.ratio[0];
     this.variable2 = app.current_config.ratio[1];
@@ -117,9 +118,11 @@ export class ScatterPlot2 {
       .call(this.yAxis);
 
     this.menuX = new ContextMenu();
-    this.itemsX = app.current_config.ratio.map(elem => ({
-      name: elem, action: () => self.changeVariableX(elem),
-    }));
+    this.itemsX = app.current_config.ratio.filter(elem => elem !== this.variable2)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableX(elem),
+      }));
 
     svg_bar.append('text')
       .attrs({
@@ -156,9 +159,11 @@ export class ScatterPlot2 {
       });
 
     this.menuY = new ContextMenu();
-    this.itemsY = app.current_config.ratio.map(elem => ({
-      name: elem, action: () => self.changeVariableY(elem),
-    }));
+    this.itemsY = app.current_config.ratio.filter(elem => elem !== this.variable1)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableY(elem),
+      }));
 
     svg_bar.append('text')
       .attrs({
@@ -173,7 +178,6 @@ export class ScatterPlot2 {
         const bbox = this.getBoundingClientRect();
         self.menuY.showMenu(d3.event, document.body, self.itemsY, [bbox.left, bbox.bottom + 10]);
       });
-
 
     svg_bar.append('image')
       .attrs({
@@ -200,7 +204,7 @@ export class ScatterPlot2 {
     prepareTooltip(svg_bar);
 
     // Compute the "complétude" value for this ratio:
-    this.completude_value = calcCompletudeSubset(app, [this.variable1, this.variable2]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
 
     // Create the "complétude" text:
     this.completude = svg_bar.append('text')
@@ -247,7 +251,6 @@ export class ScatterPlot2 {
       .selectAll('line')
       .attr('stroke', 'lightgray');
   }
-
 
   update() {
     const self = this;
@@ -311,12 +314,11 @@ export class ScatterPlot2 {
   }
 
   updateCompletude() {
-    this.completude_value = calcCompletudeSubset(app, [this.variable1, this.variable2]);
+    this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
 
     this.completude
       .text(`Complétude : ${this.completude_value}%`);
   }
-
 
   updateMapRegio() {
     if (!this.map_elem) return;
@@ -449,6 +451,7 @@ export class ScatterPlot2 {
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.map_elem.removeRectBrush();
+    this.updateItemsCtxMenu();
     this.updateMeanValue();
     this.updateMapRegio();
     this.update();
@@ -460,6 +463,7 @@ export class ScatterPlot2 {
     this.pretty_name1 = variables.filter(ft => ft.ratio === code_variable)[0].name;
     svg_bar.select('#title-axis-x')
       .text(code_variable);
+    this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
         const res = { id: d.id };
@@ -487,6 +491,7 @@ export class ScatterPlot2 {
     this.pretty_name2 = variables.filter(ft => ft.ratio === code_variable)[0].name;
     svg_bar.select('#title-axis-y')
       .text(code_variable);
+    this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
         const res = { id: d.id };
@@ -508,6 +513,19 @@ export class ScatterPlot2 {
     this.update();
   }
 
+  updateItemsCtxMenu() {
+    this.itemsX = app.current_config.ratio.filter(elem => elem !== this.variable2)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableX(elem),
+      }));
+    this.itemsY = app.current_config.ratio.filter(elem => elem !== this.variable1)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableY(elem),
+      }));
+  }
+
   addVariable(code_variable, name_variable) {
     this.itemsX.push({
       name: code_variable,
@@ -520,18 +538,35 @@ export class ScatterPlot2 {
   }
 
   removeVariable(code_variable) {
-    for (let i = this.itemsX.length - 1; i > 0; i--) {
+    // If there is only two variable, return false to indicate we can't remove that variable:
+    if (this.itemsX.length === 1) {
+      return false;
+    }
+
+    // Remove the variable from the X and Y list of items:
+    for (let i = this.itemsX.length - 1; i > -1; i--) {
       if (this.itemsX[i].name === code_variable) {
         this.itemsX.splice(i, 1);
         break;
       }
     }
-    for (let i = this.itemsY.length - 1; i > 0; i--) {
+    for (let i = this.itemsY.length - 1; i > -1; i--) {
       if (this.itemsY[i].name === code_variable) {
         this.itemsY.splice(i, 1);
         break;
       }
     }
+
+    // If the variable to remove was currently used for drawing this chart,
+    // set a new variable for this axis and redraw the chart:
+    if (code_variable === this.variable1) {
+      const new_var_x = this.itemsX.filter(ft => ft.name !== this.variable2)[0].name;
+      this.changeVariableX(new_var_x);
+    } else if (code_variable === this.variable2) {
+      const new_var_y = this.itemsY.filter(ft => ft.name !== this.variable1)[0].name;
+      this.changeVariableY(new_var_y);
+    }
+    return true;
   }
 
   remove() {
