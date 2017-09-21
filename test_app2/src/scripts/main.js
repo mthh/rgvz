@@ -2,7 +2,7 @@ import debug from 'debug';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { makeTable } from './modules/table';
-import { prepare_dataset, filterLevelVar, applyFilter, changeRegion, addVariable, removeVariable } from './modules/prepare_data';
+import { prepare_dataset, filterLevelVar, applyFilter, changeRegion, addVariable, removeVariable, resetVariables } from './modules/prepare_data';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
@@ -36,22 +36,42 @@ const territorial_mesh = [
 ];
 
 export const app = {
+  // A mapping id -> color, containing the color to use for each
+  // feature not using the default color or the disabled color
   colors: {},
+  // The filtered dataset (acccording to: the current territorial level,
+  // the filter key (if any) and the ratio(s) selected on the left menu:
   current_data: [],
+  // The full dataset provided (containing all the features at any level in one table)
+  // Row without data are expected to be empty or to contain the "NA" string.
   full_dataset: [],
+  // The ids of the current feature in use (acccording to: the current territorial level,
+  // the filter key (if any) and the ratio(s) used in the current chart; filtered
+  // to not contain feature with empty ratio values within the ratios in use).
+  current_ids: [],
 };
 
 function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, level = 'NUTS1') {
   app.current_config = {
+    // The name of the field of the dataset containing the ID of each feature:
     id_field: 'geo',
+    // The name of the field of the dataset containing the name of each feature:
     name_field: 'Nom',
+    // The name of the field of the dataset containing the population of each feature:
+    pop_field: '',
+    // The name of the field of the geojson layer containing the ID of each feature
+    // (these values should match with the values of the "id_field" in the
+    // tabular dataset)
     id_field_geom: 'NUTS1_2016',
     num: ['CHOM_1524_2015'],
     denum: ['ACT_1524_2015'],
     ratio: [variable],
     ratio_pretty_name: ['Taux de chômage des jeunes (2015)'],
+    // The level currently in use:
     current_level: 1,
+    // The ID of the region currently in use:
     my_region: code,
+    // The name of the region currently in use:
     my_region_pretty_name: app.feature_names[code],
   };
   app.colors[app.current_config.my_region] = color_highlight;
@@ -65,7 +85,7 @@ function setDefaultConfigMenu(code = 'FRE', variable = 'PC_CHOM_1524_2015', leve
 }
 
 
-export function resetColors(current_ids) {
+export function resetColors() {
   app.colors = {};
   // for (let i = 0, len_i = current_ids.length; i < len_i; i++) {
   //   app.colors[current_ids[i]] = color_countries;
@@ -83,6 +103,7 @@ export function resetColors(current_ids) {
 *
 */
 function bindUI_chart(chart, map_elem) {
+  // User change the study zone:
   d3.selectAll('span.filter_v')
     .on('click', function () {
       if (!this.classList.contains('checked')) {
@@ -96,6 +117,7 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  // User change the targeted region:
   d3.selectAll('span.target_region')
     .on('click', function () {
       if (!this.classList.contains('checked')) {
@@ -108,6 +130,7 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  // User click to add/remove a variable from the comparison:
   d3.selectAll('span.target_variable')
     .on('click', function () {
       if (this.classList.contains('disabled')) return;
@@ -119,6 +142,8 @@ function bindUI_chart(chart, map_elem) {
         makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
       } else {
+        // We don't want to allow the user to remove the variable if
+        // it's the only one selected:
         const last_one = Array.prototype.slice.call(
           document.querySelectorAll('span.target_variable')).filter(
             elem => !!elem.classList.contains('checked')).length === 1;
@@ -154,6 +179,7 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  // Dispatch a click event on the associated checkbox when the text is clicked:
   d3.selectAll('span.label_chk')
     .on('click', function () {
       this.previousSibling.click();
@@ -318,9 +344,16 @@ function updateAvailablesRatios(my_region) {
       lines[i].classList.remove('disabled');
       lines[i].nextSibling.classList.remove('disabled');
     } else {
+      lines[i].classList.remove('checked');
       lines[i].classList.add('disabled');
       lines[i].nextSibling.classList.add('disabled');
     }
+  }
+  const new_var = menu.querySelectorAll('.target_variable.checked');
+  if (new_var.length !== app.current_config.ratio.length) {
+    const new_var_names = Array.prototype.slice.call(
+      new_var).map(elem => elem.getAttribute('value'));
+    resetVariables(app, new_var_names);
   }
 }
 

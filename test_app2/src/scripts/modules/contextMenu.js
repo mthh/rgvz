@@ -35,7 +35,13 @@ export default class contextMenu {
   showMenu(event, parent, items, position) {
     if (event.preventDefault) event.preventDefault();
     if (event.stopPropagation) event.stopPropagation();
-    if (items) this.setItems(items);
+    if (this.DOMobj) {
+      this.hideMenu();
+      return;
+    }
+    if (items) {
+      this.setItems(items);
+    }
 
     this.initMenu(parent);
     if (!position) {

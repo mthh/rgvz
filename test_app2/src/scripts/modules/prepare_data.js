@@ -133,6 +133,24 @@ export function removeVariable(app, code_ratio) {
   filterLevelVar(app);
 }
 
+export function resetVariables(app, codes_ratio) {
+  app.colors = {}
+  app.colors[app.current_config.my_region] = color_highlight;
+  app.current_config.num = [];
+  app.current_config.denum = [];
+  app.current_config.ratio = [];
+  app.current_config.ratio_pretty_name = [];
+  for (let i = 0, len = codes_ratio.length; i < len; i++) {
+    const code_ratio = codes_ratio[i];
+    const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
+    app.current_config.num.push(variable_info.num);
+    app.current_config.denum.push(variable_info.denum);
+    app.current_config.ratio.push(variable_info.ratio);
+    app.current_config.ratio_pretty_name.push(variable_info.name);
+  }
+  filterLevelVar(app);
+}
+
 // TODO:
 export function calcCompletudeSubset(app, vars) {
   const {

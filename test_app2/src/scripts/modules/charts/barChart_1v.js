@@ -400,8 +400,8 @@ export class BarChart1 {
 
     bar.enter()
       .insert('rect', '.mean')
-      .attr('class', 'bar')
       .attrs(d => ({
+        class: 'bar',
         x: this.x(d.id),
         y: this.y(d[ratio_to_use]),
         width: this.x.bandwidth(),
@@ -439,20 +439,24 @@ export class BarChart1 {
       .data(this.data);
 
     mini_bars
-      .attr('x', d => this.x2(d.id))
-      .attr('width', this.x2.bandwidth())
-      .attr('y', d => this.y2(d[ratio_to_use]))
-      .attr('height', d => height2 - this.y2(d[ratio_to_use]))
+      .attrs(d => ({
+        x: this.x2(d.id),
+        y: this.y2(d[ratio_to_use]),
+        width: this.x2.bandwidth(),
+        height: height2 - this.y2(d[ratio_to_use]),
+      }))
       .style('fill', d => (d.id !== app.current_config.my_region ? color_countries : color_highlight));
 
     mini_bars
       .enter()
       .insert('rect')
-      .attr('class', 'bar')
-      .attr('x', d => this.x2(d.id))
-      .attr('width', this.x2.bandwidth())
-      .attr('y', d => this.y2(d[ratio_to_use]))
-      .attr('height', d => height2 - this.y2(d[ratio_to_use]))
+      .attrs(d => ({
+        class: 'bar',
+        x: this.x2(d.id),
+        y: this.y2(d[ratio_to_use]),
+        width: this.x2.bandwidth(),
+        height: height2 - this.y2(d[ratio_to_use]),
+      }))
       .style('fill', d => (d.id !== app.current_config.my_region ? color_countries : color_highlight));
     mini_bars.exit().remove();
   }

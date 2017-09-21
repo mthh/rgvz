@@ -113,7 +113,7 @@ export class ScatterPlot2 {
       .call(this.xAxis);
 
     this.plot.append('g')
-      .attrs({ class: 'y axis', id: 'axis--y' })
+      .attrs({ class: 'y axis', id: 'axis--y', opacity: 0.9 })
       .call(this.yAxis);
 
     this.menuX = new ContextMenu();
@@ -125,7 +125,7 @@ export class ScatterPlot2 {
       .attrs({
         id: 'title-axis-x',
         x: margin.left + width / 2,
-        y: margin.top + height + margin.bottom / 2 + 5,
+        y: margin.top + height + margin.bottom / 2 + 10,
       })
       .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
       .text(this.variable1)
@@ -137,7 +137,7 @@ export class ScatterPlot2 {
     svg_bar.append('image')
       .attrs({
         x: margin.left + width / 2 - 20 - svg_bar.select('#title-axis-x').node().getBoundingClientRect().width / 2,
-        y: margin.top + height + margin.bottom / 2 - 7.5,
+        y: margin.top + height + margin.bottom / 2 - 2.5,
         width: 15,
         height: 15,
         'xlink:href': 'img/reverse_blue.png',
@@ -161,12 +161,13 @@ export class ScatterPlot2 {
     }));
 
     svg_bar.append('text')
-      .attr('id', 'title-axis-y')
-      .attr('x', margin.left / 2)
-      .attr('y', margin.top + (height / 2))
-      .attr('transform', `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`)
-      .style('text-anchor', 'middle')
-      .styles({ 'font-family': 'sans-serif', 'font-size': '12px' })
+      .attrs({
+        id: 'title-axis-y',
+        x: margin.left / 2,
+        y: margin.top + (height / 2) - 10,
+        transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
+      })
+      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
       .text(this.variable2)
       .on('click', function () {
         const bbox = this.getBoundingClientRect();
@@ -176,8 +177,8 @@ export class ScatterPlot2 {
 
     svg_bar.append('image')
       .attrs({
-        x: margin.left / 2 - 15,
-        y: margin.top + (height / 2) + svg_bar.select('#title-axis-y').node().getBoundingClientRect().height / 2 + 7.5,
+        x: margin.left / 2 - 20,
+        y: margin.top + (height / 2) + svg_bar.select('#title-axis-y').node().getBoundingClientRect().height / 2 + 5,
         width: 15,
         height: 15,
         'xlink:href': 'img/reverse_blue.png',
@@ -265,7 +266,6 @@ export class ScatterPlot2 {
         r: 5,
         cx: x(d[rank_variable1]),
         cy: y(d[rank_variable2]),
-        opacity: 0.6,
       }))
       .styles(d => ({
         fill: app.colors[d.id] || default_color,
@@ -282,7 +282,6 @@ export class ScatterPlot2 {
         r: 5,
         cx: x(d[rank_variable1]),
         cy: y(d[rank_variable2]),
-        opacity: 0.6,
         class: 'dot',
       }));
 
@@ -436,15 +435,16 @@ export class ScatterPlot2 {
         return res;
       });
     this.current_ids = this.data.map(d => d.id);
-    resetColors(this.current_ids);
+    resetColors();
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
 
     this.xInversed = false;
     this.yInversed = false;
-    // this.ref_value1 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable1];
-    // this.ref_value2 = this.data.filter(d => d.id === app.current_config.my_region)[0][this.variable2];
+    const tmp_my_region = this.data.filter(d => d.id === app.current_config.my_region)[0];
+    this.ref_value1 = tmp_my_region[this.variable1];
+    this.ref_value2 = tmp_my_region[this.variable2];
 
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
@@ -468,7 +468,7 @@ export class ScatterPlot2 {
         return res;
       });
     this.current_ids = this.data.map(d => d.id);
-    resetColors(this.current_ids);
+    resetColors();
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
@@ -495,7 +495,7 @@ export class ScatterPlot2 {
         return res;
       });
     this.current_ids = this.data.map(d => d.id);
-    resetColors(this.current_ids);
+    resetColors();
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);

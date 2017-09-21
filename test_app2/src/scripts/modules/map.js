@@ -180,6 +180,12 @@ class MapSelect {
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
+  resetHeaderButton() {
+    document.getElementById('img_rect_selec').classList.add('active');
+    document.getElementById('img_map_zoom').classList.remove('active');
+    document.getElementById('img_map_select').classList.remove('active');
+  }
+
   updateLegend() {
     d3.select('#svg_legend > g > .legend > text')
       .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
@@ -194,6 +200,7 @@ class MapSelect {
   }
 
   bindBrush(chart) {
+    this.resetHeaderButton();
     this.brush_map = d3.brush()
       .extent([[0, 0], [width_map, height_map]])
       .on('start brush', () => {
