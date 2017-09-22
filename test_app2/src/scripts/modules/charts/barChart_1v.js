@@ -695,8 +695,8 @@ export class BarChart1 {
     }
     this.current_ids = this.data.map(d => d.id);
     nbFt = this.data.length;
-    this.ref_value = this.data.filter(
-      ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
+    this.ref_value = this.data.find(
+      ft => ft.id === app.current_config.my_region)[ratio_to_use];
     this.x.domain(this.current_ids);
     const min_serie = d3.min(this.data, d => d[ratio_to_use]);
     const max_serie = d3.max(this.data, d => d[ratio_to_use]);

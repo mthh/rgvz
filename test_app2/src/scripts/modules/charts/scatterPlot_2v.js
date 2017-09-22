@@ -11,7 +11,15 @@ const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
 
+
+/** Class representing a scatterplot */
 export class ScatterPlot2 {
+  /**
+   * Create a the scatterplot on the `svg_bar` svg element previously defined
+   * @param {Array} ref_data - A reference to the subset of the dataset to be used
+   * to create the scatterplot (should contain at least two field flagged as ratio
+   * in the `app.current_config.ratio` Object.
+   */
   constructor(ref_data) {
     app.current_config.nb_var = 2;
     const self = this;
@@ -47,10 +55,10 @@ export class ScatterPlot2 {
 
     this.xInversed = false;
     this.yInversed = false;
-    this.ref_value1 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable1];
-    this.ref_value2 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable2];
+    this.ref_value1 = this.data.find(
+      d => d.id === app.current_config.my_region)[this.variable1];
+    this.ref_value2 = this.data.find(
+      d => d.id === app.current_config.my_region)[this.variable2];
 
     this.plot = svg_bar.append('g')
       .attr('transform', `translate(${[margin.left, margin.top]})`);
@@ -117,25 +125,7 @@ export class ScatterPlot2 {
       .attrs({ class: 'y axis', id: 'axis--y', opacity: 0.9 })
       .call(this.yAxis);
 
-    this.menuX = new ContextMenu();
-    this.itemsX = app.current_config.ratio.filter(elem => elem !== this.variable2)
-      .map(elem => ({
-        name: elem,
-        action: () => this.changeVariableX(elem),
-      }));
-
-    svg_bar.append('text')
-      .attrs({
-        id: 'title-axis-x',
-        x: margin.left + width / 2,
-        y: margin.top + height + margin.bottom / 2 + 10,
-      })
-      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
-      .text(this.variable1)
-      .on('click', function () {
-        const bbox = this.getBoundingClientRect();
-        self.menuX.showMenu(d3.event, document.body, self.itemsX, [bbox.left - 20, bbox.top + 20]);
-      });
+    this.prepareTitleAxis();
 
     svg_bar.append('image')
       .attrs({
@@ -156,27 +146,6 @@ export class ScatterPlot2 {
         } else {
           this.update();
         }
-      });
-
-    this.menuY = new ContextMenu();
-    this.itemsY = app.current_config.ratio.filter(elem => elem !== this.variable1)
-      .map(elem => ({
-        name: elem,
-        action: () => this.changeVariableY(elem),
-      }));
-
-    svg_bar.append('text')
-      .attrs({
-        id: 'title-axis-y',
-        x: margin.left / 2,
-        y: margin.top + (height / 2) - 10,
-        transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
-      })
-      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
-      .text(this.variable2)
-      .on('click', function () {
-        const bbox = this.getBoundingClientRect();
-        self.menuY.showMenu(d3.event, document.body, self.itemsY, [bbox.left, bbox.bottom + 10]);
       });
 
     svg_bar.append('image')
@@ -234,6 +203,9 @@ export class ScatterPlot2 {
     // this.update();
   }
 
+  /**
+   * Create the underlying grey grid
+   */
   makeGrid() {
     this.plot.insert('g', '#scatterplot')
       .attrs({
@@ -250,6 +222,60 @@ export class ScatterPlot2 {
     this.plot.selectAll('.grid')
       .selectAll('line')
       .attr('stroke', 'lightgray');
+  }
+
+  /**
+   * Create the title of the X and Y axis with the associated context menu
+   * displayed when they are clicked and allowing to select an other variable
+   * for this axis.
+   */
+  prepareTitleAxis() {
+    const self = this;
+    this.menuX = new ContextMenu();
+    this.menuY = new ContextMenu();
+    this.itemsX = app.current_config.ratio.filter(elem => elem !== this.variable2)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableX(elem),
+      }));
+    this.itemsY = app.current_config.ratio.filter(elem => elem !== this.variable1)
+      .map(elem => ({
+        name: elem,
+        action: () => this.changeVariableY(elem),
+      }));
+
+    svg_bar.append('text')
+      .attrs({
+        id: 'title-axis-x',
+        x: margin.left + width / 2,
+        y: margin.top + height + margin.bottom / 2 + 10,
+      })
+      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
+      .text(this.variable1)
+      .on('click', function () {
+        const bbox = this.getBoundingClientRect();
+        if (self.menuY.displayed) {
+          self.menuY.hideMenu();
+        }
+        self.menuX.showMenu(d3.event, document.body, self.itemsX, [bbox.left - 20, bbox.top + 20]);
+      });
+
+    svg_bar.append('text')
+      .attrs({
+        id: 'title-axis-y',
+        x: margin.left / 2,
+        y: margin.top + (height / 2) - 10,
+        transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
+      })
+      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
+      .text(this.variable2)
+      .on('click', function () {
+        const bbox = this.getBoundingClientRect();
+        if (self.menuX.displayed) {
+          self.menuX.hideMenu();
+        }
+        self.menuY.showMenu(d3.event, document.body, self.itemsY, [bbox.left, bbox.bottom + 10]);
+      });
   }
 
   update() {
@@ -417,10 +443,10 @@ export class ScatterPlot2 {
     if (app.current_config.filter_key !== undefined) {
       this.changeStudyZone();
     } else {
-      this.ref_value1 = this.data.filter(
-        d => d.id === app.current_config.my_region)[0][this.variable1];
-      this.ref_value2 = this.data.filter(
-        d => d.id === app.current_config.my_region)[0][this.variable2];
+      this.ref_value1 = this.data.find(
+        d => d.id === app.current_config.my_region)[this.variable1];
+      this.ref_value2 = this.data.find(
+        d => d.id === app.current_config.my_region)[this.variable2];
       this.map_elem.removeRectBrush();
       this.map_elem.updateLegend();
       this.map_elem.resetColors(this.current_ids);
@@ -460,9 +486,10 @@ export class ScatterPlot2 {
   changeVariableX(code_variable) {
     this.variable1 = code_variable;
     this.rank_variable1 = `pr_${this.variable1}`;
-    this.pretty_name1 = variables.filter(ft => ft.ratio === code_variable)[0].name;
+    this.pretty_name1 = variables.find(ft => ft.ratio === code_variable).name;
     svg_bar.select('#title-axis-x')
       .text(code_variable);
+    // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
@@ -476,8 +503,8 @@ export class ScatterPlot2 {
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
-    this.ref_value1 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable1];
+    this.ref_value1 = this.data.find(
+      d => d.id === app.current_config.my_region)[this.variable1];
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     // this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.updateMeanValue();
@@ -488,9 +515,10 @@ export class ScatterPlot2 {
   changeVariableY(code_variable) {
     this.variable2 = code_variable;
     this.rank_variable2 = `pr_${this.variable2}`;
-    this.pretty_name2 = variables.filter(ft => ft.ratio === code_variable)[0].name;
+    this.pretty_name2 = variables.find(ft => ft.ratio === code_variable).name;
     svg_bar.select('#title-axis-y')
       .text(code_variable);
+    // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
@@ -504,8 +532,8 @@ export class ScatterPlot2 {
     this.nbFt = this.data.length;
     computePercentileRank(this.data, this.variable1, this.rank_variable1);
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
-    this.ref_value2 = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.variable2];
+    this.ref_value2 = this.data.find(
+      d => d.id === app.current_config.my_region)[this.variable2];
     // this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.updateMeanValue();
@@ -538,11 +566,6 @@ export class ScatterPlot2 {
   }
 
   removeVariable(code_variable) {
-    // If there is only two variable, return false to indicate we can't remove that variable:
-    if (this.itemsX.length === 1) {
-      return false;
-    }
-
     // Remove the variable from the X and Y list of items:
     for (let i = this.itemsX.length - 1; i > -1; i--) {
       if (this.itemsX[i].name === code_variable) {
@@ -566,7 +589,6 @@ export class ScatterPlot2 {
       const new_var_y = this.itemsY.filter(ft => ft.name !== this.variable1)[0].name;
       this.changeVariableY(new_var_y);
     }
-    return true;
   }
 
   remove() {

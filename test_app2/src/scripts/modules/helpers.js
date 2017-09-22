@@ -123,9 +123,9 @@ const comp2 = (val1, val2, ref_val1, ref_val2, xInversed, yInversed) => {
   }
   // val1 is superior :
   if (val2 > ref_val2) {
-    return !yInversed ? color_sup : 'rgb(160, 30, 160)';
+    return !yInversed ? color_sup : 'orange';
   }
-  return !yInversed ? 'rgb(160, 30, 160)' : color_sup;
+  return !yInversed ? 'orange' : color_sup;
 };
 
 class Rect {

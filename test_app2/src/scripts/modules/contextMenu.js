@@ -51,6 +51,7 @@ export default class contextMenu {
       this.DOMobj.style.top = `${position[1]}px`;
       this.DOMobj.style.left = `${position[0]}px`;
     }
+    this.displayed = true;
     setTimeout(() => {
       document.addEventListener('click', () => this.hideMenu());
     }, 150);
@@ -61,6 +62,7 @@ export default class contextMenu {
       this.DOMobj.parentElement.removeChild(this.DOMobj);
       this.DOMobj = null;
     }
+    this.displayed = false;
     document.removeEventListener('click', this.hideMenu);
   }
 

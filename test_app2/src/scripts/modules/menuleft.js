@@ -8,7 +8,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   const section1 = document.createElement('div');
   section1.className = 'box';
   section1.style.overflow = 'auto';
-  section1.style.height = '200px';
+  section1.style.height = '180px';
   for (let i = 0, len_i = names.length; i < len_i; i++) {
     const id = names[i].geo;
     const name = names[i].Nom;
@@ -23,6 +23,8 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   title_section2.innerHTML = 'Mon/mes indicateurs';
   const section2 = document.createElement('div');
   section2.className = 'box';
+  section2.style.overflow = 'auto';
+  section2.style.height = '170px';
 
   // Filter the "variables" variable to fetch the group names :
   const groups_var = removeDuplicates(variables.map(d => d.group));
@@ -30,8 +32,11 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   for (let i = 0, len_i = groups_var.length; i < len_i; i++) {
     const gp_name = groups_var[i];
     const entry = document.createElement('p');
+    entry.className = 'name_group_var';
     entry.innerHTML = `<span class='square'></span><span>${gp_name}</span>`;
     section2.appendChild(entry);
+    const div_grp = document.createElement('div');
+    div_grp.style.display = i === 0 ? null : 'none';
     const var_names = variables.filter(d => d.group === gp_name);
     for (let j = 0, len_j = var_names.length; j < len_j; j++) {
       const name_var = var_names[j].name;
@@ -39,8 +44,9 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
       sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span class="label_chk">${name_var}</span>`;
-      section2.appendChild(sub_entry);
+      div_grp.appendChild(sub_entry);
     }
+    section2.appendChild(div_grp);
   }
 
   // Third section, study zone:

@@ -82,13 +82,13 @@ span.small {
   color: #4f81bd;
 }
 
-#menu > div > p {
+#menu > div.box > p, #menu > div.box > div > p {
   font-size: 0.75em;
   padding: 1px 1px 1px 8px;
   margin: 0;
 }
 
-#menu > div > p.small {
+#menu > div.box > p.small, #menu > div.box > div > p.small {
   font-size: 10px;
   margin-left: 12px;
   color: black;

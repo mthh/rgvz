@@ -12,7 +12,7 @@ import { unbindUI } from './modules/helpers';
 
 debug('app:log');
 
-export const variables = [
+export let variables;/* = [
   { ratio: 'PC_CHOM_1524_2015', num: 'CHOM_1524_2015', denum: 'ACT_1524_2015', name: 'Taux de chomage des jeunes (2015)', group: 'Pauvreté / Exclusion sociale' },
   { ratio: 'PC_CHOM_1574_2015', num: 'CHOM_1574_2015', denum: 'ACT_1574_2015', name: 'Taux de chomage (2015)', group: 'Pauvreté / Exclusion sociale' },
   { ratio: 'PC_CHOM_LONG_2016', num: 'CHOM_LONG_2016', denum: 'ACT_LONG_2016', name: 'Taux de chômage de longue durée (2016)', group: 'Pauvreté / Exclusion sociale' },
@@ -21,7 +21,7 @@ export const variables = [
   { ratio: 'PC_RD_EMP_2013', num: 'RD_EMP_2013', denum: 'POP_RD_EMP_2013', name: 'Part de l\'emploi en R&D (2013)', group: 'Activité / Innovation' },
   { ratio: 'PC_PIB_HAB_2014', num: 'PC_PIB_HAB_2014', denum: 'POP_PIB_2014', name: 'PIB par habitant (euros)(2014)', group: 'Activité / Innovation' },
   { ratio: 'PC_ARTIF_AREA_2015', num: 'ARTIF_AREA_2015', denum: 'LC_AREA_2015', name: 'Part des surfaces artificialisées (2015)', group: 'Environnement / Transition écologique' },
-];
+];*/
 
 
 const study_zones = [
@@ -51,22 +51,22 @@ export const app = {
   current_ids: [],
 };
 
-function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, level = 'NUTS1') {
+function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level = 'NUTS1') {
   app.current_config = {
     // The name of the field of the dataset containing the ID of each feature:
     id_field: 'geo',
     // The name of the field of the dataset containing the name of each feature:
     name_field: 'Nom',
     // The name of the field of the dataset containing the population of each feature:
-    pop_field: 'POP_T_2015',
+    pop_field: 'POP_AGE_T_2016',
     // The name of the field of the geojson layer containing the ID of each feature
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
     id_field_geom: 'NUTS1_2016',
-    num: ['CHOM_1524_2015'],
-    denum: ['ACT_1524_2015'],
+    num: ['CHOM_1574'],
+    denum: ['ACT_1574'],
     ratio: [variable],
-    ratio_pretty_name: ['Taux de chômage des jeunes (2015)'],
+    ratio_pretty_name: ['Taux de chômage (15-74 ans) (2016)'],
     // The level currently in use:
     current_level: 1,
     // The ID of the region currently in use:
@@ -79,7 +79,7 @@ function setDefaultConfig(code = 'FRE', variable = 'PC_CHOM_1524_2015') { // }, 
   app.colors[app.current_config.my_region] = color_highlight;
 }
 
-function setDefaultConfigMenu(code = 'FRE', variable = 'PC_CHOM_1524_2015', level = 'NUTS1') {
+function setDefaultConfigMenu(code = 'FRE', variable = 'RT_CHOM_1574', level = 'NUTS1') {
   document.querySelector(`.target_region.square[value="${code}"]`).classList.add('checked');
   document.querySelector(`.target_variable.small_square[value="${variable}"]`).classList.add('checked');
   document.querySelector('.filter_v.square[filter-value="no_filter"]').classList.add('checked');
@@ -142,39 +142,51 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  // User click on the name of a group of variables
+  // to expand or collapse its content:
+  d3.selectAll('.name_group_var')
+    .on('click', function () {
+      const group_var = this.nextSibling;
+      if (group_var.style.display === 'none') {
+        group_var.style.display = null;
+      } else {
+        group_var.style.display = 'none';
+      }
+
+    });
+
   // User click to add/remove a variable from the comparison:
   d3.selectAll('span.target_variable')
     .on('click', function () {
       if (this.classList.contains('disabled')) return;
+      let nb_var;
       if (!this.classList.contains('checked')) {
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
-        const name_variable = variables.filter(d => d.ratio === code_variable)[0].name;
+        const name_variable = variables.find(d => d.ratio === code_variable).name;
         addVariable(app, code_variable);
         makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
-      } else {
-        // We don't want to allow the user to remove the variable if
-        // it's the only one selected:
-        const last_one = Array.prototype.slice.call(
+        nb_var = Array.prototype.slice.call(
           document.querySelectorAll('span.target_variable')).filter(
-            elem => !!elem.classList.contains('checked')).length === 1;
-        if (last_one) {
+            elem => !!elem.classList.contains('checked')).length;
+      } else {
+        // We don't want to let the user remove the variable if
+        // it's the only one selected or if the currently displayed
+        // chart need a minimum number of variables:
+        nb_var = Array.prototype.slice.call(
+          document.querySelectorAll('span.target_variable')).filter(
+            elem => !!elem.classList.contains('checked')).length;
+        if (nb_var < app.current_config.nb_var) {
           return;
         }
         const code_variable = this.getAttribute('value');
-        // We also don't want to allow the user to remove the variable if,
-        // after having removed it, there is not enough variables left for the current representation:
-        const res = chart.removeVariable(code_variable);
-        if (res !== false) {
-          this.classList.remove('checked');
-          removeVariable(app, code_variable);
-          makeTable(app.current_data, app.current_config);
-        }
+        this.classList.remove('checked');
+        removeVariable(app, code_variable);
+        chart.removeVariable(code_variable);
+        makeTable(app.current_data, app.current_config);
+        nb_var -= 1;
       }
-      const nb_var = Array.prototype.slice.call(
-        document.querySelectorAll('span.target_variable')).filter(
-          elem => !!elem.classList.contains('checked')).length;
       if (nb_var === 1) { // Allow all kind of vizu with 1 variable:
         d3.selectAll('.chart_t1')
           .attr('class', 'type_chart chart_t1');
@@ -318,24 +330,38 @@ export function bindTopButtons(chart, map_elem) {
 
 function loadData() {
   d3.queue(4)
-    .defer(d3.csv, 'data/REGIOVIZ_DATA_aggregated.csv')
+    .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
     .defer(d3.json, 'data/cget-nuts1-3035.geojson')
     .defer(d3.json, 'data/countries3035.geojson')
     .defer(d3.json, 'data/remote3035.geojson')
     .defer(d3.json, 'data/template3035.geojson')
     .defer(d3.json, 'data/sea_boxes.geojson')
+    .defer(d3.csv, 'data/indicateurs_meta.csv')
     .awaitAll((error, results) => {
       if (error) throw error;
-      const [full_dataset, nuts1, countries, remote, template, seaboxes] = results;
+      const [
+        full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs,
+      ] = results;
+      variables = metadata_indicateurs
+        .filter(ft => ft['Type statistique'] === 'Ratio')
+        .map(ft => ({
+          ratio: ft['id'],
+          num: ft['id1'],
+          denum: ft['id2'],
+          name: `${ft['Nom']} (${ft['Année']})`,
+          group: ft['Thème']
+        }));
+      console.log(variables);
       prepare_dataset(full_dataset, app);
-      setDefaultConfig('FRB', 'PC_CHOM_1524_2015', 'NUTS1');
+      setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
         && +ft.level === app.current_config.current_level);
       createMenu(features_menu, variables, study_zones, territorial_mesh);
       makeTopMenu();
       makeHeaderChart();
-      setDefaultConfigMenu('FRB', 'PC_CHOM_1524_2015', 'NUTS1');
+      setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
       filterLevelVar(app);
+      console.log(app);
       const map_elem = new MapSelect(nuts1, countries, remote, template, seaboxes);
       const chart = new BarChart1(app.current_data);
       makeTable(app.current_data, app.current_config);
@@ -350,7 +376,7 @@ function loadData() {
 
 /**
 * Function to select the first variable on the left menu
-* (triggered after changing region, if not more variable was selected)
+* (triggered after changing region, if no more variable was selected)
 *
 * @return {void}
 */
