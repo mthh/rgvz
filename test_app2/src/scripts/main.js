@@ -1,14 +1,23 @@
 import debug from 'debug';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
-import { makeTable } from './modules/table';
-import { prepare_dataset, filterLevelVar, applyFilter, changeRegion, addVariable, removeVariable, resetVariables } from './modules/prepare_data';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
+import { makeTable } from './modules/table';
 import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { unbindUI } from './modules/helpers';
+import {
+  prepare_dataset,
+  filterLevelVar,
+  applyFilter,
+  changeRegion,
+  addVariable,
+  removeVariable,
+  resetVariables,
+  prepareVariablesInfo
+} from './modules/prepare_data';
 
 debug('app:log');
 
@@ -342,15 +351,7 @@ function loadData() {
       const [
         full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs,
       ] = results;
-      variables = metadata_indicateurs
-        .filter(ft => ft['Type statistique'] === 'Ratio')
-        .map(ft => ({
-          ratio: ft['id'],
-          num: ft['id1'],
-          denum: ft['id2'],
-          name: `${ft['Nom']} (${ft['Année']})`,
-          group: ft['Thème']
-        }));
+      variables = prepareVariablesInfo(metadata_indicateurs);
       console.log(variables);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');

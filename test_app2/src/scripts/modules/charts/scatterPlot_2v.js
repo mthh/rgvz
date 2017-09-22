@@ -21,6 +21,46 @@ export class ScatterPlot2 {
    * in the `app.current_config.ratio` Object.
    */
   constructor(ref_data) {
+    this.brushed = () => {
+      if (d3.event && !d3.event.selection) {
+        if (d3.event.type === 'end' && d3.event.sourceEvent.type === 'mouseup') {
+          this.map_elem.removeRectBrush();
+        }
+        app.colors = {};
+        app.colors[app.current_config.my_region] = color_highlight;
+        this.update();
+        this.updateMapRegio();
+        return;
+      }
+
+      resetColors();
+      const self = this;
+      const [topleft, bottomright] = d3.event.selection;
+      const range_x = [
+        this.x.invert(topleft[0]),
+        this.x.invert(bottomright[0]),
+      ];
+      const range_y = [
+        this.y.invert(bottomright[1]),
+        this.y.invert(topleft[1]),
+      ];
+      const t1 = this.rank_variable1;
+      const t2 = this.rank_variable2;
+      this.data
+        .filter(ft => ft[t1] > range_x[0]
+          && ft[t1] < range_x[1]
+          && ft[t2] > range_y[0]
+          && ft[t2] < range_y[1])
+        .forEach(ft => {
+          app.colors[ft.id] = comp2(
+            ft[this.variable1], ft[this.variable2],
+            self.ref_value1, self.ref_value2,
+            self.xInversed, self.yInversed);
+        });
+      this.update();
+      this.updateMapRegio();
+      this.map_elem.removeRectBrush();
+    };
     app.current_config.nb_var = 2;
     const self = this;
     this.variable1 = app.current_config.ratio[0];
@@ -53,6 +93,10 @@ export class ScatterPlot2 {
     this.xAxis2 = d3.axisBottom(this.x).ticks(12);
     this.yAxis2 = d3.axisLeft(this.y).ticks(12 * height / width);
 
+    this.brush = d3.brush()
+      .extent([[0, 0], [width, height]])
+      .on("brush end", this.brushed);
+
     this.xInversed = false;
     this.yInversed = false;
     this.ref_value1 = this.data.find(
@@ -75,8 +119,8 @@ export class ScatterPlot2 {
       });
 
     this.scatter = this.plot.append('g')
-         .attr('id', 'scatterplot')
-         .attr('clip-path', 'url(#clip)');
+      .attr('id', 'scatterplot')
+      .attr('clip-path', 'url(#clip)');
 
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
@@ -180,6 +224,10 @@ export class ScatterPlot2 {
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
       .text(`Complétude : ${this.completude_value}%`);
+
+    this.plot.append("g")
+      .attr("class", "brush")
+      .call(this.brush);
 
 
     // Deactivate the rect brush selection on the map
@@ -359,6 +407,7 @@ export class ScatterPlot2 {
       this.last_map_selection = undefined;
       return;
     }
+    svg_bar.select('.brush').call(this.brush.move, null);
     const self = this;
     const [topleft, bottomright] = event.selection;
     this.last_map_selection = [topleft, bottomright];
