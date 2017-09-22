@@ -72,8 +72,8 @@ function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
     id_field_geom: 'NUTS1_2016',
-    num: ['CHOM_1574'],
-    denum: ['ACT_1574'],
+    num: ['CHOM_1574_2016'],
+    denum: ['ACT_1574_2016'],
     ratio: [variable],
     ratio_pretty_name: ['Taux de chômage (15-74 ans) (2016)'],
     // The level currently in use:

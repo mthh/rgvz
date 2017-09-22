@@ -57,6 +57,7 @@ export class ScatterPlot2 {
             self.ref_value1, self.ref_value2,
             self.xInversed, self.yInversed);
         });
+      app.colors[app.current_config.my_region] = color_highlight;
       this.update();
       this.updateMapRegio();
       this.map_elem.removeRectBrush();
