@@ -289,3 +289,15 @@ input.nb_select::-webkit-outer-spin-button {
   margin: 0; /* Removes leftover margin */
 }
 /* End of style for BubbleChart1 */
+
+/* Styles for minitable (displaying statistical summary) */
+.minitable_container {
+  text-align: center;
+  font-size: 0.7em;
+  font-family: "Signika", sans-serif;
+}
+
+.minitable {
+  margin: auto;
+}
+/* End of style for minitable */

@@ -3,6 +3,7 @@ import { color_disabled, color_countries, color_sup, color_inf, color_highlight 
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, resetColors } from './../../main';
+import TableResumeStat from './../tableResumeStat';
 
 export const svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 40 },
@@ -241,7 +242,7 @@ export class BarChart1 {
         y: 385,
         width: 15,
         height: 15,
-        'xlink:href': 'img/reverse_blue.png',
+        'xlink:href': 'img/reverse_plus.png',
         id: 'img_reverse',
       })
       .on('click', () => {
@@ -345,6 +346,8 @@ export class BarChart1 {
       .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
       .text('> à ma région')
       .on('click', () => this.selectAboveMyRegion());
+
+    this.makeTableStat()
   }
 
   updateCompletude() {
@@ -714,6 +717,7 @@ export class BarChart1 {
     this.map_elem.removeRectBrush();
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
+    this.updateTableStats();
     this.updateMapRegio();
   }
 
@@ -741,6 +745,19 @@ export class BarChart1 {
     this.ratio_to_use = code_variable;
   }
 
+  updateTableStats() {
+    const values = this.data.map(d => d[this.ratio_to_use]);
+    this.table_stats.removeAll();
+    this.table_stats.addFeature({
+      Min: d3.min(values),
+      Max: d3.max(values),
+      Moyenne: d3.mean(values),
+      id: this.ratio_to_use,
+      Variable: this.ratio_to_use,
+      'Ma région': this.ref_value,
+    })
+  }
+
   remove() {
     this._focus.remove();
     this.context.remove();
@@ -753,5 +770,18 @@ export class BarChart1 {
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
+  }
+
+  makeTableStat() {
+    const values = this.data.map(d => d[this.ratio_to_use]);
+    const feature = [{
+      Min: d3.min(values),
+      Max: d3.max(values),
+      Moyenne: d3.mean(values),
+      id: this.ratio_to_use,
+      Variable: this.ratio_to_use,
+      'Ma région': this.ref_value,
+    }];
+    this.table_stats = new TableResumeStat(feature);
   }
 }

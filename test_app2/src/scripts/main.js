@@ -168,7 +168,14 @@ function bindUI_chart(chart, map_elem) {
   d3.selectAll('span.target_variable')
     .on('click', function () {
       if (this.classList.contains('disabled')) return;
-      let nb_var;
+      let nb_var =  Array.prototype.slice.call(
+        document.querySelectorAll('span.target_variable')).filter(
+          elem => !!elem.classList.contains('checked')).length;
+      // We don't want the user to be able to select more than 8 variables simultaneously:
+      if (nb_var >= 8) {
+        return;
+      }
+      // Select a new variable and trigger the appropriate changes on the current chart:
       if (!this.classList.contains('checked')) {
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
@@ -176,16 +183,12 @@ function bindUI_chart(chart, map_elem) {
         addVariable(app, code_variable);
         makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
-        nb_var = Array.prototype.slice.call(
-          document.querySelectorAll('span.target_variable')).filter(
-            elem => !!elem.classList.contains('checked')).length;
-      } else {
+        nb_var += 1;
+      } else { // Remove a variable from the selection:
+        nb_var -= 1;
         // We don't want to let the user remove the variable if
         // it's the only one selected or if the currently displayed
         // chart need a minimum number of variables:
-        nb_var = Array.prototype.slice.call(
-          document.querySelectorAll('span.target_variable')).filter(
-            elem => !!elem.classList.contains('checked')).length;
         if (nb_var < app.current_config.nb_var) {
           return;
         }
@@ -194,8 +197,9 @@ function bindUI_chart(chart, map_elem) {
         removeVariable(app, code_variable);
         chart.removeVariable(code_variable);
         makeTable(app.current_data, app.current_config);
-        nb_var -= 1;
       }
+      // Update the top menu to display available charts according to the current
+      // number of available variables:
       if (nb_var === 1) { // Allow all kind of vizu with 1 variable:
         d3.selectAll('.chart_t1')
           .attr('class', 'type_chart chart_t1');
@@ -291,8 +295,9 @@ function bindUI_chart(chart, map_elem) {
 * Function to handle click on the top menu, in order to choose
 * the kind of availables representation
 *
-*
-*
+* @param {Object} chart -
+* @param {Object} map_elem -
+* @return {void}
 */
 export function bindTopButtons(chart, map_elem) {
   d3.selectAll('.type_chart')

@@ -76,6 +76,14 @@ export function filterLevelVar(app, filter_id) {
   app.current_data = temp;
 }
 
+/**
+* Function to prepare the global "variables_info" Array of objects from the array
+* containing the readed 'metadata.csv' file.
+*
+* @param {Array} metadata_indicateurs - The array return by d3.csv.
+* @return {void}
+*
+*/
 export function prepareVariablesInfo(metadata_indicateurs) {
   return metadata_indicateurs
     .filter(ft => ft['Type statistique'] === 'Ratio')
@@ -124,6 +132,12 @@ export function changeRegion(app, id_region) {
   app.colors[app.current_config.my_region] = color_highlight;
 }
 
+/**
+*
+*
+*
+*
+*/
 export function addVariable(app, code_ratio) {
   const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
   app.colors = {};
@@ -135,6 +149,12 @@ export function addVariable(app, code_ratio) {
   filterLevelVar(app);
 }
 
+/**
+*
+*
+*
+*
+*/
 export function removeVariable(app, code_ratio) {
   const ix = app.current_config.ratio.indexOf(code_ratio);
   app.current_config.num.splice(ix, 1);
@@ -144,6 +164,12 @@ export function removeVariable(app, code_ratio) {
   filterLevelVar(app);
 }
 
+/**
+* Reset the current variables in use.
+*
+*
+*
+*/
 export function resetVariables(app, codes_ratio) {
   app.colors = {}
   app.colors[app.current_config.my_region] = color_highlight;
@@ -162,7 +188,15 @@ export function resetVariables(app, codes_ratio) {
   filterLevelVar(app);
 }
 
-// TODO:
+/**
+* Compute the ratio of available (= not empty) values (the "complétude") within
+* the subset currently in use for all the variables in "vars".
+*
+* @param {Object} app -
+* @param {Array} vars -
+* @return {Number}
+*
+*/
 export function calcCompletudeSubset(app, vars) {
   const {
     current_level, id_field, filter_key, my_region,
@@ -198,6 +232,15 @@ export function calcCompletudeSubset(app, vars) {
   return Math.round((filtered_length / total_length) * 1000) / 10;
 }
 
+/**
+* Compute the ratio of population covered by features on which all the variables
+* of "vars" are available.
+*
+* @param {Object} app -
+* @param {Array} vars -
+* @return {Number}
+*
+*/
 export function calcPopCompletudeSubset(app, vars) {
   const {
     current_level, id_field, filter_key, my_region, pop_field,
@@ -206,7 +249,7 @@ export function calcPopCompletudeSubset(app, vars) {
   // Compute the total population stock of the data (within the "study zone" if any):
   let temp;
   if (filter_key) {
-    const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
+    const my_category = app.full_dataset.find(ft => ft[id_field] === my_region)[filter_key];
     temp = app.full_dataset
       .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
   } else {

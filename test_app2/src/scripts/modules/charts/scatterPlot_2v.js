@@ -178,7 +178,7 @@ export class ScatterPlot2 {
         y: margin.top + height + margin.bottom / 2 - 2.5,
         width: 15,
         height: 15,
-        'xlink:href': 'img/reverse_blue.png',
+        'xlink:href': 'img/reverse_plus.png',
         id: 'img_reverse_x',
       })
       .on('click', () => {
@@ -199,7 +199,7 @@ export class ScatterPlot2 {
         y: margin.top + (height / 2) + svg_bar.select('#title-axis-y').node().getBoundingClientRect().height / 2 + 5,
         width: 15,
         height: 15,
-        'xlink:href': 'img/reverse_blue.png',
+        'xlink:href': 'img/reverse_plus.png',
         id: 'img_reverse_y',
       })
       .on('click', () => {
@@ -652,4 +652,19 @@ export class ScatterPlot2 {
     this.updateMapRegio();
     this.update();
   }
+
+  makeTableStat() {
+    const values1 = this.data.map(d => d[this.variable1]);
+    const values2 = this.data.map(d => d[this.variable2]);
+    // const feature = [{
+    //   Min: d3.min(values),
+    //   Max: d3.max(values),
+    //   Moyenne: d3.mean(values),
+    //   id: this.ratio_to_use,
+    //   Variable: this.ratio_to_use,
+    //   'Ma région': this.ref_value,
+    // }];
+    // this.table_stats = new TableResumeStat(feature);
+  }
+
 }
