@@ -1,6 +1,6 @@
 import { math_round } from './helpers';
 import { color_highlight } from './options';
-import { variables } from './../main';
+import { variables_info } from './../main';
 
 /* eslint-disable no-param-reassign */
 
@@ -105,7 +105,7 @@ export function prepareVariablesInfo(metadata_indicateurs) {
 */
 export function applyFilter(app, filter_type) {
   if (filter_type === 'filter_FR') {
-    app.current_config.filter_key = 'PAYS';
+    app.current_config.filter_key = 'Pays';
     filterLevelVar(app);
   } else if (filter_type === 'no_filter') {
     app.current_config.filter_key = undefined;
@@ -126,7 +126,6 @@ export function changeRegion(app, id_region) {
   if (app.current_config.filter_key !== undefined) {
     filterLevelVar(app);
   }
-  console.log(app);
   // Reset the color to use on the chart/map:
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
@@ -139,7 +138,7 @@ export function changeRegion(app, id_region) {
 *
 */
 export function addVariable(app, code_ratio) {
-  const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
+  const variable_info = variables_info.filter(d => d.ratio === code_ratio)[0];
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
   app.current_config.num.push(variable_info.num);
@@ -179,7 +178,7 @@ export function resetVariables(app, codes_ratio) {
   app.current_config.ratio_pretty_name = [];
   for (let i = 0, len = codes_ratio.length; i < len; i++) {
     const code_ratio = codes_ratio[i];
-    const variable_info = variables.filter(d => d.ratio === code_ratio)[0];
+    const variable_info = variables_info.filter(d => d.ratio === code_ratio)[0];
     app.current_config.num.push(variable_info.num);
     app.current_config.denum.push(variable_info.denum);
     app.current_config.ratio.push(variable_info.ratio);

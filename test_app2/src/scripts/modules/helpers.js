@@ -2,6 +2,10 @@ import { color_inf, color_sup } from './options';
 
 const math_abs = Math.abs;
 const math_round = Math.round;
+const math_max = Math.max;
+const math_sin = Math.sin;
+const math_cos = Math.cos;
+const HALF_PI = Math.PI / 2;
 
 function prepareTooltip(parent_svg_elem) {
   const tooltip = parent_svg_elem.append('g')
@@ -214,6 +218,10 @@ export {
   comp2,
   math_abs,
   math_round,
+  math_sin,
+  math_cos,
+  math_max,
+  HALF_PI,
   Rect,
   PropSizer,
   unbindUI,

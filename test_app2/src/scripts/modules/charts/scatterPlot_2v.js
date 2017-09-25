@@ -2,8 +2,9 @@ import { comp, math_round, math_abs, Rect, comp2, prepareTooltip, svgPathToCoord
 import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
-import { app, variables, resetColors } from './../../main';
+import { app, variables_info, resetColors } from './../../main';
 import ContextMenu from './../contextMenu';
+import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 40 };
@@ -250,6 +251,7 @@ export class ScatterPlot2 {
       }
     };
     // this.update();
+    this.makeTableStat();
   }
 
   /**
@@ -530,13 +532,14 @@ export class ScatterPlot2 {
     this.updateItemsCtxMenu();
     this.updateMeanValue();
     this.updateMapRegio();
+    this.updateTableStat();
     this.update();
   }
 
   changeVariableX(code_variable) {
     this.variable1 = code_variable;
     this.rank_variable1 = `pr_${this.variable1}`;
-    this.pretty_name1 = variables.find(ft => ft.ratio === code_variable).name;
+    this.pretty_name1 = variables_info.find(ft => ft.ratio === code_variable).name;
     svg_bar.select('#title-axis-x')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie
@@ -559,13 +562,14 @@ export class ScatterPlot2 {
     // this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.updateMeanValue();
     this.updateMapRegio();
+    this.updateTableStat();
     this.update();
   }
 
   changeVariableY(code_variable) {
     this.variable2 = code_variable;
     this.rank_variable2 = `pr_${this.variable2}`;
-    this.pretty_name2 = variables.find(ft => ft.ratio === code_variable).name;
+    this.pretty_name2 = variables_info.find(ft => ft.ratio === code_variable).name;
     svg_bar.select('#title-axis-y')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie
@@ -588,6 +592,7 @@ export class ScatterPlot2 {
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.updateMeanValue();
     this.updateMapRegio();
+    this.updateTableStat();
     this.update();
   }
 
@@ -642,6 +647,7 @@ export class ScatterPlot2 {
   }
 
   remove() {
+    this.table_stats.remove();
     this.map_elem.unbindBrush();
     this.map_elem = null;
     svg_bar.html('');
@@ -653,18 +659,37 @@ export class ScatterPlot2 {
     this.update();
   }
 
-  makeTableStat() {
+  prepareTableStat() {
     const values1 = this.data.map(d => d[this.variable1]);
     const values2 = this.data.map(d => d[this.variable2]);
-    // const feature = [{
-    //   Min: d3.min(values),
-    //   Max: d3.max(values),
-    //   Moyenne: d3.mean(values),
-    //   id: this.ratio_to_use,
-    //   Variable: this.ratio_to_use,
-    //   'Ma région': this.ref_value,
-    // }];
-    // this.table_stats = new TableResumeStat(feature);
+    const features = [
+    {
+      Min: d3.min(values1),
+      Max: d3.max(values1),
+      Moyenne: d3.mean(values1),
+      id: this.variable1,
+      Variable: this.variable1,
+      'Ma région': this.ref_value1,
+    },
+    {
+      Min: d3.min(values2),
+      Max: d3.max(values2),
+      Moyenne: d3.mean(values2),
+      id: this.variable2,
+      Variable: this.variable2,
+      'Ma région': this.ref_value2,
+    }];
+    return features;
+  }
+
+  updateTableStat() {
+    this.table_stats.removeAll();
+    this.table_stats.addFeatures(this.prepareTableStat());
+  }
+
+  makeTableStat() {
+    const features = this.prepareTableStat();
+    this.table_stats = new TableResumeStat(features);
   }
 
 }

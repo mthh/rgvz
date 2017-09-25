@@ -2,7 +2,8 @@ import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToC
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
-import { app, variables, resetColors } from './../../main';
+import { app, variables_info, resetColors } from './../../main';
+import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
@@ -116,6 +117,8 @@ export class BubbleChart1 {
           .style('display', null);
       }
     };
+
+    this.makeTableStat();
   }
 
   applySelection(nb, type_selection = 'close') {
@@ -359,7 +362,7 @@ export class BubbleChart1 {
 
   changeVariable(code_variable) {
     this.ratio_to_use = code_variable;
-    this.stock_to_use = variables.filter(d => d.ratio === code_variable)[0].num;
+    this.stock_to_use = variables_info.filter(d => d.ratio === code_variable)[0].num;
   }
 
 
@@ -407,6 +410,8 @@ export class BubbleChart1 {
   remove() {
     this.map_elem.unbindBrush();
     this.map_elem = null;
+    this.table_stats.remove();
+    this.table_stats = null;
     this.selec_var.remove();
     svg_bar.html('');
   }
@@ -416,4 +421,27 @@ export class BubbleChart1 {
     this.map_elem.resetColors(this.current_ids);
     d3.select('#menu_selection').select('.nb_select').dispatch('change');
   }
+
+  updateTableStats() {
+    this.table_stats.removeAll();
+    this.table_stats.addFeature(this.prepareTableStat());
+  }
+
+  prepareTableStat() {
+    const values = this.data.map(d => d[this.ratio_to_use]);
+    return {
+      Min: d3.min(values),
+      Max: d3.max(values),
+      Moyenne: d3.mean(values),
+      id: this.ratio_to_use,
+      Variable: this.ratio_to_use,
+      'Ma région': this.ref_value,
+    };
+  }
+
+  makeTableStat() {
+    const feature = this.prepareTableStat();
+    this.table_stats = new TableResumeStat(feature);
+  }
+
 }

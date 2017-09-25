@@ -34,11 +34,11 @@ export function makeTopMenu() {
     .html('1 ind.');
 
   position.append('span')
-  .attrs({ class: 'type_chart chart_t2 disabled', value: 'ScatterPlot2' })
+    .attrs({ class: 'type_chart chart_t2 disabled', value: 'ScatterPlot2' })
     .html('2 ind.');
 
   position.append('span')
-    .attr('class', 'type_chart chart_t3 disabled')
+    .attrs({ class: 'type_chart chart_t3 disabled', value: 'RadarChart3' })
     .html('+3 ind.');
 
   const ressemblance = type_chart

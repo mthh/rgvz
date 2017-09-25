@@ -7,6 +7,7 @@ import { color_countries, color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
+import { RadarChart3, prepare_data_radar_default } from './modules/charts/radarChart_3v';
 import { unbindUI } from './modules/helpers';
 import {
   prepare_dataset,
@@ -21,7 +22,7 @@ import {
 
 debug('app:log');
 
-export let variables;/* = [
+export let variables_info;/* = [
   { ratio: 'PC_CHOM_1524_2015', num: 'CHOM_1524_2015', denum: 'ACT_1524_2015', name: 'Taux de chomage des jeunes (2015)', group: 'Pauvreté / Exclusion sociale' },
   { ratio: 'PC_CHOM_1574_2015', num: 'CHOM_1574_2015', denum: 'ACT_1574_2015', name: 'Taux de chomage (2015)', group: 'Pauvreté / Exclusion sociale' },
   { ratio: 'PC_CHOM_LONG_2016', num: 'CHOM_LONG_2016', denum: 'ACT_LONG_2016', name: 'Taux de chômage de longue durée (2016)', group: 'Pauvreté / Exclusion sociale' },
@@ -171,15 +172,13 @@ function bindUI_chart(chart, map_elem) {
       let nb_var =  Array.prototype.slice.call(
         document.querySelectorAll('span.target_variable')).filter(
           elem => !!elem.classList.contains('checked')).length;
-      // We don't want the user to be able to select more than 8 variables simultaneously:
-      if (nb_var >= 8) {
-        return;
-      }
       // Select a new variable and trigger the appropriate changes on the current chart:
       if (!this.classList.contains('checked')) {
+        // We don't want the user to be able to select more than 8 variables simultaneously:
+        if (nb_var >= 8) return;
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
-        const name_variable = variables.find(d => d.ratio === code_variable).name;
+        const name_variable = variables_info.find(d => d.ratio === code_variable).name;
         addVariable(app, code_variable);
         makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
@@ -333,7 +332,7 @@ export function bindTopButtons(chart, map_elem) {
       } else if (value === 'RadarChart3') {
         console.log('RadarChart3');
         makeTable(app.current_data, app.current_config);
-        chart = new ScatterPlot2(app.current_data);
+        chart = new RadarChart3(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
@@ -356,13 +355,12 @@ function loadData() {
       const [
         full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs,
       ] = results;
-      variables = prepareVariablesInfo(metadata_indicateurs);
-      console.log(variables);
+      variables_info = prepareVariablesInfo(metadata_indicateurs);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
         && +ft.level === app.current_config.current_level);
-      createMenu(features_menu, variables, study_zones, territorial_mesh);
+      createMenu(features_menu, variables_info, study_zones, territorial_mesh);
       makeTopMenu();
       makeHeaderChart();
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');

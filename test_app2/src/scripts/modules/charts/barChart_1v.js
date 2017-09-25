@@ -745,23 +745,12 @@ export class BarChart1 {
     this.ratio_to_use = code_variable;
   }
 
-  updateTableStats() {
-    const values = this.data.map(d => d[this.ratio_to_use]);
-    this.table_stats.removeAll();
-    this.table_stats.addFeature({
-      Min: d3.min(values),
-      Max: d3.max(values),
-      Moyenne: d3.mean(values),
-      id: this.ratio_to_use,
-      Variable: this.ratio_to_use,
-      'Ma région': this.ref_value,
-    })
-  }
-
   remove() {
     this._focus.remove();
     this.context.remove();
     this.selec_var.remove();
+    this.table_stats.remove();
+    this.table_stats = null;
     this.map_elem.unbindBrush();
     this.map_elem = null;
     svg_bar.html('');
@@ -772,16 +761,25 @@ export class BarChart1 {
     this.map_elem.resetColors(this.current_ids);
   }
 
-  makeTableStat() {
+  updateTableStats() {
+    this.table_stats.removeAll();
+    this.table_stats.addFeature(this.prepareTableStat());
+  }
+
+  prepareTableStat() {
     const values = this.data.map(d => d[this.ratio_to_use]);
-    const feature = [{
+    return {
       Min: d3.min(values),
       Max: d3.max(values),
       Moyenne: d3.mean(values),
       id: this.ratio_to_use,
       Variable: this.ratio_to_use,
       'Ma région': this.ref_value,
-    }];
+    };
+  }
+
+  makeTableStat() {
+    const feature = this.prepareTableStat();
     this.table_stats = new TableResumeStat(feature);
   }
 }

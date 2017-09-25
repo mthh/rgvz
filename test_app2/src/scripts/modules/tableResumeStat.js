@@ -42,6 +42,12 @@ export default class TableResumeStat {
     this.table_body = table_body;
   }
 
+  addFeatures(summary_features) {
+    for (let i = 0, len = summary_features.length; i < len; i++) {
+      this.addFeature(summary_features[i]);
+    }
+  }
+
   addFeature(summary) {
     const row = document.createElement('tr');
     row.id = `row_${summary.id}`;
@@ -68,5 +74,10 @@ export default class TableResumeStat {
     for (let i = rows.length - 1; i > -1; i--) {
       rows[i].remove();
     }
+  }
+
+  remove() {
+    this.table_body.parentElement.parentElement.remove();
+    this.table_body = null;
   }
 }

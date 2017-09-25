@@ -300,4 +300,9 @@ input.nb_select::-webkit-outer-spin-button {
 .minitable {
   margin: auto;
 }
+
+.minitable > tbody > tr > td {
+  padding: 4px;
+}
+
 /* End of style for minitable */
