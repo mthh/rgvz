@@ -109,7 +109,7 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
 export class RadarChart3 {
   constructor(data, options) {
     const self = this;
-    const labelClicked = function labelClicked() {
+    this.labelClicked = function labelClicked() {
       const ix = +this.id;
       if (ix + 1 === self.allAxis.length) {
         for (let i = 0; i < self.data.length; i++) {
@@ -124,12 +124,12 @@ export class RadarChart3 {
       self.update();
     }
 
-    const labelCtxMenu = function labelCtxMenu(label) {
+    this.labelCtxMenu = function labelCtxMenu(label) {
       d3.event.stopPropagation();
       d3.event.preventDefault();
       const ix = +this.id;
       self.inverse_data(label);
-    }
+    };
 
     app.current_config.nb_var = 3;
     this.ref_data = data.slice();
@@ -139,7 +139,6 @@ export class RadarChart3 {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
     });
     this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    this.displayed_ids = this.data.map(d => d.name);
     this.current_ids = this.ref_data.map(d => d.id);
 
     const cfg = {
@@ -276,8 +275,8 @@ export class RadarChart3 {
       .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
       .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
       .text(d => d)
-      .on('click', labelClicked)
-      .on('contextmenu', cfg.allowInverseData ? labelCtxMenu : null)
+      .on('click', this.labelClicked)
+      .on('contextmenu', cfg.allowInverseData ? this.labelCtxMenu : null)
       .call(wrap, cfg.wrapWidth);
 
     // ///////////////////////////////////////////////////////
@@ -336,7 +335,7 @@ export class RadarChart3 {
     // Create the outlines
     blobWrapper.append('path')
       .attr('class', 'radarStroke')
-      .attr('d', (d) => this.radarLine(d.axes))
+      .attr('d', d => this.radarLine(d.axes))
       .style('stroke-width', `${cfg.strokeWidth}px`)
       .style('stroke', (d, i) => cfg.color(i))
       .style('fill', 'none')
@@ -351,7 +350,7 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
-      .style('fill', (d) => cfg.color(d.id))
+      .style('fill', d => cfg.color(d.id))
       .style('fill-opacity', 0.8);
 
     const tooltip = g.append('text')
@@ -427,7 +426,7 @@ export class RadarChart3 {
         .attr('y', (d, i) => i * 20)
         .attr('width', 10)
         .attr('height', 10)
-        .style('fill', (d) => cfg.color(d));
+        .style('fill', d => cfg.color(d));
       // Create labels
       legend
         .append('text')
@@ -597,7 +596,6 @@ export class RadarChart3 {
     });
     this.data = prepare_data_radar_default(this.ref_data, this.variables);
     this.current_ids = this.ref_data.map(d => d.id);
-    this.displayed_ids = this.data.map(d => d.name);
     resetColors();
     this.nbFt = this.data.length;
     this.updateMapRegio();
@@ -662,13 +660,9 @@ export class RadarChart3 {
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
-    if (this.displayed_ids.indexOf(id) < 0) {
-      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
-      this.add_element(a);
-      this.update();
-    } else {
-      this.update();
-    }
+    const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+    this.add_element(a);
+    this.update();
   }
 
 

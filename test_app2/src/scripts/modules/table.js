@@ -13,6 +13,7 @@ function createTableDOM(data, opts, config) {
   const headers = doc.createElement('thead');
   const body = doc.createElement('tbody');
   const headers_row = doc.createElement('tr');
+  // TODO: Only display ratios values if there is more than 1 variable currently selected
   for (let i = 0; i < nb_columns; i++) {
     const cell = doc.createElement('th');
     const col_name = column_names[i];
@@ -40,7 +41,8 @@ function createTableDOM(data, opts, config) {
     for (let j = 0; j < nb_columns; j++) {
       const cell = doc.createElement('td');
       const col_name = column_names[j];
-      if (num.indexOf(col_name) > -1 || denum.indexOf(col_name) > -1 || ratio.indexOf(col_name) > -1) {
+      if (num.indexOf(col_name) > -1
+          || denum.indexOf(col_name) > -1 || ratio.indexOf(col_name) > -1) {
         cell.innerHTML = Math.round(data[i][col_name] * 100) / 10;
       } else {
         cell.innerHTML = data[i][col_name];

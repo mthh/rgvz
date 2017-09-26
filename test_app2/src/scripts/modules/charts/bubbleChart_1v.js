@@ -26,6 +26,7 @@ export class BubbleChart1 {
     this.current_ids = this.data.map(d => d.id);
     resetColors();
     this.highlight_selection = [];
+    this.serie_inversed = false;
     const draw_group = svg_bar
       .append('g')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -44,6 +45,22 @@ export class BubbleChart1 {
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
       .text(`Complétude : ${this.completude_value}%`);
+
+    // Create the button allowing to choose if the color are inversed (green/red for superior/inferior regions)
+    svg_bar.append('image')
+      .attrs({
+        x: width + margin.left + 5,
+        y: 232.5,
+        width: 15,
+        height: 15,
+        'xlink:href': 'img/reverse_plus.png',
+        id: 'img_reverse',
+      })
+      .on('click', () => {
+        this.serie_inversed = !this.serie_inversed;
+        this.applySelection(this.highlight_selection.length);
+      });
+
 
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
@@ -68,8 +85,13 @@ export class BubbleChart1 {
     this.my_region_value = this.data
         .filter(d => d.id === app.current_config.my_region)
         .map(d => d[ratio_to_use])[0];
+    this.feature_order = this.data.map(d => ({
+      dist: math_abs(d[ratio_to_use] - this.my_region_value),
+      id: d.id
+    })).sort((a, b) => a.dist - b.dist).map(d => d.id);
+    console.log(this.feature_order);
+
     this.bindMenu();
-    this.applySelection(5, 'close');
 
     //
     const header_bar_section = d3.select('#header_chart');
@@ -121,7 +143,7 @@ export class BubbleChart1 {
     this.makeTableStat();
   }
 
-  applySelection(nb, type_selection = 'close') {
+  applySelection(nb) {
     app.colors = {};
     if (nb > 0) {
       const my_region_value = this.my_region_value;
@@ -131,15 +153,11 @@ export class BubbleChart1 {
         dist: math_abs(d[ratio_to_use] - my_region_value),
         ratio: d[ratio_to_use],
         id: d.id }));
-      if (type_selection === 'close') {
-        this.highlight_selection.sort((a, b) => a.dist - b.dist);
-        this.highlight_selection = this.highlight_selection.slice(1, nb + 1);
-      } else if (type_selection === 'distant') {
-        this.highlight_selection.sort((a, b) => b.dist - a.dist);
-        this.highlight_selection = this.highlight_selection.slice(0, nb);
-      }
+
+      this.highlight_selection.sort((a, b) => a.dist - b.dist);
+      this.highlight_selection = this.highlight_selection.slice(1, nb + 1);
       this.highlight_selection.forEach((elem) => {
-        app.colors[elem.id] = elem.ratio < my_region_value ? color_inf : color_sup;
+        app.colors[elem.id] = comp(elem.ratio, my_region_value, this.serie_inversed);
       });
     } else {
       this.highlight_selection = [];
@@ -203,6 +221,7 @@ export class BubbleChart1 {
       })
       .styles(d => ({
         fill: app.colors[d.id] || color_countries,
+        'fill-opacity': 0.7,
       }));
 
     bubbles
@@ -210,6 +229,7 @@ export class BubbleChart1 {
       .insert('circle')
       .styles(d => ({
         fill: app.colors[d.id] || color_countries,
+        'fill-opacity': 0.7,
       }))
       .transition()
       .duration(225)
@@ -343,7 +363,8 @@ export class BubbleChart1 {
       this.map_elem.updateLegend();
       this.my_region_value = this.data.filter(
         d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
-      this.applySelection(this.highlight_selection.length, 'close');
+      this.updateTableStats();
+      this.applySelection(this.highlight_selection.length);
     }
   }
 
@@ -357,7 +378,7 @@ export class BubbleChart1 {
       d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
-    this.applySelection(temp, 'close');
+    this.applySelection(temp);
   }
 
   changeVariable(code_variable) {
@@ -391,13 +412,12 @@ export class BubbleChart1 {
     const menu = d3.select('#menu_selection');
     const applychange = function () {
       self.map_elem.removeRectBrush();
-      const type = this.parentElement.querySelector('.type_selection').value;
       let value = +this.value;
       if (!(value > -1)) {
         this.value = 5;
         value = 5;
       }
-      self.applySelection(value, type);
+      self.applySelection(value);
     };
     menu.select('.nb_select')
       .on('change', applychange);
@@ -435,13 +455,13 @@ export class BubbleChart1 {
       Moyenne: d3.mean(values),
       id: this.ratio_to_use,
       Variable: this.ratio_to_use,
-      'Ma région': this.ref_value,
+      'Ma région': this.my_region_value,
     };
   }
 
   makeTableStat() {
     const feature = this.prepareTableStat();
-    this.table_stats = new TableResumeStat(feature);
+    this.table_stats = new TableResumeStat([feature]);
   }
 
 }

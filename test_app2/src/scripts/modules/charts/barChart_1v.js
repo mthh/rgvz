@@ -347,7 +347,7 @@ export class BarChart1 {
       .text('> à ma région')
       .on('click', () => this.selectAboveMyRegion());
 
-    this.makeTableStat()
+    this.makeTableStat();
   }
 
   updateCompletude() {
@@ -667,6 +667,7 @@ export class BarChart1 {
       this.update();
       this.updateContext(0, this.data.length);
       this.updateMapRegio();
+      this.updateTableStats();
       svg_bar.select('.brush_bottom').call(this.brush_bottom.move, this.x.range());
       this.map_elem.removeRectBrush();
       this.map_elem.updateLegend();
@@ -780,6 +781,6 @@ export class BarChart1 {
 
   makeTableStat() {
     const feature = this.prepareTableStat();
-    this.table_stats = new TableResumeStat(feature);
+    this.table_stats = new TableResumeStat([feature]);
   }
 }
