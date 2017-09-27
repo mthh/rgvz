@@ -181,6 +181,7 @@ class MapSelect {
   }
 
   resetHeaderButton() {
+    document.getElementById('img_rect_selec').display = null;
     document.getElementById('img_rect_selec').classList.add('active');
     document.getElementById('img_map_zoom').classList.remove('active');
     document.getElementById('img_map_select').classList.remove('active');
@@ -201,14 +202,18 @@ class MapSelect {
 
   bindBrush(chart) {
     this.resetHeaderButton();
-    this.brush_map = d3.brush()
-      .extent([[0, 0], [width_map, height_map]])
-      .on('start brush', () => {
-        chart.handle_brush_map(d3.event);
-      });
-    svg_map.append('g')
-      .attr('class', 'brush_map')
-      .call(this.brush_map);
+    if (chart.handle_brush_map) {
+      this.brush_map = d3.brush()
+        .extent([[0, 0], [width_map, height_map]])
+        .on('start brush', () => {
+          chart.handle_brush_map(d3.event);
+        });
+      svg_map.append('g')
+        .attr('class', 'brush_map')
+        .call(this.brush_map);
+    } else {
+      document.getElementById('img_rect_selec').display = 'none';
+    }
   }
 
   unbindBrush() {

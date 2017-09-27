@@ -132,8 +132,9 @@ export class RadarChart3 {
     };
 
     app.current_config.nb_var = 3;
-    this.ref_data = data.slice();
     this.variables = app.current_config.ratio;
+    this.ref_data = data.slice().filter(ft => this.variables.map(v => !!ft[v]).every(d => d === true));
+    // this.ref_data = data.slice();
     this.rank_variables = this.variables.map(d => `pr_${d}`);
     this.variables.forEach((d, i) => {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
@@ -190,17 +191,22 @@ export class RadarChart3 {
       Format = d3.format(cfg.format), // Formatting
       angleSlice = Math.PI * 2 / total; // The width in radians of each "slice"
 
+    this.cfg = cfg;
+    this.maxValue = maxValue;
+    this.angleSlice = angleSlice;
+
     // Scale for the radius
     const rScale = d3.scaleLinear()
       .range([0, radius])
       .domain([0, maxValue]);
 
+    this.rScale = rScale;
     // ///////////////////////////////////////////////////////
     // ////////// Create the container SVG and g /////////////
     // ///////////////////////////////////////////////////////
 
     // Append a g element
-    const g = svg_bar.append('g')
+    this.g = svg_bar.append('g')
       .attr('transform', `translate(${cfg.w / 2 + cfg.margin.left},${cfg.h / 2 + cfg.margin.top})`);
 
     // ///////////////////////////////////////////////////////
@@ -208,7 +214,7 @@ export class RadarChart3 {
     // ///////////////////////////////////////////////////////
 
     // Filter for the outside glow
-    const filter = g.append('defs')
+    const filter = this.g.append('defs')
       .append('filter')
       .attr('id', 'glow');
     filter.append('feGaussianBlur')
@@ -218,67 +224,7 @@ export class RadarChart3 {
     feMerge.append('feMergeNode').attr('in', 'coloredBlur');
     feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
-    // ///////////////////////////////////////////////////////
-    // ///////////// Draw the Circular grid //////////////////
-    // ///////////////////////////////////////////////////////
-
-    // Wrapper for the grid & axes
-    const axisGrid = g.append('g').attr('class', 'axisWrapper');
-
-    // Draw the background circles
-    axisGrid.selectAll('.levels')
-      .data(d3.range(1, (cfg.levels + 1)).reverse())
-      .enter()
-      .append('circle')
-      .attr('class', 'gridCircle')
-      .attr('r', d => radius / cfg.levels * d)
-      .style('fill', '#CDCDCD')
-      .style('stroke', '#CDCDCD')
-      .style('fill-opacity', cfg.opacityCircles)
-      .style('filter', 'url(#glow)');
-
-    // Text indicating at what % each level is
-    axisGrid.selectAll('.axisLabel')
-      .data(d3.range(1, (cfg.levels + 1)).reverse())
-      .enter().append('text')
-      .attr('class', 'axisLabel')
-      .attr('x', 4)
-      .attr('y', d => -d * radius / cfg.levels)
-      .attr('dy', '0.4em')
-      .style('font-size', '10px')
-      .attr('fill', '#737373')
-      .text(d => Format(maxValue * d / cfg.levels) + cfg.unit);
-
-    // Create the straight lines radiating outward from the center
-    const axis = axisGrid.selectAll('.axis')
-      .data(this.allAxis)
-      .enter()
-      .append('g')
-      .attr('class', 'axis');
-    // Append the lines
-    axis.append('line')
-      .attr('x1', 0)
-      .attr('y1', 0)
-      .attr('x2', (d, i) => rScale(maxValue * 1.1) * math_cos(angleSlice * i - HALF_PI))
-      .attr('y2', (d, i) => rScale(maxValue * 1.1) * math_sin(angleSlice * i - HALF_PI))
-      .attr('class', 'line')
-      .style('stroke', 'white')
-      .style('stroke-width', '2px');
-
-    // Append the labels at each axis
-    axis.append('text')
-      .attr('class', 'legend')
-      .style('font-size', '11px')
-      .attr('id', (d, i) => i)
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
-      .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
-      .text(d => d)
-      .on('click', this.labelClicked)
-      .on('contextmenu', cfg.allowInverseData ? this.labelCtxMenu : null)
-      .call(wrap, cfg.wrapWidth);
-
+    this.drawAxisGrid();
     // ///////////////////////////////////////////////////////
     // /////////// Draw the radar chart blobs ////////////////
     // ///////////////////////////////////////////////////////
@@ -290,7 +236,7 @@ export class RadarChart3 {
       .angle((d, i) => i * angleSlice);
 
     // Create a wrapper for the blobs
-    const blobWrapper = g.selectAll('.radarWrapper')
+    const blobWrapper = this.g.selectAll('.radarWrapper')
       .data(this.data)
       .enter()
       .append('g')
@@ -353,7 +299,7 @@ export class RadarChart3 {
       .style('fill', d => cfg.color(d.id))
       .style('fill-opacity', 0.8);
 
-    const tooltip = g.append('text')
+    const tooltip = this.g.append('text')
       .attr('class', 'tooltip')
       .attr('x', 0)
       .attr('y', 0)
@@ -367,7 +313,7 @@ export class RadarChart3 {
     // ///////////////////////////////////////////////////////
 
     // Wrapper for the invisible circles on top
-    const blobCircleWrapper = g.selectAll('.radarCircleWrapper')
+    const blobCircleWrapper = this.g.selectAll('.radarCircleWrapper')
       .data(this.data)
       .enter()
       .append('g')
@@ -437,13 +383,6 @@ export class RadarChart3 {
         .text(d => d);
     }
 
-    this.g = g;
-    this.axisGrid = axisGrid;
-    this.rScale = rScale;
-    this.cfg = cfg;
-    this.maxValue = maxValue;
-    this.angleSlice = angleSlice;
-
     if (cfg.allowInverseData) {
       this.inverse_data = (field) => {
         const data_length = this.data.length;
@@ -476,6 +415,71 @@ export class RadarChart3 {
       throw new Error('Expected element with same axes name than existing data.');
     }
     this.data.push(elem);
+  }
+
+  redraw() {
+    this.g.selectAll('*').remove();
+    this.drawAxisGrid();
+  }
+
+  drawAxisGrid() {
+    const cfg = this.cfg;
+    // Wrapper for the grid & axes
+    const axisGrid = this.g.append('g').attr('class', 'axisWrapper');
+
+    // Draw the background circles
+    axisGrid.selectAll('.levels')
+      .data(d3.range(1, (cfg.levels + 1)).reverse())
+      .enter()
+      .append('circle')
+      .attr('class', 'gridCircle')
+      .attr('r', d => this.radius / cfg.levels * d)
+      .style('fill', '#CDCDCD')
+      .style('stroke', '#CDCDCD')
+      .style('fill-opacity', cfg.opacityCircles)
+      .style('filter', 'url(#glow)');
+
+    // Text indicating at what % each level is
+    axisGrid.selectAll('.axisLabel')
+      .data(d3.range(1, (cfg.levels + 1)).reverse())
+      .enter().append('text')
+      .attr('class', 'axisLabel')
+      .attr('x', 4)
+      .attr('y', d => -d * this.radius / cfg.levels)
+      .attr('dy', '0.4em')
+      .style('font-size', '10px')
+      .attr('fill', '#737373')
+      .text(d => this.Format(this.maxValue * d / cfg.levels) + cfg.unit);
+
+    // Create the straight lines radiating outward from the center
+    const axis = axisGrid.selectAll('.axis')
+      .data(this.allAxis)
+      .enter()
+      .append('g')
+      .attr('class', 'axis');
+    // Append the lines
+    axis.append('line')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', (d, i) => this.rScale(this.maxValue * 1.1) * math_cos(this.angleSlice * i - HALF_PI))
+      .attr('y2', (d, i) => this.rScale(this.maxValue * 1.1) * math_sin(this.angleSlice * i - HALF_PI))
+      .attr('class', 'line')
+      .style('stroke', 'white')
+      .style('stroke-width', '2px');
+
+    // Append the labels at each axis
+    axis.append('text')
+      .attr('class', 'legend')
+      .style('font-size', '11px')
+      .attr('id', (d, i) => i)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('x', (d, i) => this.rScale(this.maxValue * cfg.labelFactor) * math_cos(this.angleSlice * i - HALF_PI))
+      .attr('y', (d, i) => this.rScale(this.maxValue * cfg.labelFactor) * math_sin(this.angleSlice * i - HALF_PI))
+      .text(d => d)
+      .on('click', this.labelClicked)
+      .on('contextmenu', cfg.allowInverseData ? this.labelCtxMenu : null)
+      .call(wrap, cfg.wrapWidth);
   }
 
   changeOrder() {
@@ -580,16 +584,17 @@ export class RadarChart3 {
   }
 
   updateChangeRegion() {
-    if (app.current_config.filter_key) {
-      this.changeStudyZone();
-    } else {
-
-    }
+    console.log(app.current_config.my_region);
+    // if (app.current_config.filter_key) {
+    this.changeStudyZone();
+    // } else {
+    //   this.update();
+    // }
   }
 
   changeStudyZone() {
-    this.ref_data = app.current_data.slice();
     this.variables = app.current_config.ratio;
+    this.ref_data = app.current_data.slice().filter(ft => this.variables.map(v => !!ft[v]).every(d => d === true));
     this.rank_variables = this.variables.map(d => `pr_${d}`);
     this.variables.forEach((d, i) => {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
@@ -604,8 +609,8 @@ export class RadarChart3 {
   }
 
   addVariable(code_variable, name_variable) {
-    this.ref_data = app.current_data.slice();
     this.variables = app.current_config.ratio;
+    this.ref_data = app.current_data.slice().filter(ft => this.variables.map(v => !!ft[v]).every(d => d === true));
     this.rank_variables = this.variables.map(d => `pr_${d}`);
     this.variables.forEach((d, i) => {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
@@ -638,7 +643,6 @@ export class RadarChart3 {
   prepareTableStat() {
     const all_values = this.variables.map(v => this.ref_data.map(d => d[v]));
     const my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
-    console.log(this.variables, this.ref_data, all_values);
     const features = all_values.map((values, i) => {
       return {
         Min: d3.min(values),

@@ -108,40 +108,6 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
 
 export class RadarChart3 {
   constructor(data, options) {
-    const self = this;
-    const labelClicked = function labelClicked() {
-      const ix = +this.id;
-      if (ix + 1 === self.allAxis.length) {
-        for (let i = 0; i < self.data.length; i++) {
-          swap(self.data[i].axes, ix, 0);
-        }
-      } else {
-        const new_ix = ix + 1;
-        for (let i = 0; i < self.data.length; i++) {
-          move(self.data[i].axes, ix, new_ix);
-        }
-      }
-      self.update();
-    }
-
-    const labelCtxMenu = function labelCtxMenu(label) {
-      d3.event.stopPropagation();
-      d3.event.preventDefault();
-      const ix = +this.id;
-      self.inverse_data(label);
-    }
-
-    app.current_config.nb_var = 3;
-    this.ref_data = data.slice();
-    this.variables = app.current_config.ratio;
-    this.rank_variables = this.variables.map(d => `pr_${d}`);
-    this.variables.forEach((d, i) => {
-      computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    });
-    this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    this.displayed_ids = this.data.map(d => d.name);
-    this.current_ids = this.ref_data.map(d => d.id);
-
     const cfg = {
       w: width, // Width of the circle
       h: height, // Height of the circle
@@ -161,14 +127,190 @@ export class RadarChart3 {
       legend: false,
       allowInverseData: true,
     };
-
+    this.cfg = cfg;
     // Put all of the options into a variable called cfg
     if (typeof options !== 'undefined') {
       for (const i in options) {
         if (typeof options[i] !== 'undefined') { cfg[i] = options[i]; }
       }
     }
-    const ref_ids = [];
+
+    this.g = svg_bar.append('g')
+      .attr('id', 'RadarGrp')
+      .attr('transform', `translate(${cfg.w / 2 + cfg.margin.left},${cfg.h / 2 + cfg.margin.top})`);
+
+    this.prepareData(data);
+    this.drawAxisGrid();
+    this.drawArea();
+    this.handleLegend();
+    // Compute the "complétude" value for these ratios:
+    this.completude_value = calcPopCompletudeSubset(app, this.variables);
+
+    // Create the "complétude" text:
+    this.completude = svg_bar.append('text')
+      .attrs({ id: 'chart_completude', x: 60, y: 40 })
+      .styles({ 'font-family': '\'Signika\', sans-serif' })
+      .text(`Complétude : ${this.completude_value}%`);
+
+    if (cfg.allowInverseData) {
+      this.inverse_data = (field) => {
+        const data_length = this.data.length;
+        if (!field) {
+          for (let i = 0; i < data_length; i++) {
+            const ax = this.data[i].axes;
+            for (let j = 0; j < ax.length; j++) {
+              ax[j].value = 100 - ax[j].value;
+            }
+          }
+        } else {
+          for (let i = 0; i < data_length; i++) {
+            const ax = this.data[i].axes;
+            for (let j = 0; j < ax.length; j++) {
+              if (ax[j].axis === field) {
+                ax[j].value = 100 - ax[j].value;
+              }
+            }
+          }
+        }
+        this.update();
+      };
+    }
+    this.makeTableStat();
+  }
+
+  add_element(elem) {
+    const n_axis = elem.axes.map(i => i.axis);
+    if (!(JSON.stringify(n_axis) === JSON.stringify(this.allAxis))) {
+      throw new Error('Expected element with same axes name than existing data.');
+    }
+    this.data.push(elem);
+    this.displayed_ids.push(elem.name);
+    for (let j = 0; j < this.data.length; j++) {
+      const on_axes = [];
+      for (let i = 0; i < this.data[j].axes.length; i++) {
+        this.data[j].axes[i].id = this.data[j].name;
+        on_axes.push(this.data[j].name);
+      }
+    }
+
+    const self = this;
+    const cfg = this.cfg;
+    const n = this.data.length - 1;
+    const blobWrapper = this.g
+      .insert('g', '.radarCircleWrapper')
+      .attr('id', elem.name.indexOf(' ') > -1 ? 'ctx' : elem.name)
+      .attr('class', 'radarWrapper');
+
+    // Append the backgrounds
+    blobWrapper
+      .append('path')
+      .attr('class', 'radarArea')
+      .attr('d', this.radarLine(elem.axes))
+      .style('fill', cfg.color(n))
+      .style('fill-opacity', 0)
+      .style('fill-opacity', cfg.opacityArea)
+      .on('mouseover', function () {
+        // Dim all blobs
+        blobWrapper.selectAll('.radarArea')
+          .transition().duration(200)
+          .style('fill-opacity', 0.1);
+        // Bring back the hovered over blob
+        d3.select(this)
+          .transition().duration(200)
+          .style('fill-opacity', 0.7);
+      })
+      .on('mouseout', () => {
+        // Bring back all blobs
+        blobWrapper.selectAll('.radarArea')
+          .transition().duration(200)
+          .style('fill-opacity', cfg.opacityArea);
+      });
+      // .on('click', function () {
+      //   const p = this.parentElement;
+      //   if (p.previousSibling.className !== 'tooltip') {
+      //     const group = g.node();
+      //     group.insertBefore(p, group.querySelector('.tooltip'));
+      //     const new_order = [];
+      //     g.selectAll('.radarWrapper').each(d => new_order.push(d.name));
+      //     new_order.reverse();
+      //     updateLegend(new_order);
+      //   }
+      // });
+
+    // Create the outlines
+    blobWrapper.append('path')
+      .attr('class', 'radarStroke')
+      .attr('d', this.radarLine(elem.axes))
+      .style('stroke-width', `${cfg.strokeWidth}px`)
+      .style('stroke', cfg.color(n))
+      .style('fill', 'none')
+      .style('filter', 'url(#glow)');
+
+    // Append the circles
+    blobWrapper.selectAll('.radarCircle')
+      .data(elem.axes)
+      .enter()
+      .append('circle')
+      .attr('class', 'radarCircle')
+      .attr('r', cfg.dotRadius)
+      .attr('cx', (d, i) => this.rScale(d.value) * math_cos(this.angleSlice * i - HALF_PI))
+      .attr('cy', (d, i) => this.rScale(d.value) * math_sin(this.angleSlice * i - HALF_PI))
+      .style('fill', d => cfg.color(d.id))
+      .style('fill-opacity', 0.8);
+
+    // ///////////////////////////////////////////////////////
+    // ////// Append invisible circles for tooltip ///////////
+    // ///////////////////////////////////////////////////////
+
+    // Wrapper for the invisible circles on top
+    const blobCircleWrapper = this.g
+      .insert('g', '.tooltip')
+      .attr('id', elem.name.indexOf(' ') > -1 ? 'ctx' : elem.name)
+      .attr('class', 'radarCircleWrapper');
+
+    // Append a set of invisible circles on top for the mouseover pop-up
+    blobCircleWrapper.selectAll('.radarInvisibleCircle')
+      .data(elem.axes)
+      .enter()
+      .append('circle')
+      .attr('class', 'radarInvisibleCircle')
+      .attr('r', cfg.dotRadius * 1.5)
+      .attr('cx', (d, i) => this.rScale(d.value) * math_cos(this.angleSlice * i - HALF_PI))
+      .attr('cy', (d, i) => this.rScale(d.value) * math_sin(this.angleSlice * i - HALF_PI))
+      .style('fill', 'none')
+      .style('pointer-events', 'all')
+      .on('mouseover', function (d) {
+        self.g.select('.tooltip')
+          .attr('x', this.cx.baseVal.value - 10)
+          .attr('y', this.cy.baseVal.value - 10)
+          .transition()
+          .style('display', 'block')
+          .text(this.Format(d.value) + cfg.unit);
+      })
+      .on('mouseout', () => {
+        self.g.select('.tooltip').transition()
+          .style('display', 'none').text('');
+      });
+  }
+
+  changeOrder() {
+    this.data = this.data.slice(1, this.data.length).concat(this.data.slice(0, 1));
+    this.update();
+  }
+
+  prepareData(data) {
+    app.current_config.nb_var = 3;
+    this.variables = app.current_config.ratio;
+    this.ref_data = data.slice().filter(
+      ft => this.variables.map(v => !!ft[v]).every(d => d === true));
+    this.rank_variables = this.variables.map(d => `pr_${d}`);
+    this.variables.forEach((d, i) => {
+      computePercentileRank(this.ref_data, d, this.rank_variables[i]);
+    });
+    this.data = prepare_data_radar_default(this.ref_data, this.variables);
+    this.displayed_ids = this.data.map(d => d.name);
+    this.current_ids = this.ref_data.map(d => d.id);
+    // const ref_ids = [];
     // If the supplied maxValue is smaller than the actual one, replace by the max in the data
     // var maxValue = max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
     let maxValue = 0;
@@ -176,54 +318,63 @@ export class RadarChart3 {
       const on_axes = [];
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
-        on_axes.push(this.data[j].name);
+        // on_axes.push(this.data[j].name);
         if (this.data[j].axes[i].value > maxValue) {
           maxValue = this.data[j].axes[i].value;
         }
-        ref_ids.push(on_axes);
+        // ref_ids.push(on_axes);
       }
     }
 
-    maxValue = math_max(cfg.maxValue, maxValue);
+    this.maxValue = math_max(this.cfg.maxValue, maxValue);
     this.allAxis = this.data[0].axes.map(i => i.axis); // Names of each axis
-    const total = this.allAxis.length, // The number of different axes
-      radius = Math.min(cfg.w / 2, cfg.h / 2), // Radius of the outermost circle
-      Format = d3.format(cfg.format), // Formatting
-      angleSlice = Math.PI * 2 / total; // The width in radians of each "slice"
-
+    this.total = this.allAxis.length; // The number of different axes
+    this.radius = Math.min(this.cfg.w / 2, this.cfg.h / 2); // Radius of the outermost circle
+    this.Format = d3.format(this.cfg.format); // Formatting
+    this.angleSlice = Math.PI * 2 / this.total; // The width in radians of each "slice"
     // Scale for the radius
-    const rScale = d3.scaleLinear()
-      .range([0, radius])
-      .domain([0, maxValue]);
+    this.rScale = d3.scaleLinear()
+      .range([0, this.radius])
+      .domain([0, this.maxValue]);
+    // The radial line function
+    this.radarLine = d3.radialLine()
+      .curve(this.cfg.roundStrokes ? d3.curveCardinalClosed : d3.curveLinearClosed)
+      .radius(d => this.rScale(d.value))
+      .angle((d, i) => i * this.angleSlice);
+  }
 
-    // ///////////////////////////////////////////////////////
-    // ////////// Create the container SVG and g /////////////
-    // ///////////////////////////////////////////////////////
+  drawAxisGrid() {
+    const self = this;
+    const cfg = this.cfg;
+    const g = this.g;
+    const radius = this.radius;
+    const Format = this.Format;
+    const maxValue = this.maxValue;
+    const rScale = this.rScale;
+    const angleSlice = this.angleSlice;
 
-    // Append a g element
-    const g = svg_bar.append('g')
-      .attr('transform', `translate(${cfg.w / 2 + cfg.margin.left},${cfg.h / 2 + cfg.margin.top})`);
+    const labelClicked = function labelClicked() {
+      const ix = +this.id;
+      if (ix + 1 === self.allAxis.length) {
+        for (let i = 0; i < self.data.length; i++) {
+          swap(self.data[i].axes, ix, 0);
+        }
+      } else {
+        const new_ix = ix + 1;
+        for (let i = 0; i < self.data.length; i++) {
+          move(self.data[i].axes, ix, new_ix);
+        }
+      }
+      self.update();
+    };
 
-    // ///////////////////////////////////////////////////////
-    // //////// Glow filter for some extra pizzazz ///////////
-    // ///////////////////////////////////////////////////////
+    const labelCtxMenu = function labelCtxMenu(label) {
+      d3.event.stopPropagation();
+      d3.event.preventDefault();
+      const ix = +this.id;
+      self.inverse_data(label);
+    };
 
-    // Filter for the outside glow
-    const filter = g.append('defs')
-      .append('filter')
-      .attr('id', 'glow');
-    filter.append('feGaussianBlur')
-      .attr('stdDeviation', '2.5')
-      .attr('result', 'coloredBlur');
-    const feMerge = filter.append('feMerge');
-    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
-    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
-
-    // ///////////////////////////////////////////////////////
-    // ///////////// Draw the Circular grid //////////////////
-    // ///////////////////////////////////////////////////////
-
-    // Wrapper for the grid & axes
     const axisGrid = g.append('g').attr('class', 'axisWrapper');
 
     // Draw the background circles
@@ -280,21 +431,84 @@ export class RadarChart3 {
       .on('contextmenu', cfg.allowInverseData ? labelCtxMenu : null)
       .call(wrap, cfg.wrapWidth);
 
-    // ///////////////////////////////////////////////////////
-    // /////////// Draw the radar chart blobs ////////////////
-    // ///////////////////////////////////////////////////////
+    // Filter for the outside glow
+    const filter = g.append('defs')
+      .append('filter')
+      .attr('id', 'glow');
+    filter.append('feGaussianBlur')
+      .attr('stdDeviation', '2.5')
+      .attr('result', 'coloredBlur');
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
-    // The radial line function
-    this.radarLine = d3.radialLine()
-      .curve(cfg.roundStrokes ? d3.curveCardinalClosed : d3.curveLinearClosed)
-      .radius(d => rScale(d.value))
-      .angle((d, i) => i * angleSlice);
+    this.axisGrid = axisGrid;
+  }
+
+  handleLegend() {
+    const cfg = this.cfg;
+    if (cfg.legend !== false && typeof cfg.legend === 'object') {
+      const names = this.data.map(el => el.name);
+      if (cfg.legend.title) {
+        this.legendZone.append('text')
+          .attr('class', 'title')
+          .attr('transform', 'translate(0, -20)')
+          .attr('x', cfg.w - 70)
+          .attr('y', 10)
+          .attr('font-size', '12px')
+          .attr('fill', '#404040')
+          .text(cfg.legend.title);
+      }
+      const legend = this.legendZone
+        .selectAll('g')
+        .data(names);
+      const legendEnter = legend
+        .enter()
+        .append('g');
+
+      // Create rectangles markers
+      legendEnter
+        .append('rect')
+        .attr('x', cfg.w - 65)
+        .attr('y', (d, i) => i * 20)
+        .attr('width', 10)
+        .attr('height', 10)
+        .style('fill', d => cfg.color(d));
+      // Create labels
+      legendEnter
+        .append('text')
+        .attr('x', cfg.w - 52)
+        .attr('y', (d, i) => i * 20 + 9)
+        .attr('font-size', '11px')
+        .attr('fill', '#737373')
+        .text(d => d);
+
+      legend.merge(legendEnter).selectAll('rect')
+        .attr('y', (d, i) => i * 20)
+        .style('fill', d => cfg.color(d));
+
+      legend.merge(legendEnter).selectAll('text')
+        .attr('x', cfg.w - 52)
+        .attr('y', (d, i) => i * 20 + 9)
+        .text(d => d);
+
+      legend.exit().remove();
+    }
+  }
+
+  drawArea() {
+    const cfg = this.cfg;
+    const g = this.g;
+    const Format = this.Format;
+    const rScale = this.rScale;
+    const angleSlice = this.angleSlice;
 
     // Create a wrapper for the blobs
     const blobWrapper = g.selectAll('.radarWrapper')
-      .data(this.data)
+      .data(this.data, d => d.name)
       .enter()
       .append('g')
+      .attr('id', d => (d.name.indexOf(' ') > -1 ? 'ctx' : d.name))
       .attr('class', 'radarWrapper');
 
     // Append the backgrounds
@@ -336,7 +550,7 @@ export class RadarChart3 {
     // Create the outlines
     blobWrapper.append('path')
       .attr('class', 'radarStroke')
-      .attr('d', (d) => this.radarLine(d.axes))
+      .attr('d', d => this.radarLine(d.axes))
       .style('stroke-width', `${cfg.strokeWidth}px`)
       .style('stroke', (d, i) => cfg.color(i))
       .style('fill', 'none')
@@ -351,17 +565,8 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
-      .style('fill', (d) => cfg.color(d.id))
+      .style('fill', d => cfg.color(d.id))
       .style('fill-opacity', 0.8);
-
-    const tooltip = g.append('text')
-      .attr('class', 'tooltip')
-      .attr('x', 0)
-      .attr('y', 0)
-      .style('font-size', '12px')
-      .style('display', 'none')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em');
 
     // ///////////////////////////////////////////////////////
     // ////// Append invisible circles for tooltip ///////////
@@ -369,9 +574,10 @@ export class RadarChart3 {
 
     // Wrapper for the invisible circles on top
     const blobCircleWrapper = g.selectAll('.radarCircleWrapper')
-      .data(this.data)
+      .data(this.data, d => d.name)
       .enter()
       .append('g')
+      .attr('id', d => (d.name.indexOf(' ') > -1 ? 'ctx' : d.name))
       .attr('class', 'radarCircleWrapper');
 
     // Append a set of invisible circles on top for the mouseover pop-up
@@ -386,7 +592,7 @@ export class RadarChart3 {
       .style('fill', 'none')
       .style('pointer-events', 'all')
       .on('mouseover', function (d) {
-        tooltip
+        g.select('.tooltip')
           .attr('x', this.cx.baseVal.value - 10)
           .attr('y', this.cy.baseVal.value - 10)
           .transition()
@@ -394,94 +600,23 @@ export class RadarChart3 {
           .text(Format(d.value) + cfg.unit);
       })
       .on('mouseout', () => {
-        tooltip.transition()
+        g.select('.tooltip').transition()
           .style('display', 'none').text('');
       });
 
-    if (cfg.legend !== false && typeof cfg.legend === 'object') {
-      const legendZone = svg_bar.append('g')
-        .attr('id', 'legendZone')
-        .attr('class', 'legend')
-        .attr('transform', `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`);
-      const names = this.data.map(el => el.name);
-      if (cfg.legend.title) {
-        legendZone.append('text')
-          .attr('class', 'title')
-          .attr('transform', 'translate(0, -20)')
-          .attr('x', cfg.w - 70)
-          .attr('y', 10)
-          .attr('font-size', '12px')
-          .attr('fill', '#404040')
-          .text(cfg.legend.title);
-      }
-      const legend = legendZone
-        .selectAll('g')
-        .data(names)
-        .enter()
-        .append('g');
+    const tooltip = g.append('text')
+      .attr('class', 'tooltip')
+      .attr('x', 0)
+      .attr('y', 0)
+      .style('font-size', '12px')
+      .style('display', 'none')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em');
 
-      // Create rectangles markers
-      legend
-        .append('rect')
-        .attr('x', cfg.w - 65)
-        .attr('y', (d, i) => i * 20)
-        .attr('width', 10)
-        .attr('height', 10)
-        .style('fill', (d) => cfg.color(d));
-      // Create labels
-      legend
-        .append('text')
-        .attr('x', cfg.w - 52)
-        .attr('y', (d, i) => i * 20 + 9)
-        .attr('font-size', '11px')
-        .attr('fill', '#737373')
-        .text(d => d);
-    }
-
-    this.g = g;
-    this.axisGrid = axisGrid;
-    this.rScale = rScale;
-    this.cfg = cfg;
-    this.maxValue = maxValue;
-    this.angleSlice = angleSlice;
-
-    if (cfg.allowInverseData) {
-      this.inverse_data = (field) => {
-        const data_length = this.data.length;
-        if (!field) {
-          for (let i = 0; i < data_length; i++) {
-            const ax = this.data[i].axes;
-            for (let j = 0; j < ax.length; j++) {
-              ax[j].value = 100 - ax[j].value;
-            }
-          }
-        } else {
-          for (let i = 0; i < data_length; i++) {
-            const ax = this.data[i].axes;
-            for (let j = 0; j < ax.length; j++) {
-              if (ax[j].axis === field) {
-                ax[j].value = 100 - ax[j].value;
-              }
-            }
-          }
-        }
-        this.update();
-      };
-    }
-    this.makeTableStat();
-  }
-
-  add_element(elem) {
-    const n_axis = elem.axes.map(i => i.axis);
-    if (!(JSON.stringify(n_axis) === JSON.stringify(this.allAxis))) {
-      throw new Error('Expected element with same axes name than existing data.');
-    }
-    this.data.push(elem);
-  }
-
-  changeOrder() {
-    this.data = this.data.slice(1, this.data.length).concat(this.data.slice(0, 1));
-    this.update();
+    this.legendZone = svg_bar.append('g')
+      .attr('id', 'legendZone')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`);
   }
 
   update() {
@@ -500,8 +635,6 @@ export class RadarChart3 {
     // } else {
     this.allAxis = this.data[0].axes.map(elem => elem.axis);
     // }
-    console.log(this);
-    console.log(this.data);
     const update_axis = this.axisGrid.selectAll('.axis')
       .data(this.allAxis);
 
@@ -521,9 +654,8 @@ export class RadarChart3 {
       .text(d => d)
       .call(wrap, cfg.wrapWidth);
 
-
     const update_blobWrapper = this.g.selectAll('.radarWrapper')
-      .data(this.data);
+      .data(this.data, d => d.name);
 
     update_blobWrapper.select('.radarArea')
       .transition(t)
@@ -543,7 +675,7 @@ export class RadarChart3 {
       .style('fill-opacity', 0.8);
 
     const update_blobCircleWrapper = this.g.selectAll('.radarCircleWrapper')
-      .data(this.data);
+      .data(this.data, d => d.name);
 
     const invisibleCircle = update_blobCircleWrapper.selectAll('.radarInvisibleCircle')
       .data(d => d.axes);
@@ -581,16 +713,17 @@ export class RadarChart3 {
   }
 
   updateChangeRegion() {
-    if (app.current_config.filter_key) {
-      this.changeStudyZone();
-    } else {
-
-    }
+    // if (app.current_config.filter_key) {
+    this.changeStudyZone();
+    // } else {
+    //
+    // }
   }
 
   changeStudyZone() {
-    this.ref_data = app.current_data.slice();
     this.variables = app.current_config.ratio;
+    this.ref_data = app.current_data.slice().filter(
+      ft => this.variables.map(v => !!ft[v]).every(d => d === true));
     this.rank_variables = this.variables.map(d => `pr_${d}`);
     this.variables.forEach((d, i) => {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
@@ -606,58 +739,82 @@ export class RadarChart3 {
   }
 
   addVariable(code_variable, name_variable) {
-    this.ref_data = app.current_data.slice();
-    this.variables = app.current_config.ratio;
-    this.rank_variables = this.variables.map(d => `pr_${d}`);
-    this.variables.forEach((d, i) => {
-      computePercentileRank(this.ref_data, d, this.rank_variables[i]);
+    const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
+
+    this.g.remove();
+    this.g = svg_bar.append('g')
+      .attr('id', 'RadarGrp')
+      .attr('transform', `translate(${this.cfg.w / 2 + this.cfg.margin.left},${this.cfg.h / 2 + this.cfg.margin.top})`);
+
+    this.prepareData(app.current_data);
+    this.drawAxisGrid();
+    this.drawArea();
+    this.handleLegend();
+    other_features.forEach((id) => {
+      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+      this.add_element(a);
     });
-    this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    this.current_ids = this.ref_data.map(d => d.id);
-    resetColors();
-    this.nbFt = this.data.length;
-    this.updateMapRegio();
-    this.updateTableStat();
-    this.update();
+    // this.update();
+    // this.variables = app.current_config.ratio;
+    // this.ref_data = app.current_data.slice().filter(
+    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
+    // this.rank_variables = this.variables.map(d => `pr_${d}`);
+    // this.variables.forEach((d, i) => {
+    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
+    // });
+    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
+    // this.current_ids = this.ref_data.map(d => d.id);
+    // resetColors();
+    // this.nbFt = this.data.length;
+    // this.updateMapRegio();
+    // this.updateTableStat();
+    // this.update();
   }
 
   removeVariable(code_variable) {
-    this.ref_data = app.current_data.slice();
-    this.variables = app.current_config.ratio;
-    this.rank_variables = this.variables.map(d => `pr_${d}`);
-    this.variables.forEach((d, i) => {
-      computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    });
-    this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    this.current_ids = this.ref_data.map(d => d.id);
-    resetColors();
-    this.nbFt = this.data.length;
-    this.updateMapRegio();
-    this.updateTableStat();
-    this.update();
+    this.g.remove();
+    this.g = svg_bar.append('g')
+      .attr('id', 'RadarGrp')
+      .attr('transform', `translate(${this.cfg.w / 2 + this.cfg.margin.left},${this.cfg.h / 2 + this.cfg.margin.top})`);
+
+    this.prepareData(app.current_data);
+    this.drawAxisGrid();
+    this.drawArea();
+    this.handleLegend();
+    // this.variables = app.current_config.ratio;
+    // this.ref_data = app.current_data.slice().filter(
+    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
+    // this.rank_variables = this.variables.map(d => `pr_${d}`);
+    // this.variables.forEach((d, i) => {
+    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
+    // });
+    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
+    // this.current_ids = this.ref_data.map(d => d.id);
+    // resetColors();
+    // this.nbFt = this.data.length;
+    // this.updateMapRegio();
+    // this.updateTableStat();
+    // this.update();
   }
 
   prepareTableStat() {
     const all_values = this.variables.map(v => this.ref_data.map(d => d[v]));
     const my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
-    console.log(this.variables, this.ref_data, all_values);
-    const features = all_values.map((values, i) => {
-      return {
-        Min: d3.min(values),
-        Max: d3.max(values),
-        Moyenne: d3.mean(values),
-        id: this.variables[i],
-        Variable: this.variables[i],
-        'Ma région': my_region[this.variables[i]],
-      };
-    });
+    const features = all_values.map((values, i) => ({
+      Min: d3.min(values),
+      Max: d3.max(values),
+      Moyenne: d3.mean(values),
+      id: this.variables[i],
+      Variable: this.variables[i],
+      'Ma région': my_region[this.variables[i]],
+    }));
     return features;
   }
 
-  handle_brush_map(event) {
-    console.log(this);
-    console.log(event);
-  }
+  // handle_brush_map(event) {
+  //   console.log(this);
+  //   console.log(event);
+  // }
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
@@ -666,11 +823,22 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
       this.update();
+      console.log(a);
     } else {
+      this.g.selectAll(`#${id}.radarWrapper`).remove();
+      this.g.selectAll(`#${id}.radarCircleWrapper`).remove();
+      const ix = this.data.map((_d, i) => [i, _d.name === id]).find(_d => _d[1] === true);
+      this.data.splice(ix, 1);
+      this.displayed_ids = this.data.map(_d => _d.name);
       this.update();
     }
   }
 
+  updateCompletude() {
+    this.completude_value = calcPopCompletudeSubset(app, this.variables);
+    this.completude
+      .text(`Complétude : ${this.completude_value}%`);
+  }
 
   updateMapRegio() {
     if (!this.map_elem) return;

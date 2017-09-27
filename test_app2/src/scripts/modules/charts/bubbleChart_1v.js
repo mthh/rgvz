@@ -184,6 +184,7 @@ export class BubbleChart1 {
       const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
+      if (_min > _max) { console.log('a'); [_min, _max] = [_max, _min]; }
     } else {
       const dist_min = my_region_value - d3.min(data, d => d[ratio_to_use]);
       const dist_max = d3.max(data, d => d[ratio_to_use]) - my_region_value;
@@ -324,6 +325,7 @@ export class BubbleChart1 {
         }
         return color_countries;
       });
+    this.highlight_selection.sort((a, b) => a.dist - b.dist);
     self.update();
   }
 
@@ -352,6 +354,7 @@ export class BubbleChart1 {
         dist: math_abs(value - this.my_region_value),
       });
     }
+    this.highlight_selection.sort((a, b) => a.dist - b.dist);
     this.update();
   }
 

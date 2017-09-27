@@ -162,7 +162,6 @@ function bindUI_chart(chart, map_elem) {
       } else {
         group_var.style.display = 'none';
       }
-
     });
 
   // User click to add/remove a variable from the comparison:
@@ -234,7 +233,9 @@ function bindUI_chart(chart, map_elem) {
         document.getElementById('img_map_zoom').classList.remove('active');
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').style('display', null);
+        if (map_elem.brush_map) {
+          svg_map.select('.brush_map').style('display', null);
+        }
         map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
@@ -246,8 +247,10 @@ function bindUI_chart(chart, map_elem) {
         document.getElementById('img_rect_selec').classList.remove('active');
         document.getElementById('img_map_select').classList.remove('active');
         svg_map.call(map_elem.zoom_map);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
+        if (map_elem.brush_map) {
+          svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
+          svg_map.select('.brush_map').style('display', 'none');
+        }
         map_elem.target_layer.selectAll('path').on('click', null);
       }
     });
@@ -259,8 +262,10 @@ function bindUI_chart(chart, map_elem) {
         document.getElementById('img_rect_selec').classList.remove('active');
         document.getElementById('img_map_zoom').classList.remove('active');
         svg_map.on('.zoom', null);
-        svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
-        svg_map.select('.brush_map').style('display', 'none');
+        if (map_elem.brush_map) {
+          svg_map.select('.brush_map').call(map_elem.brush_map.move, null);
+          svg_map.select('.brush_map').style('display', 'none');
+        }
         map_elem.target_layer.selectAll('path')
           .on('click', function (d) { chart.handleClickMap(d, this); });
       }
