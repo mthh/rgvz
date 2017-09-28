@@ -223,6 +223,10 @@ span.label_chk.disabled {
 .map_button.active {
   filter: none;
 }
+
+.map_button.disabled {
+  display: none;
+}
 /* End of styles of buttons on the top of the map */
 
 /* Styles for context-menu */

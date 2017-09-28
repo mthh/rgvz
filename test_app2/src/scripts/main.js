@@ -267,9 +267,18 @@ function bindUI_chart(chart, map_elem) {
           svg_map.select('.brush_map').style('display', 'none');
         }
         map_elem.target_layer.selectAll('path')
-          .on('click', function (d) { chart.handleClickMap(d, this); });
+          .on('click', function (d) {
+            chart.handleClickMap(d, this);
+          });
       }
     });
+
+  if (!map_elem.brush_map) {
+    map_elem.target_layer.selectAll('path')
+      .on('click', function (d) {
+        chart.handleClickMap(d, this);
+      });
+  }
 
   const header_table_section = d3.select('#map_section')
       .insert('p', 'svg')

@@ -21,8 +21,14 @@ export class BubbleChart1 {
     const stock_to_use = available_nums[0];
     this.ratio_to_use = ratio_to_use;
     this.stock_to_use = stock_to_use;
-    this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice()
-      .sort((a, b) => b[stock_to_use] - a[stock_to_use]);
+    this.my_region_value = ref_data.find(d => d.id === app.current_config.my_region)[ratio_to_use];
+    this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice();
+    this.data
+      .forEach((ft) => {
+        // eslint-disable-next-line no-param-reassign
+        ft.dist = math_abs(ft[ratio_to_use] - this.my_region_value);
+      });
+    this.data.sort((a, b) => b.dist - a.dist);
     this.current_ids = this.data.map(d => d.id);
     resetColors();
     this.highlight_selection = [];
@@ -82,14 +88,6 @@ export class BubbleChart1 {
     selection_close.append('span')
       .attrs({ class: 'label_chk' })
       .html('régions les plus proches');
-    this.my_region_value = this.data
-        .filter(d => d.id === app.current_config.my_region)
-        .map(d => d[ratio_to_use])[0];
-    this.feature_order = this.data.map(d => ({
-      dist: math_abs(d[ratio_to_use] - this.my_region_value),
-      id: d.id
-    })).sort((a, b) => a.dist - b.dist).map(d => d.id);
-    console.log(this.feature_order);
 
     this.bindMenu();
 
@@ -121,24 +119,24 @@ export class BubbleChart1 {
       self.updateCompletude();
     });
 
-    // Deactivate the rect brush selection on the map
-    // while the user press the Ctrl key:
-    document.onkeydown = (event) => {
-      if (event && event.key === 'Control') {
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', 'none');
-      }
-    };
-    // Reactivate the rect brush selection on the map
-    // when the user doesn't press the Ctrl key anymore
-    document.onkeyup = (event) => {
-      if (event && event.key === 'Control') {
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', null);
-      }
-    };
+    // // Deactivate the rect brush selection on the map
+    // // while the user press the Ctrl key:
+    // document.onkeydown = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', 'none');
+    //   }
+    // };
+    // // Reactivate the rect brush selection on the map
+    // // when the user doesn't press the Ctrl key anymore
+    // document.onkeyup = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', null);
+    //   }
+    // };
 
     this.makeTableStat();
   }
@@ -146,23 +144,19 @@ export class BubbleChart1 {
   applySelection(nb) {
     app.colors = {};
     if (nb > 0) {
-      const my_region_value = this.my_region_value;
       const ratio_to_use = this.ratio_to_use;
 
       this.highlight_selection = this.data.map(d => ({
-        dist: math_abs(d[ratio_to_use] - my_region_value),
+        dist: d.dist,
         ratio: d[ratio_to_use],
-        id: d.id }));
+        id: d.id,
+      }));
 
       this.highlight_selection.sort((a, b) => a.dist - b.dist);
       this.highlight_selection = this.highlight_selection.slice(1, nb + 1);
-      this.highlight_selection.forEach((elem) => {
-        app.colors[elem.id] = comp(elem.ratio, my_region_value, this.serie_inversed);
-      });
     } else {
       this.highlight_selection = [];
     }
-    app.colors[app.current_config.my_region] = color_highlight;
     this.update();
     this.updateMapRegio();
   }
@@ -178,22 +172,27 @@ export class BubbleChart1 {
     let _min;
     let _max;
     if (highlight_selection.length > 0) {
-      const dist_min = my_region_value - d3.min(highlight_selection, d => d.ratio);
-      const dist_max = d3.max(highlight_selection, d => d.ratio) - my_region_value;
+      const dist_min = math_abs(my_region_value - d3.min(highlight_selection, d => d.ratio));
+      const dist_max = math_abs(d3.max(highlight_selection, d => d.ratio) - my_region_value);
       const dist_axis = Math.max(dist_min, dist_max);
       const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
       if (_min > _max) { console.log('a'); [_min, _max] = [_max, _min]; }
     } else {
-      const dist_min = my_region_value - d3.min(data, d => d[ratio_to_use]);
-      const dist_max = d3.max(data, d => d[ratio_to_use]) - my_region_value;
+      const dist_min = math_abs(my_region_value - d3.min(data, d => d[ratio_to_use]));
+      const dist_max = math_abs(d3.max(data, d => d[ratio_to_use]) - my_region_value);
       const dist_axis = Math.max(dist_min, dist_max);
       const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
       _max = my_region_value + dist_axis + margin_min_max;
     }
 
+    this.highlight_selection.forEach((elem) => {
+      app.colors[elem.id] = comp(elem.ratio, my_region_value, this.serie_inversed);
+    });
+
+    app.colors[app.current_config.my_region] = color_highlight;
     const prop_sizer = new PropSizer(d3.max(data, d => d[stock_to_use]), 30);
     const xScale = d3.scaleLinear()
       .domain([_min, _max])
@@ -285,49 +284,49 @@ export class BubbleChart1 {
         : color_disabled));
   }
 
-  handle_brush_map(event) {
-    if (!event || !event.selection) {
-      this.last_map_selection = undefined;
-      return;
-    }
-    const self = this;
-    const [topleft, bottomright] = event.selection;
-    this.last_map_selection = [topleft, bottomright];
-    const rect = new Rect(topleft, bottomright);
-    const ratio_to_use = this.ratio_to_use;
-    app.colors = {};
-    self.highlight_selection = [];
-    self.map_elem.target_layer.selectAll('path')
-      .attr('fill', function (d) {
-        const id = d.properties[app.current_config.id_field_geom];
-        if (id === app.current_config.my_region) {
-          app.colors[id] = color_highlight;
-          return color_highlight;
-        } else if (self.current_ids.indexOf(id) < 0) {
-          return color_disabled;
-        }
-        if (!this._pts) {
-          this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
-        }
-        const pts = this._pts;
-        for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
-          if (rect.contains(pts[ix])) {
-            const value = d.properties[ratio_to_use];
-            const color = comp(value, self.my_region_value, this.serie_inversed);
-            app.colors[id] = color;
-            self.highlight_selection.push({
-              id,
-              ratio: value,
-              dist: math_abs(value - self.my_region_value),
-            });
-            return color;
-          }
-        }
-        return color_countries;
-      });
-    this.highlight_selection.sort((a, b) => a.dist - b.dist);
-    self.update();
-  }
+  // handle_brush_map(event) {
+  //   if (!event || !event.selection) {
+  //     this.last_map_selection = undefined;
+  //     return;
+  //   }
+  //   const self = this;
+  //   const [topleft, bottomright] = event.selection;
+  //   this.last_map_selection = [topleft, bottomright];
+  //   const rect = new Rect(topleft, bottomright);
+  //   const ratio_to_use = this.ratio_to_use;
+  //   app.colors = {};
+  //   self.highlight_selection = [];
+  //   self.map_elem.target_layer.selectAll('path')
+  //     .attr('fill', function (d) {
+  //       const id = d.properties[app.current_config.id_field_geom];
+  //       if (id === app.current_config.my_region) {
+  //         app.colors[id] = color_highlight;
+  //         return color_highlight;
+  //       } else if (self.current_ids.indexOf(id) < 0) {
+  //         return color_disabled;
+  //       }
+  //       if (!this._pts) {
+  //         this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
+  //       }
+  //       const pts = this._pts;
+  //       for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
+  //         if (rect.contains(pts[ix])) {
+  //           const value = d.properties[ratio_to_use];
+  //           const color = comp(value, self.my_region_value, this.serie_inversed);
+  //           app.colors[id] = color;
+  //           self.highlight_selection.push({
+  //             id,
+  //             ratio: value,
+  //             dist: math_abs(value - self.my_region_value),
+  //           });
+  //           return color;
+  //         }
+  //       }
+  //       return color_countries;
+  //     });
+  //   this.highlight_selection.sort((a, b) => a.dist - b.dist);
+  //   self.update();
+  // }
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
@@ -335,7 +334,7 @@ export class BubbleChart1 {
     if (app.colors[id] !== undefined) {
       // Remove the clicked feature from the colored selection on the chart:
       const id_to_remove = this.highlight_selection
-        .map((ft, i) => (ft.id === id ? i : null)).filter(ft => ft);
+        .map((ft, i) => (ft.id === id ? i : null)).filter(ft => ft)[0];
       this.highlight_selection.splice(id_to_remove, 1);
       // Change its color in the global colors object:
       app.colors[id] = undefined;
@@ -344,7 +343,7 @@ export class BubbleChart1 {
     } else {
       const value = d.properties[this.ratio_to_use];
       const color = comp(value, this.my_region_value, this.serie_inversed);
-      app.colors[id] = color;
+      // app.colors[id] = color;
       // Change the color on the map:
       d3.select(parent).attr('fill', color);
       // Add the clicked feature on the colored selection on the chart:
@@ -374,8 +373,13 @@ export class BubbleChart1 {
   changeStudyZone() {
     this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
-    this.data = app.current_data.filter(ft => !!ft[this.ratio_to_use]).slice()
-      .sort((a, b) => b[this.stock_to_use] - a[this.stock_to_use]);
+    this.data = app.current_data.filter(ft => !!ft[this.ratio_to_use]).slice();
+    this.data
+      .forEach((ft) => {
+        // eslint-disable-next-line no-param-reassign
+        ft.dist = math_abs(ft[this.ratio_to_use] - this.my_region_value);
+      });
+    this.data.sort((a, b) => b.dist - a.dist);
     this.current_ids = this.data.map(d => d.id);
     this.my_region_value = this.data.filter(
       d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
@@ -414,7 +418,7 @@ export class BubbleChart1 {
     const self = this;
     const menu = d3.select('#menu_selection');
     const applychange = function () {
-      self.map_elem.removeRectBrush();
+      // self.map_elem.removeRectBrush();
       let value = +this.value;
       if (!(value > -1)) {
         this.value = 5;
