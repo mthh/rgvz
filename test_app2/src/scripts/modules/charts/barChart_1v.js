@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -118,7 +118,7 @@ export class BarChart1 {
     resetColors();
     this.current_ranks = this.data.map((d, i) => i + 1);
     nbFt = this.data.length;
-    this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
+    this.mean_value = getMean(this.data.map(d => d[ratio_to_use]));
     this.ref_value = this.data.filter(
       ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
     svg_bar.append('defs')
@@ -678,7 +678,7 @@ export class BarChart1 {
     const y = this.y;
     const ratio_to_use = this.ratio_to_use;
     const grp_mean = this._focus.select('.mean');
-    this.mean_value = d3.mean(this.data.map(d => d[ratio_to_use]));
+    this.mean_value = getMean(this.data.map(d => d[ratio_to_use]));
     grp_mean.select('text')
       .attr('y', y(this.mean_value) + 20)
       .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
@@ -772,7 +772,7 @@ export class BarChart1 {
     return {
       Min: d3.min(values),
       Max: d3.max(values),
-      Moyenne: d3.mean(values),
+      Moyenne: getMean(values),
       id: this.ratio_to_use,
       Variable: this.ratio_to_use,
       'Ma région': this.ref_value,

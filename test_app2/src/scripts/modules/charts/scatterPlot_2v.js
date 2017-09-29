@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank } from './../helpers';
+import { comp, math_round, math_abs, Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -127,9 +127,9 @@ export class ScatterPlot2 {
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.mean_variable1 = _getPR(
-      d3.mean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
+      getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
     this.mean_variable2 = _getPR(
-      d3.mean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
+      getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
 
     this.makeGrid();
 
@@ -471,9 +471,9 @@ export class ScatterPlot2 {
 
   updateMeanValue() {
     this.mean_variable1 = _getPR(
-      d3.mean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
+      getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
     this.mean_variable2 = _getPR(
-      d3.mean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
+      getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
     const grp_mean = this.plot.select('g.mean');
     grp_mean.select('#mean_x')
       .transition()
@@ -666,7 +666,7 @@ export class ScatterPlot2 {
     {
       Min: d3.min(values1),
       Max: d3.max(values1),
-      Moyenne: d3.mean(values1),
+      Moyenne: getMean(values1),
       id: this.variable1,
       Variable: this.variable1,
       'Ma région': this.ref_value1,
@@ -674,7 +674,7 @@ export class ScatterPlot2 {
     {
       Min: d3.min(values2),
       Max: d3.max(values2),
-      Moyenne: d3.mean(values2),
+      Moyenne: getMean(values2),
       id: this.variable2,
       Variable: this.variable2,
       'Ma région': this.ref_value2,

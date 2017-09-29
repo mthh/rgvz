@@ -55,7 +55,7 @@ export function makeTopMenu() {
     .html('1 ind.');
 
   ressemblance.append('span')
-    .attr('class', 'type_chart chart_t2 disabled')
+    .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
     .html('+2 ind.');
 
   const inegalite = type_chart

@@ -1,10 +1,7 @@
 import {
-  comp, math_round, math_abs, math_max, math_sin, math_cos, HALF_PI, Rect,
-  prepareTooltip, svgPathToCoords, _getPR, computePercentileRank,
-} from './../helpers';
-import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
+  math_max, math_sin, math_cos, HALF_PI, _getPR, computePercentileRank, getMean } from './../helpers';
+import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
-import { svg_map } from './../map';
 import { app, variables_info, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
@@ -14,7 +11,7 @@ const margin = { top: 70, right: 70, bottom: 70, left: 70 };
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
 
-const wrap = (_text, width) => {
+const wrap = (_text, _width) => {
   _text.each(function () {
     const text = d3.select(this),
       words = text.text().split(/\s+/).reverse(),
@@ -33,7 +30,7 @@ const wrap = (_text, width) => {
     while (word) {
       line.push(word);
       tspan.text(line.join(' '));
-      if (tspan.node().getComputedTextLength() > width) {
+      if (tspan.node().getComputedTextLength() > _width) {
         line.pop();
         tspan.text(line.join(' '));
         line = [word];
@@ -83,7 +80,7 @@ export const prepare_data_radar_default = (data, variables) => {
     const _v = `pr_${v}`;
     obj_mean.axes.push({
       axis: t,
-      value: _getPR(d3.mean(data.map(d => d[_v])), data.map(d => d[_v])),
+      value: _getPR(getMean(data.map(d => d[_v])), data.map(d => d[_v])),
     });
   });
   features.push(obj_mean);
@@ -740,7 +737,7 @@ export class RadarChart3 {
 
   addVariable(code_variable, name_variable) {
     const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
-
+    console.log(other_features);
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -803,7 +800,7 @@ export class RadarChart3 {
     const features = all_values.map((values, i) => ({
       Min: d3.min(values),
       Max: d3.max(values),
-      Moyenne: d3.mean(values),
+      Moyenne: getMean(values),
       id: this.variables[i],
       Variable: this.variables[i],
       'Ma région': my_region[this.variables[i]],
@@ -843,7 +840,7 @@ export class RadarChart3 {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+      .attr('fill', d => (this.displayed_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }

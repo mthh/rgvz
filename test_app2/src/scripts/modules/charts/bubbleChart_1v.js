@@ -26,7 +26,7 @@ export class BubbleChart1 {
     this.data
       .forEach((ft) => {
         // eslint-disable-next-line no-param-reassign
-        ft.dist = math_abs(ft[ratio_to_use] - this.my_region_value);
+        ft.dist = math_abs(+ft[ratio_to_use] - this.my_region_value);
       });
     this.data.sort((a, b) => b.dist - a.dist);
     this.current_ids = this.data.map(d => d.id);
@@ -148,7 +148,7 @@ export class BubbleChart1 {
 
       this.highlight_selection = this.data.map(d => ({
         dist: d.dist,
-        ratio: d[ratio_to_use],
+        ratio: +d[ratio_to_use],
         id: d.id,
       }));
 
@@ -172,8 +172,8 @@ export class BubbleChart1 {
     let _min;
     let _max;
     if (highlight_selection.length > 0) {
-      const dist_min = math_abs(my_region_value - d3.min(highlight_selection, d => d.ratio));
-      const dist_max = math_abs(d3.max(highlight_selection, d => d.ratio) - my_region_value);
+      const dist_min = math_abs(my_region_value - +d3.min(highlight_selection, d => d.ratio));
+      const dist_max = math_abs(+d3.max(highlight_selection, d => d.ratio) - my_region_value);
       const dist_axis = Math.max(dist_min, dist_max);
       const margin_min_max = math_round(dist_axis) / 8;
       _min = my_region_value - dist_axis - margin_min_max;
@@ -221,7 +221,10 @@ export class BubbleChart1 {
       })
       .styles(d => ({
         fill: app.colors[d.id] || color_countries,
-        'fill-opacity': 0.7,
+        'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+        stroke: 'darkgray',
+        'stroke-width': 0.75,
+        'stroke-opacity': 0.75,
       }));
 
     bubbles
@@ -229,7 +232,10 @@ export class BubbleChart1 {
       .insert('circle')
       .styles(d => ({
         fill: app.colors[d.id] || color_countries,
-        'fill-opacity': 0.7,
+        'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+        stroke: 'darkgray',
+        'stroke-width': 0.75,
+        'stroke-opacity': 0.75,
       }))
       .transition()
       .duration(225)
@@ -243,32 +249,33 @@ export class BubbleChart1 {
           cy: height / 2,
           r: prop_sizer.scale(d[stock_to_use]),
         };
+      })
+      .on('end', () => {
+        this.draw_group.selectAll('.bubble')
+          .on('mouseover', () => {
+            svg_bar.select('.tooltip').style('display', null);
+          })
+          .on('mouseout', () => {
+            svg_bar.select('.tooltip').style('display', 'none');
+          })
+          .on('mousemove', function (d) {
+            const tooltip = svg_bar.select('.tooltip');
+            const _ratio_to_use = self.ratio_to_use;
+            const _stock_to_use = self.stock_to_use;
+            tooltip
+              .select('text.id_feature')
+              .text(`${d.id}`);
+            tooltip.select('text.value_feature1')
+              .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
+            tooltip.select('text.value_feature2')
+              .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
+            tooltip
+              .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+          });
       });
-
     bubbles.exit().transition().duration(225).remove();
-
-    this.draw_group.selectAll('.bubble')
-      .on('mouseover', () => {
-        svg_bar.select('.tooltip').style('display', null);
-      })
-      .on('mouseout', () => {
-        svg_bar.select('.tooltip').style('display', 'none');
-      })
-      .on('mousemove', function (d) {
-        const tooltip = svg_bar.select('.tooltip');
-        const _ratio_to_use = self.ratio_to_use;
-        const _stock_to_use = self.stock_to_use;
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.id}`);
-        tooltip.select('text.value_feature1')
-          .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
-        tooltip.select('text.value_feature2')
-          .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
-      });
   }
+
   updateCompletude() {
     this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
@@ -341,7 +348,7 @@ export class BubbleChart1 {
       // Change the color on the map:
       d3.select(parent).attr('fill', color_countries);
     } else {
-      const value = d.properties[this.ratio_to_use];
+      const value = +d.properties[this.ratio_to_use];
       const color = comp(value, this.my_region_value, this.serie_inversed);
       // app.colors[id] = color;
       // Change the color on the map:
@@ -361,28 +368,33 @@ export class BubbleChart1 {
     if (app.current_config.filter_key !== undefined) {
       this.changeStudyZone();
     } else {
-      this.map_elem.removeRectBrush();
+      // this.map_elem.removeRectBrush();
       this.map_elem.updateLegend();
-      this.my_region_value = this.data.filter(
-        d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
+      this.my_region_value = this.data.find(
+        d => d.id === app.current_config.my_region)[this.ratio_to_use];
+      this.data
+        .forEach((ft) => {
+          // eslint-disable-next-line no-param-reassign
+          ft.dist = math_abs(+ft[this.ratio_to_use] - this.my_region_value);
+        });
       this.updateTableStats();
       this.applySelection(this.highlight_selection.length);
     }
   }
 
   changeStudyZone() {
-    this.map_elem.removeRectBrush();
+    // this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
+    this.my_region_value = app.current_data.find(
+      d => d.id === app.current_config.my_region)[this.ratio_to_use];
     this.data = app.current_data.filter(ft => !!ft[this.ratio_to_use]).slice();
     this.data
       .forEach((ft) => {
         // eslint-disable-next-line no-param-reassign
-        ft.dist = math_abs(ft[this.ratio_to_use] - this.my_region_value);
+        ft.dist = math_abs(+ft[this.ratio_to_use] - this.my_region_value);
       });
     this.data.sort((a, b) => b.dist - a.dist);
     this.current_ids = this.data.map(d => d.id);
-    this.my_region_value = this.data.filter(
-      d => d.id === app.current_config.my_region)[0][this.ratio_to_use];
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
     this.applySelection(temp);
@@ -390,7 +402,7 @@ export class BubbleChart1 {
 
   changeVariable(code_variable) {
     this.ratio_to_use = code_variable;
-    this.stock_to_use = variables_info.filter(d => d.ratio === code_variable)[0].num;
+    this.stock_to_use = variables_info.find(d => d.ratio === code_variable).num;
   }
 
 
@@ -419,10 +431,10 @@ export class BubbleChart1 {
     const menu = d3.select('#menu_selection');
     const applychange = function () {
       // self.map_elem.removeRectBrush();
-      let value = +this.value;
-      if (!(value > -1)) {
-        this.value = 5;
-        value = 5;
+      const value = +this.value;
+      if (value < 1) {
+        this.value = 1;
+        return;
       }
       self.applySelection(value);
     };
@@ -470,5 +482,4 @@ export class BubbleChart1 {
     const feature = this.prepareTableStat();
     this.table_stats = new TableResumeStat([feature]);
   }
-
 }

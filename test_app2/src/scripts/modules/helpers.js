@@ -1,10 +1,12 @@
 import { color_inf, color_sup } from './options';
 
+const math_pow = Math.pow;
 const math_abs = Math.abs;
 const math_round = Math.round;
 const math_max = Math.max;
 const math_sin = Math.sin;
 const math_cos = Math.cos;
+const math_sqrt = Math.sqrt;
 const HALF_PI = Math.PI / 2;
 
 function prepareTooltip(parent_svg_elem) {
@@ -213,6 +215,33 @@ const _getPR = (v, serie) => {
   return 100 * count / serie.length;
 };
 
+const getMean = (serie) => {
+  const nb_values = serie.length;
+  let sum = 0;
+  for (let i = 0; i < nb_values; i++) {
+    sum += serie[i];
+  }
+  return sum / nb_values;
+};
+
+const getStdDev = (serie, mean_value) => {
+  const nb_values = serie.length;
+  if (!mean_value) {
+    mean_value = getMean(serie); // eslint-disable-line no-param-reassign
+  }
+  let sum = 0;
+  for (let i = 0; i < nb_values; i++) {
+    sum += math_pow(serie[i] - mean_value, 2);
+  }
+  return math_sqrt((1 / nb_values) * sum);
+};
+
+const getStandardizedMeanStdDev = (serie) => {
+  const mean = getMean(serie);
+  const stddev = getStdDev(serie, mean);
+  return serie.map(val => (val - mean) / stddev);
+};
+
 export {
   comp,
   comp2,
@@ -221,6 +250,8 @@ export {
   math_sin,
   math_cos,
   math_max,
+  math_sqrt,
+  math_pow,
   HALF_PI,
   Rect,
   PropSizer,
@@ -231,4 +262,7 @@ export {
   svgPathToCoords,
   computePercentileRank,
   _getPR,
+  getMean,
+  getStdDev,
+  getStandardizedMeanStdDev,
 };
