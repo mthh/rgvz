@@ -12,14 +12,13 @@ const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
 
-
 /** Class representing a scatterplot */
 export class ScatterPlot2 {
   /**
    * Create a the scatterplot on the `svg_bar` svg element previously defined
    * @param {Array} ref_data - A reference to the subset of the dataset to be used
    * to create the scatterplot (should contain at least two field flagged as ratio
-   * in the `app.current_config.ratio` Object.
+   * in the `app.current_config.ratio` Object).
    */
   constructor(ref_data) {
     this.brushed = () => {
@@ -63,6 +62,8 @@ export class ScatterPlot2 {
       this.updateMapRegio();
       this.map_elem.removeRectBrush();
     };
+
+    // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 2;
     const self = this;
     this.variable1 = app.current_config.ratio[0];
@@ -97,7 +98,7 @@ export class ScatterPlot2 {
 
     this.brush = d3.brush()
       .extent([[0, 0], [width, height]])
-      .on("brush end", this.brushed);
+      .on('brush end', this.brushed);
 
     this.xInversed = false;
     this.yInversed = false;
@@ -123,6 +124,10 @@ export class ScatterPlot2 {
     this.scatter = this.plot.append('g')
       .attr('id', 'scatterplot')
       .attr('clip-path', 'url(#clip)');
+
+    this.scatter.append('g')
+      .attr('class', 'brush')
+      .call(this.brush);
 
     this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
     this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
@@ -171,6 +176,9 @@ export class ScatterPlot2 {
       .attrs({ class: 'y axis', id: 'axis--y', opacity: 0.9 })
       .call(this.yAxis);
 
+    // Prepare the tooltip displayed on mouseover:
+    prepareTooltip(this.scatter);
+
     this.prepareTitleAxis();
 
     svg_bar.append('image')
@@ -215,9 +223,6 @@ export class ScatterPlot2 {
         }
       });
 
-    // Prepare the tooltip displayed on mouseover:
-    prepareTooltip(svg_bar);
-
     // Compute the "complétude" value for this ratio:
     this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
 
@@ -226,11 +231,6 @@ export class ScatterPlot2 {
       .attrs({ id: 'chart_completude', x: 60, y: 40 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
       .text(`Complétude : ${this.completude_value}%`);
-
-    this.plot.append("g")
-      .attr("class", "brush")
-      .call(this.brush);
-
 
     // Deactivate the rect brush selection on the map
     // while the user press the Ctrl key:
@@ -340,8 +340,7 @@ export class ScatterPlot2 {
     const dots = this.scatter.selectAll('.dot')
       .data(data, d => d.id);
 
-    dots.transition()
-      .duration(225)
+    dots
       .attrs(d => ({
         r: 5,
         cx: x(d[rank_variable1]),
@@ -356,38 +355,38 @@ export class ScatterPlot2 {
       .styles(d => ({
         fill: app.colors[d.id] || default_color,
       }))
-      .transition()
-      .duration(225)
       .attrs(d => ({
         r: 5,
         cx: x(d[rank_variable1]),
         cy: y(d[rank_variable2]),
         class: 'dot',
-      }));
-
-    dots.exit().transition().duration(225).remove();
-
-    dots
-      .on('mouseover', () => {
-        svg_bar.select('.tooltip').style('display', null);
-      })
-      .on('mouseout', () => {
-        svg_bar.select('.tooltip').style('display', 'none');
-      })
-      .on('mousemove', function (d) {
-        const tooltip = svg_bar.select('.tooltip');
-        const _var1 = self.variable1;
-        const _var2 = self.variable2;
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.id}`);
-        tooltip.select('text.value_feature1')
-          .text(`Variable 1 : ${Math.round(d[_var1] * 10) / 10}`);
-        tooltip.select('text.value_feature2')
-          .text(`Variable 2 : ${Math.round(d[_var2] * 10) / 10}`);
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+      }))
+      .call((selection) => {
+        selection.on('mouseover.tooltip', function (d) {
+          const tooltip = svg_bar.select('.tooltip')
+            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+          tooltip.select('text.id_feature')
+            .text(`${d.id}`);
+          tooltip.select('text.value_feature1')
+            .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
+          tooltip.select('text.value_feature2')
+            .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+          tooltip.select('text.value_feature3')
+            .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
+          tooltip.select('text.value_feature4')
+          .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+        })
+        .on('mousemove.tooltip', () => {
+          svg_bar.select('.tooltip').style('display', null);
+          const new_rect_size = svg_bar.select('.tooltip').select('text').node().getBoundingClientRect().width + 20;
+          svg_bar.select('.tooltip').select('rect')
+            .attr('width', new_rect_size);
+        })
+        .on('mouseout.tooltip', () => {
+          svg_bar.select('.tooltip').style('display', 'none');
+        });
       });
+    dots.exit().transition().duration(225).remove();
   }
 
   updateCompletude() {

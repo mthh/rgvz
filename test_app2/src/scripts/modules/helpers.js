@@ -58,6 +58,15 @@ function prepareTooltip(parent_svg_elem) {
       'font-weight': 'bold' })
     .style('text-anchor', 'middle');
 
+  tooltip.append('text')
+    .attrs({
+      class: 'value_feature5',
+      x: 25,
+      dy: '6.8em',
+      'font-size': '14px',
+      'font-weight': 'bold' })
+    .style('text-anchor', 'middle');
+
   return tooltip;
 }
 
@@ -201,6 +210,7 @@ function computePercentileRank(obj, field_name, result_field_name) {
     return 100 * count / len_values;
   };
   for (let ix = 0; ix < len_values; ix++) {
+    // eslint-disable-next-line no-param-reassign
     obj[ix][result_field_name] = getPR(values[ix]);
   }
 }

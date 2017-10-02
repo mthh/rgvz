@@ -310,3 +310,15 @@ input.nb_select::-webkit-outer-spin-button {
 }
 
 /* End of style for minitable */
+
+/* Style for menu / buttons under some charts */
+.choice_ind {
+  color: #4f81bd;
+  opacity: 0.5;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.choice_ind.active {
+  opacity: 1;
+}

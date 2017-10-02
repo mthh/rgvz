@@ -13,6 +13,7 @@ const width = +svg_bar.attr('width') - margin.left - margin.right,
 
 export class BubbleChart1 {
   constructor(ref_data) {
+    // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 1;
     const self = this;
     const available_ratios = app.current_config.ratio;
@@ -397,6 +398,7 @@ export class BubbleChart1 {
     this.current_ids = this.data.map(d => d.id);
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
+    this.updateTableStats();
     this.applySelection(temp);
   }
 

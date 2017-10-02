@@ -90,6 +90,8 @@ export class BarChart1 {
           .style('fill', d => app.colors[d.id] || color_countries);
       }
     };
+
+    // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 1;
     const x = d3.scaleBand().range([0, width]).padding(0.1),
       x2 = d3.scaleBand().range([0, width]).padding(0.1),

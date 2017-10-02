@@ -255,6 +255,8 @@ export class RadarChart3 {
       .style('fill', d => cfg.color(d.id))
       .style('fill-opacity', 0.8);
 
+    blobWrapper.node().__data__ = elem;
+
     // ///////////////////////////////////////////////////////
     // ////// Append invisible circles for tooltip ///////////
     // ///////////////////////////////////////////////////////
@@ -296,6 +298,7 @@ export class RadarChart3 {
   }
 
   prepareData(data) {
+    // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 3;
     this.variables = app.current_config.ratio;
     this.ref_data = data.slice().filter(
@@ -718,26 +721,22 @@ export class RadarChart3 {
   }
 
   changeStudyZone() {
-    this.variables = app.current_config.ratio;
-    this.ref_data = app.current_data.slice().filter(
-      ft => this.variables.map(v => !!ft[v]).every(d => d === true));
-    this.rank_variables = this.variables.map(d => `pr_${d}`);
-    this.variables.forEach((d, i) => {
-      computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    });
-    this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    this.current_ids = this.ref_data.map(d => d.id);
-    this.displayed_ids = this.data.map(d => d.name);
-    resetColors();
-    this.nbFt = this.data.length;
-    this.updateMapRegio();
-    this.updateTableStat();
-    this.update();
-  }
-
-  addVariable(code_variable, name_variable) {
+    // this.variables = app.current_config.ratio;
+    // this.ref_data = app.current_data.slice().filter(
+    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
+    // this.rank_variables = this.variables.map(d => `pr_${d}`);
+    // this.variables.forEach((d, i) => {
+    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
+    // });
+    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
+    // this.current_ids = this.ref_data.map(d => d.id);
+    // this.displayed_ids = this.data.map(d => d.name);
+    // resetColors();
+    // this.nbFt = this.data.length;
+    // this.updateMapRegio();
+    // this.updateTableStat();
+    // this.update();
     const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
-    console.log(other_features);
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -751,6 +750,25 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
     });
+    this.updateTableStat();
+  }
+
+  addVariable(code_variable, name_variable) {
+    const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
+    this.g.remove();
+    this.g = svg_bar.append('g')
+      .attr('id', 'RadarGrp')
+      .attr('transform', `translate(${this.cfg.w / 2 + this.cfg.margin.left},${this.cfg.h / 2 + this.cfg.margin.top})`);
+
+    this.prepareData(app.current_data);
+    this.drawAxisGrid();
+    this.drawArea();
+    this.handleLegend();
+    other_features.forEach((id) => {
+      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+      this.add_element(a);
+    });
+    this.updateTableStat();
     // this.update();
     // this.variables = app.current_config.ratio;
     // this.ref_data = app.current_data.slice().filter(
@@ -778,20 +796,7 @@ export class RadarChart3 {
     this.drawAxisGrid();
     this.drawArea();
     this.handleLegend();
-    // this.variables = app.current_config.ratio;
-    // this.ref_data = app.current_data.slice().filter(
-    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
-    // this.rank_variables = this.variables.map(d => `pr_${d}`);
-    // this.variables.forEach((d, i) => {
-    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    // });
-    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    // this.current_ids = this.ref_data.map(d => d.id);
-    // resetColors();
-    // this.nbFt = this.data.length;
-    // this.updateMapRegio();
-    // this.updateTableStat();
-    // this.update();
+    this.updateTableStat();
   }
 
   prepareTableStat() {
@@ -808,11 +813,6 @@ export class RadarChart3 {
     return features;
   }
 
-  // handle_brush_map(event) {
-  //   console.log(this);
-  //   console.log(event);
-  // }
-
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
@@ -820,7 +820,6 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
       this.update();
-      console.log(a);
     } else {
       this.g.selectAll(`#${id}.radarWrapper`).remove();
       this.g.selectAll(`#${id}.radarCircleWrapper`).remove();
