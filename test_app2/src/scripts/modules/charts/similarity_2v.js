@@ -2,7 +2,6 @@ import { comp, math_round, math_pow, math_sqrt, getMean, getStandardizedMeanStdD
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { app, resetColors } from './../../main';
-import ContextMenu from './../contextMenu';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
@@ -58,16 +57,16 @@ export class SimilarityChart {
     });
 
     // Find value of my region:
-    const obj_my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
+    this.obj_my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
 
     this.ref_data.forEach((ft) => {
-      const s = this.variables.map(v => math_pow(obj_my_region[`st_${v}`] - ft[`st_${v}`], 2)).reduce((a, b) => a + b, 0);
+      const s = this.variables.map(v => math_pow(this.obj_my_region[`st_${v}`] - ft[`st_${v}`], 2)).reduce((a, b) => a + b, 0);
       // eslint-disable-next-line no-param-reassign
       ft.dissimilarity = math_sqrt(s);
       this.variables.forEach((v) => {
         const var_name = `ec_${v}`;
         // eslint-disable-next-line no-param-reassign
-        ft[var_name] = (ft[`st_${v}`] / obj_my_region[`st_${v}`] * 100) / 100;
+        ft[var_name] = (ft[v] / this.obj_my_region[v] * 100) - 100;
       });
     });
     this.ref_data = this.ref_data.sort((a, b) => a.dissimilarity - b.dissimilarity);
@@ -119,29 +118,6 @@ export class SimilarityChart {
 
     // Prepare the tooltip displayed on mouseover:
     const tooltip = prepareTooltip(svg_bar);
-
-    // // Deactivate the brush rect selection on the map + on the chart
-    // // when he user press the Ctrl key:
-    // document.onkeydown = (event) => {
-    //   if (event && event.key === 'Control') {
-    //     svg_bar.select('.brush_top')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', 'none');
-    //     svg_map.select('.brush_map')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', 'none');
-    //   }
-    // };
-    // document.onkeyup = (event) => {
-    //   if (event && event.key === 'Control') {
-    //     svg_bar.select('.brush_top')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', null);
-    //     svg_map.select('.brush_map')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', null);
-    //   }
-    // };
 
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
@@ -231,23 +207,7 @@ export class SimilarityChart {
           width: this.x.bandwidth(),
           height: height - this.y(d.dissimilarity),
         }))
-        .style('fill', color_default_dissim)
-        .on('mouseover', () => {
-          svg_bar.select('.tooltip').style('display', null);
-        })
-        .on('mouseout', () => {
-          svg_bar.select('.tooltip').style('display', 'none');
-        })
-        .on('mousemove', function (d) {
-          const tooltip = svg_bar.select('.tooltip');
-          tooltip
-            .select('text.id_feature')
-            .text(`${d.id}`);
-          tooltip.select('text.value_feature1')
-            .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
-          tooltip
-            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
-        });
+        .style('fill', color_default_dissim);
 
       bars.enter()
         .insert('rect', '.mean')
@@ -258,7 +218,28 @@ export class SimilarityChart {
           width: this.x.bandwidth(),
           height: height - this.y(d.dissimilarity),
         }))
-        .style('fill', color_default_dissim);
+        .style('fill', color_default_dissim)
+        .on('mouseover', () => {
+          svg_bar.select('.tooltip').style('display', null);
+        })
+        .on('mouseout', () => {
+          svg_bar.select('.tooltip').style('display', 'none');
+        })
+        .on('mousemove', function (d) {
+          const tooltip = svg_bar.select('.tooltip');
+          console.log(d);
+          tooltip
+            .select('text.id_feature')
+            .text(`${app.current_config.my_region} - ${d.id}`);
+          tooltip.select('text.value_feature1')
+            .text(`${app.current_config.my_region} : ${math_round(d[self.ratio_to_use] * 10) / 10}`);
+          tooltip.select('text.value_feature2')
+            .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
+          tooltip.select('text.value_feature2')
+            .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
+          tooltip
+            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+        });
 
       bars.exit().remove();
 
@@ -332,7 +313,7 @@ export class SimilarityChart {
           transform: `translate(${this.x(d.id)}, 0)`,
         }))
         .selectAll('rect')
-        .data(d => keys.map(key => ({ key, value: d[key], id: d.id })))
+        .data(d => keys.map(key => ({ key, value: d[key], value_ref: d[key.replace('ec_', '')], id: d.id })))
         .enter()
         .append('rect')
         .attrs(d => ({
@@ -341,7 +322,31 @@ export class SimilarityChart {
           width: this.x1.bandwidth(),
           height: Math.abs(this.y(d.value) - this.y(0)),
           fill: this.z(d.key),
-        }));
+        }))
+        .on('mouseover', () => {
+          svg_bar.select('.tooltip').style('display', null);
+        })
+        .on('mouseout', () => {
+          svg_bar.select('.tooltip').style('display', 'none');
+        })
+        .on('mousemove', function (d) {
+          const tooltip = svg_bar.select('.tooltip');
+          const indic = d.key.replace('ec_', '');
+          tooltip
+            .select('text.id_feature')
+            .text(`${app.current_config.my_region} - ${d.id}`);
+          tooltip.select('text.value_feature1')
+            .text(`Indicateur : ${indic}`);
+          tooltip.select('text.value_feature2')
+            .text(`${app.current_config.my_region} : ${math_round(self.obj_my_region[indic] * 10) / 10}`);
+          tooltip.select('text.value_feature3')
+            .text(`${d.id} : ${math_round(d.value_ref * 10) / 10}`);
+          tooltip.select('text.value_feature4')
+            .text(`Écart: ${math_round(d.value * 10) / 10} %`);
+          const tx = +this.parentElement.getAttribute('transform').replace('translate(', '').replace(', 0)', '');
+          tooltip
+            .attr('transform', `translate(${[d3.mouse(this)[0] - 5 + tx, d3.mouse(this)[1] - 65]})`);
+        });
 
       bars.exit().remove();
 
@@ -433,16 +438,16 @@ export class SimilarityChart {
     });
 
     // Find value of my region:
-    const obj_my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
+    this.obj_my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
 
     this.ref_data.forEach((ft) => {
-      const s = this.variables.map(v => math_pow(obj_my_region[`st_${v}`] - ft[`st_${v}`], 2)).reduce((a, b) => a + b, 0);
+      const s = this.variables.map(v => math_pow(this.obj_my_region[`st_${v}`] - ft[`st_${v}`], 2)).reduce((a, b) => a + b, 0);
       // eslint-disable-next-line no-param-reassign
       ft.dissimilarity = math_sqrt(s);
       this.variables.forEach((v) => {
         const var_name = `ec_${v}`;
         // eslint-disable-next-line no-param-reassign
-        ft[var_name] = (ft[`st_${v}`] / obj_my_region[`st_${v}`] * 100) / 100;
+        ft[var_name] = (ft[v] / this.obj_my_region[v] * 100) - 100;
       });
     });
     this.ref_data = this.ref_data.sort((a, b) => a.dissimilarity - b.dissimilarity);

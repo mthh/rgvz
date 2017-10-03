@@ -322,3 +322,18 @@ input.nb_select::-webkit-outer-spin-button {
 .choice_ind.active {
   opacity: 1;
 }
+
+/* End of styles for menu / buttons under charts */
+
+/* Style for parallel coordinates */
+.foreground path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.background path {
+  fill: none;
+  stroke: #034d3c;
+}
+/* End of styles for parallel coordinates */

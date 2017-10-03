@@ -310,6 +310,7 @@ export class RadarChart3 {
     this.data = prepare_data_radar_default(this.ref_data, this.variables);
     this.displayed_ids = this.data.map(d => d.name);
     this.current_ids = this.ref_data.map(d => d.id);
+    this.id_my_region = app.current_config.my_region;
     // const ref_ids = [];
     // If the supplied maxValue is smaller than the actual one, replace by the max in the data
     // var maxValue = max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
@@ -736,12 +737,14 @@ export class RadarChart3 {
     // this.updateMapRegio();
     // this.updateTableStat();
     // this.update();
-    const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
+    const old_my_region = this.id_my_region;
+    const other_features = this.displayed_ids.filter(d => d !== old_my_region && d !== 'Moyenne du contexte d\'étude');
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
       .attr('transform', `translate(${this.cfg.w / 2 + this.cfg.margin.left},${this.cfg.h / 2 + this.cfg.margin.top})`);
 
+    this.id_my_region = app.current_config.my_region;
     this.prepareData(app.current_data);
     this.drawAxisGrid();
     this.drawArea();
@@ -754,7 +757,7 @@ export class RadarChart3 {
   }
 
   addVariable(code_variable, name_variable) {
-    const other_features = this.displayed_ids.filter(d => d !== app.current_config.my_region && d !== 'Moyenne du contexte d\'étude');
+    const other_features = this.displayed_ids.filter(d => d !== this.id_my_region && d !== 'Moyenne du contexte d\'étude');
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -801,7 +804,7 @@ export class RadarChart3 {
 
   prepareTableStat() {
     const all_values = this.variables.map(v => this.ref_data.map(d => d[v]));
-    const my_region = this.ref_data.find(d => d.id === app.current_config.my_region);
+    const my_region = this.ref_data.find(d => d.id === this.id_my_region);
     const features = all_values.map((values, i) => ({
       Min: d3.min(values),
       Max: d3.max(values),
@@ -815,7 +818,7 @@ export class RadarChart3 {
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
-    if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
+    if (this.current_ids.indexOf(id) < 0 || id === this.id_my_region) return;
     if (this.displayed_ids.indexOf(id) < 0) {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);

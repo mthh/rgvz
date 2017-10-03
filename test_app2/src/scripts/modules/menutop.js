@@ -72,7 +72,7 @@ export function makeTopMenu() {
     .html('1 ind.');
 
   inegalite.append('span')
-    .attr('class', 'type_chart chart_t2 disabled')
+    .attrs({ class: 'type_chart chart_t2 disabled', value: 'ParallelCoords2' })
     .html('+2 ind.');
 
   top_menu

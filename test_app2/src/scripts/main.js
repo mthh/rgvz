@@ -1,14 +1,15 @@
-import debug from 'debug';
+// import debug from 'debug';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { makeTable } from './modules/table';
-import { color_countries, color_highlight } from './modules/options';
+import { color_highlight } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { SimilarityChart } from './modules/charts/similarity_2v';
+import { ParallelCoords2 } from './modules/charts/parallelCoords_2v';
 import { unbindUI } from './modules/helpers';
 import {
   prepare_dataset,
@@ -18,22 +19,12 @@ import {
   addVariable,
   removeVariable,
   resetVariables,
-  prepareVariablesInfo
+  prepareVariablesInfo,
 } from './modules/prepare_data';
 
-debug('app:log');
+// debug('app:log');
 
-export let variables_info;/* = [
-  { ratio: 'PC_CHOM_1524_2015', num: 'CHOM_1524_2015', denum: 'ACT_1524_2015', name: 'Taux de chomage des jeunes (2015)', group: 'Pauvreté / Exclusion sociale' },
-  { ratio: 'PC_CHOM_1574_2015', num: 'CHOM_1574_2015', denum: 'ACT_1574_2015', name: 'Taux de chomage (2015)', group: 'Pauvreté / Exclusion sociale' },
-  { ratio: 'PC_CHOM_LONG_2016', num: 'CHOM_LONG_2016', denum: 'ACT_LONG_2016', name: 'Taux de chômage de longue durée (2016)', group: 'Pauvreté / Exclusion sociale' },
-  { ratio: 'PC_REV_2014', num: 'REV_2014', denum: 'MEN_2014', name: 'Revenu des ménages (2014)', group: 'Pauvreté / Exclusion sociale' },
-  { ratio: 'PC_BREV_HAB_2011', num: 'BREV_2011', denum: 'POP_BREV_2011', name: 'Productions innovantes (2011)', group: 'Activité / Innovation' },
-  { ratio: 'PC_RD_EMP_2013', num: 'RD_EMP_2013', denum: 'POP_RD_EMP_2013', name: 'Part de l\'emploi en R&D (2013)', group: 'Activité / Innovation' },
-  { ratio: 'PC_PIB_HAB_2014', num: 'PC_PIB_HAB_2014', denum: 'POP_PIB_2014', name: 'PIB par habitant (euros)(2014)', group: 'Activité / Innovation' },
-  { ratio: 'PC_ARTIF_AREA_2015', num: 'ARTIF_AREA_2015', denum: 'LC_AREA_2015', name: 'Part des surfaces artificialisées (2015)', group: 'Environnement / Transition écologique' },
-];*/
-
+export let variables_info;
 
 const study_zones = [
   { id: 'no_filter', name: 'UE28' },
@@ -107,6 +98,68 @@ export function resetColors() {
 }
 
 /**
+* Function to select the first variable on the left menu
+* (triggered after changing region, if no more variable was selected)
+*
+* @return {void}
+*/
+function selectFirstAvailableVar() {
+  const menu = document.querySelector('#menu');
+  const v = menu.querySelectorAll('.target_variable');
+  for (let i = 0; i < v.length; i++) {
+    if (!v[i].classList.contains('disabled')) {
+      v[i].classList.add('checked');
+      return v[i].getAttribute('value');
+    }
+  }
+}
+
+/**
+* Function to update the availables ratios in the left menu (after changing region)
+* If a selected variable is not available anymore it will be deselected.
+* If there selected variable (all the previously selected variables are unavailable for this region)
+* the first variable on the menu will be selected.
+* If the new number of selected feature is inferior to the number of variables on the current
+* chart, a new chart (suitable for only 1 variable) will be selected.
+*
+*
+* @param {String} my_region - The ID of the newly selected region.
+* @return {Number} - The new number of selected ratios.
+*
+*/
+function updateAvailablesRatios(my_region) {
+  const data_my_feature = app.full_dataset.filter(
+    ft => ft[app.current_config.id_field] === my_region)[0];
+  const menu = document.querySelector('#menu');
+  const lines = menu.querySelectorAll('.target_variable');
+  for (let i = 0, nb_lines = lines.length; i < nb_lines; i++) {
+    const code_variable = lines[i].getAttribute('value');
+    if (data_my_feature[code_variable] !== undefined
+        && data_my_feature[code_variable] !== 'NA') {
+      lines[i].classList.remove('disabled');
+      lines[i].nextSibling.classList.remove('disabled');
+    } else {
+      lines[i].classList.remove('checked');
+      lines[i].classList.add('disabled');
+      lines[i].nextSibling.classList.add('disabled');
+    }
+  }
+  const new_var = menu.querySelectorAll('.target_variable.checked');
+  if (new_var.length !== app.current_config.ratio.length) {
+    let new_var_names;
+    if (new_var.length === 0) {
+      const name = selectFirstAvailableVar();
+      new_var_names = [name];
+    } else {
+      new_var_names = Array.prototype.slice.call(
+        new_var).map(elem => elem.getAttribute('value'));
+    }
+    resetVariables(app, new_var_names);
+  }
+  return new_var.length;
+}
+
+/**
 * Create handlers for user event on the left menu and on the map for charts only
 * allowing to use 1 variable.
 *
@@ -169,7 +222,7 @@ function bindUI_chart(chart, map_elem) {
   d3.selectAll('span.target_variable')
     .on('click', function () {
       if (this.classList.contains('disabled')) return;
-      let nb_var =  Array.prototype.slice.call(
+      let nb_var = Array.prototype.slice.call(
         document.querySelectorAll('span.target_variable')).filter(
           elem => !!elem.classList.contains('checked')).length;
       // Select a new variable and trigger the appropriate changes on the current chart:
@@ -358,8 +411,13 @@ export function bindTopButtons(chart, map_elem) {
         bindUI_chart(chart, map_elem);
         map_elem.bindBrush(chart);
         chart.bindMap(map_elem);
+      } else if (value === 'ParallelCoords2') {
+        console.log('ParallelCoords2');
+        chart = new ParallelCoords2(app.current_data);
+        bindUI_chart(chart, map_elem);
+        map_elem.bindBrush(chart);
+        chart.bindMap(map_elem);
       }
-
     });
 }
 
@@ -373,11 +431,13 @@ function loadData() {
     .defer(d3.json, 'data/template3035.geojson')
     .defer(d3.json, 'data/sea_boxes.geojson')
     .defer(d3.csv, 'data/indicateurs_meta.csv')
+    .defer(d3.csv, 'data/nuts2_aggreg.csv')
     .awaitAll((error, results) => {
       if (error) throw error;
       const [
-        full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs,
+        full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs, agg_n2,
       ] = results;
+      console.log(agg_n2);
       variables_info = prepareVariablesInfo(metadata_indicateurs);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
@@ -399,68 +459,6 @@ function loadData() {
       map_elem.bindBrush(chart);
       chart.bindMap(map_elem);
     });
-}
-
-/**
-* Function to select the first variable on the left menu
-* (triggered after changing region, if no more variable was selected)
-*
-* @return {void}
-*/
-function selectFirstAvailableVar() {
-  const menu = document.querySelector('#menu');
-  const v = menu.querySelectorAll('.target_variable');
-  for (let i = 0; i < v.length; i++) {
-    if (!v[i].classList.contains('disabled')) {
-      v[i].classList.add('checked');
-      return v[i].getAttribute('value');
-    }
-  }
-}
-
-/**
-* Function to update the availables ratios in the left menu (after changing region)
-* If a selected variable is not available anymore it will be deselected.
-* If there selected variable (all the previously selected variables are unavailable for this region)
-* the first variable on the menu will be selected.
-* If the new number of selected feature is inferior to the number of variables on the current
-* chart, a new chart (suitable for only 1 variable) will be selected.
-*
-*
-* @param {String} my_region - The ID of the newly selected region.
-* @return {Number} - The new number of selected ratios.
-*
-*/
-function updateAvailablesRatios(my_region) {
-  const data_my_feature = app.full_dataset.filter(
-    ft => ft[app.current_config.id_field] === my_region)[0];
-  const menu = document.querySelector('#menu');
-  const lines = menu.querySelectorAll('.target_variable');
-  for (let i = 0, nb_lines = lines.length; i < nb_lines; i++) {
-    const code_variable = lines[i].getAttribute('value');
-    if (data_my_feature[code_variable] !== undefined
-        && data_my_feature[code_variable] !== 'NA') {
-      lines[i].classList.remove('disabled');
-      lines[i].nextSibling.classList.remove('disabled');
-    } else {
-      lines[i].classList.remove('checked');
-      lines[i].classList.add('disabled');
-      lines[i].nextSibling.classList.add('disabled');
-    }
-  }
-  const new_var = menu.querySelectorAll('.target_variable.checked');
-  if (new_var.length !== app.current_config.ratio.length) {
-    let new_var_names;
-    if (new_var.length === 0) {
-      const name = selectFirstAvailableVar();
-      new_var_names = [name];
-    } else {
-      new_var_names = Array.prototype.slice.call(
-        new_var).map(elem => elem.getAttribute('value'));
-    }
-    resetVariables(app, new_var_names);
-  }
-  return new_var.length;
 }
 
 loadData();
