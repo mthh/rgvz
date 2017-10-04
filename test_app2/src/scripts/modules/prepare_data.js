@@ -1,4 +1,3 @@
-import { math_round } from './helpers';
 import { color_highlight } from './options';
 import { variables_info } from './../main';
 
@@ -68,11 +67,6 @@ export function filterLevelVar(app, filter_id) {
     return props_feature;
   });
 
-  // // Filter data for empty values :
-  // const filtered_data = temp.filter(
-  //   ft => ratio.map(v => !!ft[v]).every(v => v === true));
-
-  //
   app.current_data = temp;
 }
 
@@ -85,6 +79,7 @@ export function filterLevelVar(app, filter_id) {
 *
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
+  console.log(metadata_indicateurs);
   return metadata_indicateurs
     .filter(ft => ft['Type statistique'] === 'Ratio')
     .map(ft => ({
@@ -93,6 +88,9 @@ export function prepareVariablesInfo(metadata_indicateurs) {
       denum: `${ft['id2']}_${ft['Année']}`,
       name: `${ft['Nom']} (${ft['Année']})`,
       group: ft['Thème'],
+      methodo: ft['Méthodologie'],
+      source: ft['Source'],
+      last_update: ft['Dernière mise à jour'],
     }));
 }
 

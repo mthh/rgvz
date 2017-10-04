@@ -11,8 +11,8 @@ const margin = { top: 20, right: 20, bottom: 40, left: 30 };
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
 
-const boxQuartiles = (values) => [
-  d3.quantiles(values, 0.25), d3.quantiles(values, 0.5), d3.quantiles(values, 0.75)
+const boxQuartiles = values => [
+  d3.quantiles(values, 0.25), d3.quantiles(values, 0.5), d3.quantiles(values, 0.75),
 ];
 
 /**
@@ -67,7 +67,85 @@ export class BoxPlot1 {
     max_nb_ft.sort((a, b) => a - b);
     max_nb_ft = max_nb_ft[max_nb_ft.length - 1];
     const barWidth = xScale.step() - 1;
-    const get_bar_width = (nb_ft) => (barWidth * nb_ft) / max_nb_ft;
+    const get_bar_width = nb_ft => (barWidth * nb_ft) / max_nb_ft;
+
+    this.plot = svg_bar.append('g')
+      .attr('transform', `translate(${[margin.left, margin.top]})`);
+    this.plot.append('g')
+      .attrs({ class: 'axis axis--x', transform: `translate(10, ${height})` })
+      .call(d3.axisBottom(xScale));
+    this.plot.append('g')
+      .attrs({ class: 'axis axis--y', transform: 'translate(10, 0)' })
+      .call(d3.axisLeft(yScale));
+
+    this.g_box = this.plot.append('g')
+      .attr('transform', 'translate(10, 0)');
+
+    this.vertical_lines = this.g_box.selectAll('.vertical_lines')
+      .data(this.data)
+      .enter()
+      .append('line')
+      .attrs(d => ({
+        x1: xScale(d.key) + get_bar_width(d.counts.length) / 2,
+        y1: yScale(d.whiskers[0]),
+        x2: xScale(d.key) + get_bar_width(d.counts.length) / 2,
+        y2: yScale(d.whiskers[1]),
+        stroke: '#000',
+        'stroke-width': 0.5,
+        fill: 'none',
+      }));
+
+    this.g_box.selectAll('rect')
+      .data(this.data)
+      .enter()
+      .append('rect')
+      .attrs(d => ({
+        width: get_bar_width(d.counts.length),
+        height: yScale(d.quartile[0]) - yScale(d.quartile[2]),
+        x: xScale(d.key),
+        y: yScale(d.quartile[2]),
+        fill: d.color,
+        stroke: '#000',
+        'stroke-width': 0.5,
+      }));
+
+    const horizontalLineConfigs = [
+      {
+        x1: datum => xScale(datum.key),
+        y1: datum => yScale(datum.whiskers[1]),
+        x2: datum => xScale(datum.key) + get_bar_width(datum.counts.length),
+        y2: datum => yScale(datum.whiskers[1]),
+      },
+      {
+        x1: datum => xScale(datum.key),
+        y1: datum => yScale(datum.quartile[1]),
+        x2: datum => xScale(datum.key) + get_bar_width(datum.counts.length),
+        y2: datum => yScale(datum.quartile[1]),
+      },
+      {
+        x1: datum => xScale(datum.key),
+        y1: datum => yScale(datum.whiskers[0]),
+        x2: datum => xScale(datum.key) + get_bar_width(datum.counts.length),
+        y2: datum => yScale(datum.whiskers[0]),
+      },
+    ];
+    for (let i = 0; i < horizontalLineConfigs.length; i++) {
+      const lineConfig = horizontalLineConfigs[i];
+      const horizontalLine = this.g_box
+        // .selectAll('.whiskers')
+        // .data(this.data)
+        // .enter()
+        .append('line')
+        .attrs(d => ({
+          x1: lineConfig.x1,
+          y1: lineConfig.y1,
+          x2: lineConfig.x2,
+          y2: lineConfig.y2,
+          stroke: '#000',
+          'stroke-width': 0.5,
+          fill: 'none',
+        }));
+    }
   }
 
   addVariable(code_variable, name_variable) {

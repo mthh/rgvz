@@ -51,7 +51,7 @@ export class ScatterPlot2 {
           && ft[t1] < range_x[1]
           && ft[t2] > range_y[0]
           && ft[t2] < range_y[1])
-        .forEach(ft => {
+        .forEach((ft) => {
           app.colors[ft.id] = comp2(
             ft[this.variable1], ft[this.variable2],
             self.ref_value1, self.ref_value2,
@@ -177,7 +177,7 @@ export class ScatterPlot2 {
       .call(this.yAxis);
 
     // Prepare the tooltip displayed on mouseover:
-    prepareTooltip(this.scatter);
+    prepareTooltip(this.plot);
 
     this.prepareTitleAxis();
 
@@ -362,7 +362,10 @@ export class ScatterPlot2 {
         class: 'dot',
       }))
       .call((selection) => {
-        selection.on('mouseover.tooltip', function (d) {
+        selection.on('mouseover.tooltip', () => {
+          svg_bar.select('.tooltip').style('display', null);
+        })
+        .on('mousemove.tooltip', function (d) {
           const tooltip = svg_bar.select('.tooltip')
             .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
           tooltip.select('rect').attrs({ width: 0, height: 0 });
@@ -376,14 +379,8 @@ export class ScatterPlot2 {
             .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
           tooltip.select('text.value_feature4')
           .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+          const b = tooltip.node().getBoundingClientRect();
           tooltip.select('rect')
-            .attrs({ width: b.width + 20, height: b.height + 7.5 });
-        })
-        .on('mousemove.tooltip', () => {
-          svg_bar.select('.tooltip').style('display', null);
-          const b = svg_bar.select('.tooltip').node().getBoundingClientRect();
-          svg_bar.select('.tooltip')
-            .select('rect')
             .attrs({ width: b.width + 20, height: b.height + 7.5 });
         })
         .on('mouseout.tooltip', () => {
@@ -395,9 +392,7 @@ export class ScatterPlot2 {
 
   updateCompletude() {
     this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
-
-    this.completude
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude.text(`Complétude : ${this.completude_value}%`);
   }
 
   updateMapRegio() {

@@ -1,6 +1,6 @@
 import {
   math_max, math_sin, math_cos, HALF_PI, _getPR, computePercentileRank, getMean } from './../helpers';
-import { color_disabled, color_countries, color_highlight } from './../options';
+import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { app, variables_info, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
@@ -89,6 +89,9 @@ export const prepare_data_radar_default = (data, variables) => {
 
 export const prepare_data_radar_ft = (data, variables, ft) => {
   const ft_values = data.find(d => d.id === ft);
+  if (!ft_values) {
+    return null;
+  }
   const obj = {
     name: ft,
     axes: [],
@@ -657,7 +660,7 @@ export class RadarChart3 {
 
     const update_blobWrapper = this.g.selectAll('.radarWrapper')
       .data(this.data, d => d.name);
-
+    console.log(this.data);
     update_blobWrapper.select('.radarArea')
       .transition(t)
       .attr('d', d => this.radarLine(d.axes));
@@ -703,6 +706,7 @@ export class RadarChart3 {
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
+    this.updateMapRegio();
   }
 
   remove() {
@@ -714,11 +718,7 @@ export class RadarChart3 {
   }
 
   updateChangeRegion() {
-    // if (app.current_config.filter_key) {
     this.changeStudyZone();
-    // } else {
-    //
-    // }
   }
 
   changeStudyZone() {
@@ -753,6 +753,7 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
     });
+    this.updateMapRegio();
     this.updateTableStat();
   }
 
@@ -771,6 +772,7 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
     });
+    this.updateMapRegio();
     this.updateTableStat();
     // this.update();
     // this.variables = app.current_config.ratio;
@@ -842,9 +844,11 @@ export class RadarChart3 {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (this.displayed_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
-        : color_disabled));
+      .attr('fill', d => (d.properties[app.current_config.id_field_geom] === this.id_my_region
+        ? color_highlight
+        : this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+        ? (this.displayed_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+        ? color_default_dissim : color_countries) : color_disabled));
   }
 
   updateTableStat() {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Signika');
+@import url('https://fonts.googleapis.com/css?family=Signika|Courgette');
 
 .area {
   fill: steelblue;
@@ -17,6 +17,20 @@
 
 .axis--y > g.tick > line, .axis--x > g.tick > line{
   stroke: #BEBEBE;
+}
+
+span.i_info {
+  font-family: Courgette;
+  color: #4f81bd;
+  padding-left: 5px;
+  padding-right: 4px;
+  font-weight: bold;
+  font-size: 11px;
+  cursor: help;
+}
+
+div.tingle-modal-box__content {
+  padding: 1rem 2rem 2rem 2rem !important;
 }
 
 /* Style for tables : */

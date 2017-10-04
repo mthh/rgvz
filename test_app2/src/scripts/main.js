@@ -1,4 +1,5 @@
 // import debug from 'debug';
+import tingle from 'tingle.js';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
@@ -22,8 +23,6 @@ import {
   resetVariables,
   prepareVariablesInfo,
 } from './modules/prepare_data';
-
-// debug('app:log');
 
 export let variables_info;
 
@@ -432,7 +431,6 @@ export function bindTopButtons(chart, map_elem) {
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       }
-
     });
 }
 
@@ -459,6 +457,7 @@ function loadData() {
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
         && +ft.level === app.current_config.current_level);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
+      bindHelpMenu();
       makeTopMenu();
       makeHeaderChart();
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
@@ -474,6 +473,83 @@ function loadData() {
       map_elem.bindBrushClick(chart);
       chart.bindMap(map_elem);
     });
+}
+
+function bindHelpMenu() {
+  const help_buttons_var = document.querySelector('#menu_variables').querySelectorAll('span.i_info');
+  Array.prototype.slice.call(help_buttons_var).forEach((btn_i) => {
+    // eslint-disable-next-line no-param-reassign
+    btn_i.onclick = function () {
+      const code_variable = this.previousSibling.previousSibling.getAttribute('value');
+      const o = variables_info.find(d => d.ratio === code_variable);
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'button', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(
+        `<p style="font-family: 'Signika',sans-serif;color: #4f81bd;font-size: 1.3rem;">Description de l'indicateur</p>
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${o.methodo.split('\n').join('<br>')}</p>
+        <p style="font-family: 'Signika',sans-serif;font-size: 0.8em">${o.source}</p>
+        <p style="font-family: 'Signika',sans-serif;font-size: 0.8em">Date de téléchargement de la données : ${o.last_update}</p>`);
+      modal.open();
+    };
+  });
+
+  const helps_buttons_study_zone = document.querySelector('#menu_studyzone').querySelectorAll('span.i_info');
+  Array.prototype.slice.call(helps_buttons_study_zone).forEach((btn_i) => {
+    // eslint-disable-next-line no-param-reassign
+    btn_i.onclick = function () {
+      const filter_name = this.previousSibling.previousSibling.getAttribute('filter-value');
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'button', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(
+        `<p style="font-family: 'Signika',sans-serif;color: #4f81bd;font-size: 1.3rem;">Méthodologie</p>
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${filter_name}</p>`);
+      modal.open();
+    };
+  });
+
+  const helps_buttons_territ_unit = document.querySelector('#menu_territ_level').querySelectorAll('span.i_info');
+  Array.prototype.slice.call(helps_buttons_territ_unit).forEach((btn_i) => {
+    // eslint-disable-next-line no-param-reassign
+    btn_i.onclick = function () {
+      const territ_level_name = this.previousSibling.previousSibling.getAttribute('value');
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'button', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(`
+        <p style="font-family: 'Signika',sans-serif; color: #4f81bd;font-size: 1.3rem;">Titre</p>
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${territ_level_name}</p>`);
+      modal.open();
+    };
+  });
 }
 
 loadData();

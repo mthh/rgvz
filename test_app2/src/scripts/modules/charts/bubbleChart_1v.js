@@ -53,7 +53,9 @@ export class BubbleChart1 {
       .styles({ 'font-family': '\'Signika\', sans-serif' })
       .text(`Complétude : ${this.completude_value}%`);
 
-    // Create the button allowing to choose if the color are inversed (green/red for superior/inferior regions)
+    // Create the button allowing to choose
+    // if the colors are inversed
+    // (like green/red for superior/inferior regions)
     svg_bar.append('image')
       .attrs({
         x: width + margin.left + 5,
@@ -119,25 +121,6 @@ export class BubbleChart1 {
       self.changeStudyZone();
       self.updateCompletude();
     });
-
-    // // Deactivate the rect brush selection on the map
-    // // while the user press the Ctrl key:
-    // document.onkeydown = (event) => {
-    //   if (event && event.key === 'Control') {
-    //     svg_map.select('.brush_map')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', 'none');
-    //   }
-    // };
-    // // Reactivate the rect brush selection on the map
-    // // when the user doesn't press the Ctrl key anymore
-    // document.onkeyup = (event) => {
-    //   if (event && event.key === 'Control') {
-    //     svg_map.select('.brush_map')
-    //       .selectAll('.selection, .overlay')
-    //       .style('display', null);
-    //   }
-    // };
 
     this.makeTableStat();
   }
@@ -332,7 +315,6 @@ export class BubbleChart1 {
     if (app.current_config.filter_key !== undefined) {
       this.changeStudyZone();
     } else {
-      // this.map_elem.removeRectBrush();
       this.map_elem.updateLegend();
       this.my_region_value = this.data.find(
         d => d.id === app.current_config.my_region)[this.ratio_to_use];
@@ -347,7 +329,6 @@ export class BubbleChart1 {
   }
 
   changeStudyZone() {
-    // this.map_elem.removeRectBrush();
     this.map_elem.updateLegend();
     this.my_region_value = app.current_data.find(
       d => d.id === app.current_config.my_region)[this.ratio_to_use];

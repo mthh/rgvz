@@ -395,11 +395,18 @@ export class BarChart1 {
       })
       .on('mousemove', function (d) {
         const tooltip = svg_bar.select('.tooltip');
+        tooltip.select('rect').attrs({ width: 0, height: 0 });
         tooltip
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
           .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
+        const b = tooltip.node().getBoundingClientRect();
+        tooltip.select('rect')
+          .attrs({
+            width: b.width + 20,
+            height: b.height + 7.5,
+          });
         tooltip
           .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
       });

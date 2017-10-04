@@ -22,6 +22,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   title_section2.className = 'title_menu';
   title_section2.innerHTML = 'Mon/mes indicateurs';
   const section2 = document.createElement('div');
+  section2.id = 'menu_variables';
   section2.className = 'box';
   section2.style.overflow = 'auto';
   section2.style.height = '170px';
@@ -43,7 +44,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
       const code_var = var_names[j].ratio;
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
-      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span class="label_chk">${name_var}</span>`;
+      sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span class="label_chk">${name_var}</span><span class="i_info">i</span>`;
       div_grp.appendChild(sub_entry);
     }
     section2.appendChild(div_grp);
@@ -54,11 +55,12 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   title_section3.className = 'title_menu';
   title_section3.innerHTML = 'Mon espace d\'étude';
   const section3 = document.createElement('div');
+  section3.id = 'menu_studyzone';
   section3.className = 'box';
   for (let i = 0, len_i = study_zones.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const zone = study_zones[i];
-    entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square'></span><span class="label_chk">${zone.name}</span>`;
+    entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square'></span><span class="label_chk">${zone.name}</span><span class="i_info">i</span>`;
     section3.appendChild(entry);
   }
 
@@ -67,11 +69,12 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   title_section4.className = 'title_menu';
   title_section4.innerHTML = 'Maillage territorial d\'analyse';
   const section4 = document.createElement('div');
+  section4.id = 'menu_territ_level';
   section4.className = 'box';
   for (let i = 0, len_i = territorial_mesh.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const territ_level = territorial_mesh[i];
-    entry.innerHTML = `<span value="${territ_level.id}" class='square territ_level'></span><span class="label_chk">${territ_level.name}</span>`;
+    entry.innerHTML = `<span value="${territ_level.id}" class='square territ_level'></span><span class="label_chk">${territ_level.name}</span><span class="i_info">i</span>`;
     section4.appendChild(entry);
   }
 

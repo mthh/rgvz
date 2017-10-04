@@ -178,7 +178,7 @@ class MapSelect {
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
-  static updateLegend() {
+  updateLegend() {
     d3.select('#svg_legend > g > .legend > text')
       .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
   }
