@@ -754,7 +754,7 @@ export class BarChart1 {
     this.selec_var.remove();
     this.table_stats.remove();
     this.table_stats = null;
-    this.map_elem.unbindBrush();
+    this.map_elem.unbindBrushClick();
     this.map_elem = null;
     svg_bar.html('');
   }

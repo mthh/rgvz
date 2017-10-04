@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords } from './../helpers';
+import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -263,6 +263,7 @@ export class BubbleChart1 {
             const tooltip = svg_bar.select('.tooltip');
             const _ratio_to_use = self.ratio_to_use;
             const _stock_to_use = self.stock_to_use;
+            tooltip.select('rect').attrs({ width: 0, height: 0 });
             tooltip
               .select('text.id_feature')
               .text(`${d.id}`);
@@ -270,6 +271,12 @@ export class BubbleChart1 {
               .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
             tooltip.select('text.value_feature2')
               .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
+            const b = tooltip.node().getBoundingClientRect();
+            tooltip.select('rect')
+              .attrs({
+                width: b.width + 20,
+                height: b.height + 7.5,
+              });
             tooltip
               .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
           });
@@ -291,50 +298,6 @@ export class BubbleChart1 {
         ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
         : color_disabled));
   }
-
-  // handle_brush_map(event) {
-  //   if (!event || !event.selection) {
-  //     this.last_map_selection = undefined;
-  //     return;
-  //   }
-  //   const self = this;
-  //   const [topleft, bottomright] = event.selection;
-  //   this.last_map_selection = [topleft, bottomright];
-  //   const rect = new Rect(topleft, bottomright);
-  //   const ratio_to_use = this.ratio_to_use;
-  //   app.colors = {};
-  //   self.highlight_selection = [];
-  //   self.map_elem.target_layer.selectAll('path')
-  //     .attr('fill', function (d) {
-  //       const id = d.properties[app.current_config.id_field_geom];
-  //       if (id === app.current_config.my_region) {
-  //         app.colors[id] = color_highlight;
-  //         return color_highlight;
-  //       } else if (self.current_ids.indexOf(id) < 0) {
-  //         return color_disabled;
-  //       }
-  //       if (!this._pts) {
-  //         this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
-  //       }
-  //       const pts = this._pts;
-  //       for (let ix = 0, nb_pts = pts.length; ix < nb_pts; ix++) {
-  //         if (rect.contains(pts[ix])) {
-  //           const value = d.properties[ratio_to_use];
-  //           const color = comp(value, self.my_region_value, this.serie_inversed);
-  //           app.colors[id] = color;
-  //           self.highlight_selection.push({
-  //             id,
-  //             ratio: value,
-  //             dist: math_abs(value - self.my_region_value),
-  //           });
-  //           return color;
-  //         }
-  //       }
-  //       return color_countries;
-  //     });
-  //   this.highlight_selection.sort((a, b) => a.dist - b.dist);
-  //   self.update();
-  // }
 
   handleClickMap(d, parent) {
     const id = d.properties[app.current_config.id_field_geom];
@@ -449,7 +412,7 @@ export class BubbleChart1 {
   }
 
   remove() {
-    this.map_elem.unbindBrush();
+    this.map_elem.unbindBrushClick();
     this.map_elem = null;
     this.table_stats.remove();
     this.table_stats = null;
@@ -473,7 +436,7 @@ export class BubbleChart1 {
     return {
       Min: d3.min(values),
       Max: d3.max(values),
-      Moyenne: d3.mean(values),
+      Moyenne: getMean(values),
       id: this.ratio_to_use,
       Variable: this.ratio_to_use,
       'Ma région': this.my_region_value,

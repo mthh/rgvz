@@ -6,7 +6,7 @@ import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
-const margin = { top: 70, right: 70, bottom: 70, left: 70 };
+const margin = { top: 20, right: 20, bottom: 40, left: 20 };
 
 const width = +svg_bar.attr('width') - margin.left - margin.right;
 const height = +svg_bar.attr('height') - margin.top - margin.bottom;
@@ -25,7 +25,7 @@ export class ParallelCoords2 {
     this.plot = svg_bar.append('g')
       .attr('transform', `translate(${[margin.left, margin.top]})`);
 
-    this.x = d3.scaleBand().rangeRound([0, width]).padding(1);
+    this.x = d3.scaleBand().rangeRound([0, width]);
     this.y = {};
     this.line = d3.line();
     // this.all_keys = this.variables;
@@ -51,12 +51,12 @@ export class ParallelCoords2 {
     this.data = this.data.filter(d => !d.remove);
     this.current_ids = this.data.map(d => d.id);
     this.dimensions = d3.keys(this.data[0]).filter((d) => {
-      return d !== 'id' && d.indexOf('rsd_') === 0 && (this.y[d] = d3.scaleLinear()
+      return d.indexOf('rsd_') === 0 && (this.y[d] = d3.scaleLinear()
         .domain(d3.extent(this.data, p => +p[d]))
         .range([height, 0]));
     });
     this.x.domain(this.dimensions);
-
+    this.x.rangeRound([0, width + this.x.step() * 1.5]);
     const background = this.plot.append('g')
       .attr('class', 'background')
       .selectAll('path')
@@ -66,13 +66,13 @@ export class ParallelCoords2 {
       .attr('d', d => this.path(d))
       .attr('id', d => `f_${d.id}`);
 
-    const foreground = this.plot.append('g')
-      .attr('class', 'foreground')
-      .selectAll('path')
-      .data(this.data)
-      .enter()
-      .append('path')
-      .attr('d', d => this.path(d));
+    // const foreground = this.plot.append('g')
+    //   .attr('class', 'foreground')
+    //   .selectAll('path')
+    //   .data(this.data)
+    //   .enter()
+    //   .append('path')
+    //   .attr('d', d => this.path(d));
 
     const g = this.plot.selectAll('.dimension')
       .data(this.dimensions)
@@ -94,22 +94,22 @@ export class ParallelCoords2 {
       .attr('y', -5)
       .text(d => d);
 
-    foreground
-      .on('mouseover', function (d) {
-        d3.select(this).style('stroke-width', d.id === app.current_config.my_region ? 2.8 : 2);
-        svg_bar.append('text')
-          .attrs({
-            id: 'id_feature',
-            x: 75,
-            y: self.y[self.dimensions[0]](d[self.dimensions]),
-          });
-      })
-      .on('mouseout', function (d) {
-        d3.select(this).style('stroke-width', d.id === app.current_config.my_region ? 1.7 : 1);
-        svg_bar.select('#id_feature').remove();
-      });
-
-    this.plot.select(`.foreground > #f_${app.current_config.my_region}`);
+    // foreground
+    //   .on('mouseover', function (d) {
+    //     d3.select(this).style('stroke-width', d.id === app.current_config.my_region ? 2.8 : 2);
+    //     svg_bar.append('text')
+    //       .attrs({
+    //         id: 'id_feature',
+    //         x: 75,
+    //         y: self.y[self.dimensions[0]](d[self.dimensions]),
+    //       });
+    //   })
+    //   .on('mouseout', function (d) {
+    //     d3.select(this).style('stroke-width', d.id === app.current_config.my_region ? 1.7 : 1);
+    //     svg_bar.select('#id_feature').remove();
+    //   });
+    //
+    // this.plot.select(`.foreground > #f_${app.current_config.my_region}`);
     this.makeTableStat();
   }
 
@@ -126,7 +126,7 @@ export class ParallelCoords2 {
     this.plot.remove();
     this.table_stats.remove();
     this.table_stats = null;
-    this.map_elem.unbindBrush();
+    this.map_elem.unbindBrushClick();
     this.map_elem = null;
     svg_bar.html('');
   }
@@ -138,7 +138,6 @@ export class ParallelCoords2 {
 
   prepareTableStat() {
     const all_values = this.variables.map(v => this.data.map(d => d[v]));
-    console.log(this.data); console.log(app.current_config.my_region);
     const my_region = this.data.find(d => d.id === app.current_config.my_region);
     const features = all_values.map((values, i) => ({
       Min: d3.min(values),

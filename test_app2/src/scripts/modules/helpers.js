@@ -15,12 +15,12 @@ function prepareTooltip(parent_svg_elem) {
     .style('display', 'none');
 
   tooltip.append('rect')
-    .attrs({ width: 50, height: 40, fill: 'white' })
-    .style('opacity', 0.5);
+    .attrs({ x: 15, width: 0, height: 0, fill: 'beige' })
+    .style('opacity', 0.75);
 
   tooltip.append('text')
     .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
-    .style('text-anchor', 'middle');
+    .style('font-weight', 'bold');
 
   tooltip.append('text')
     .attrs({
@@ -28,8 +28,7 @@ function prepareTooltip(parent_svg_elem) {
       x: 25,
       dy: '2.4em',
       'font-size': '14px',
-      'font-weight': 'bold' })
-    .style('text-anchor', 'middle');
+    });
 
   tooltip.append('text')
     .attrs({
@@ -37,8 +36,7 @@ function prepareTooltip(parent_svg_elem) {
       x: 25,
       dy: '3.5em',
       'font-size': '14px',
-      'font-weight': 'bold' })
-    .style('text-anchor', 'middle');
+    });
 
   tooltip.append('text')
     .attrs({
@@ -46,8 +44,7 @@ function prepareTooltip(parent_svg_elem) {
       x: 25,
       dy: '4.6em',
       'font-size': '14px',
-      'font-weight': 'bold' })
-    .style('text-anchor', 'middle');
+    });
 
   tooltip.append('text')
     .attrs({
@@ -55,8 +52,7 @@ function prepareTooltip(parent_svg_elem) {
       x: 25,
       dy: '5.7em',
       'font-size': '14px',
-      'font-weight': 'bold' })
-    .style('text-anchor', 'middle');
+    });
 
   tooltip.append('text')
     .attrs({
@@ -64,8 +60,7 @@ function prepareTooltip(parent_svg_elem) {
       x: 25,
       dy: '6.8em',
       'font-size': '14px',
-      'font-weight': 'bold' })
-    .style('text-anchor', 'middle');
+    });
 
   return tooltip;
 }
@@ -252,6 +247,15 @@ const getStandardizedMeanStdDev = (serie) => {
   return serie.map(val => (val - mean) / stddev);
 };
 
+const shuffle = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    // eslint-disable-next-line no-param-reassign
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
+
 export {
   comp,
   comp2,
@@ -275,4 +279,5 @@ export {
   getMean,
   getStdDev,
   getStandardizedMeanStdDev,
+  shuffle,
 };

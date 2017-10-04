@@ -365,6 +365,7 @@ export class ScatterPlot2 {
         selection.on('mouseover.tooltip', function (d) {
           const tooltip = svg_bar.select('.tooltip')
             .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+          tooltip.select('rect').attrs({ width: 0, height: 0 });
           tooltip.select('text.id_feature')
             .text(`${d.id}`);
           tooltip.select('text.value_feature1')
@@ -375,12 +376,15 @@ export class ScatterPlot2 {
             .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
           tooltip.select('text.value_feature4')
           .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+          tooltip.select('rect')
+            .attrs({ width: b.width + 20, height: b.height + 7.5 });
         })
         .on('mousemove.tooltip', () => {
           svg_bar.select('.tooltip').style('display', null);
-          const new_rect_size = svg_bar.select('.tooltip').select('text').node().getBoundingClientRect().width + 20;
-          svg_bar.select('.tooltip').select('rect')
-            .attr('width', new_rect_size);
+          const b = svg_bar.select('.tooltip').node().getBoundingClientRect();
+          svg_bar.select('.tooltip')
+            .select('rect')
+            .attrs({ width: b.width + 20, height: b.height + 7.5 });
         })
         .on('mouseout.tooltip', () => {
           svg_bar.select('.tooltip').style('display', 'none');
@@ -647,7 +651,7 @@ export class ScatterPlot2 {
 
   remove() {
     this.table_stats.remove();
-    this.map_elem.unbindBrush();
+    this.map_elem.unbindBrushClick();
     this.map_elem = null;
     svg_bar.html('');
   }
@@ -662,22 +666,22 @@ export class ScatterPlot2 {
     const values1 = this.data.map(d => d[this.variable1]);
     const values2 = this.data.map(d => d[this.variable2]);
     const features = [
-    {
-      Min: d3.min(values1),
-      Max: d3.max(values1),
-      Moyenne: getMean(values1),
-      id: this.variable1,
-      Variable: this.variable1,
-      'Ma région': this.ref_value1,
-    },
-    {
-      Min: d3.min(values2),
-      Max: d3.max(values2),
-      Moyenne: getMean(values2),
-      id: this.variable2,
-      Variable: this.variable2,
-      'Ma région': this.ref_value2,
-    }];
+      {
+        Min: d3.min(values1),
+        Max: d3.max(values1),
+        Moyenne: getMean(values1),
+        id: this.variable1,
+        Variable: this.variable1,
+        'Ma région': this.ref_value1,
+      },
+      {
+        Min: d3.min(values2),
+        Max: d3.max(values2),
+        Moyenne: getMean(values2),
+        id: this.variable2,
+        Variable: this.variable2,
+        'Ma région': this.ref_value2,
+      }];
     return features;
   }
 

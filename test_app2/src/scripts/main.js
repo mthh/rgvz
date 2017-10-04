@@ -9,6 +9,7 @@ import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { SimilarityChart } from './modules/charts/similarity_2v';
+import { BoxPlot1 } from './modules/charts/boxPlot_1v';
 import { ParallelCoords2 } from './modules/charts/parallelCoords_2v';
 import { unbindUI } from './modules/helpers';
 import {
@@ -328,10 +329,15 @@ function bindUI_chart(chart, map_elem) {
     });
 
   if (!map_elem.brush_map) {
-    map_elem.target_layer.selectAll('path')
-      .on('click', function (d) {
-        chart.handleClickMap(d, this);
-      });
+    if (chart.handleClickMap) {
+      map_elem.target_layer.selectAll('path')
+        .on('click', function (d) {
+          chart.handleClickMap(d, this);
+        });
+    } else {
+      map_elem.target_layer.selectAll('path')
+        .on('click', null);
+    }
   }
 
   const header_table_section = d3.select('#map_section')
@@ -381,43 +387,52 @@ export function bindTopButtons(chart, map_elem) {
         makeTable(app.current_data, app.current_config);
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'BubbleChart1') {
         console.log('BubbleChart1');
         makeTable(app.current_data, app.current_config);
         chart = new BubbleChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         console.log('ScatterPlot2');
         makeTable(app.current_data, app.current_config);
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'RadarChart3') {
         console.log('RadarChart3');
         makeTable(app.current_data, app.current_config);
         chart = new RadarChart3(app.current_data);
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'SimilarityChart') {
         console.log('SimilarityChart');
         makeTable(app.current_data, app.current_config);
         chart = new SimilarityChart(app.current_data);
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ParallelCoords2') {
         console.log('ParallelCoords2');
+        // makeTable(app.current_data, app.current_config);
         chart = new ParallelCoords2(app.current_data);
         bindUI_chart(chart, map_elem);
-        map_elem.bindBrush(chart);
+        map_elem.bindBrushClick(chart);
+        chart.bindMap(map_elem);
+      } else if (value === 'BoxPlot1') {
+        console.log('BoxPlot1');
+        // makeTable(app.current_data, app.current_config);
+        chart = new BoxPlot1(app.current_data);
+        bindUI_chart(chart, map_elem);
+        map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       }
+
     });
 }
 
@@ -456,7 +471,7 @@ function loadData() {
       makeSourceSection();
       makeMapLegend();
       bindUI_chart(chart, map_elem);
-      map_elem.bindBrush(chart);
+      map_elem.bindBrushClick(chart);
       chart.bindMap(map_elem);
     });
 }

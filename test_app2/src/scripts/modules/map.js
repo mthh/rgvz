@@ -138,7 +138,7 @@ class MapSelect {
     app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
     fitLayer();
     prepareTooltip(svg_map);
-    this.bindTooltip();
+    // this.bindTooltip();
   }
 
   resetColors(current_ids) {
@@ -148,39 +148,37 @@ class MapSelect {
         ? (app.colors[d.properties[id_field_geom]] || color_countries)
         : color_disabled));
   }
-
-  bindTooltip() {
-    this.target_layer.selectAll('path')
-      .on('mouseover', () => {
-        svg_map.select('.tooltip')
-          .style('display', null);
-      })
-      .on('mouseout', () => {
-        svg_map.select('.tooltip')
-          .style('display', 'none');
-      })
-      .on('mousemove', function (d) {
-        const tooltip = svg_map.select('.tooltip');
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.properties[app.current_config.id_field_geom]}`);
-        let _ix, nb_val;
-        for (_ix = 0, nb_val = Math.min(app.current_config.ratio.length, 5); _ix < nb_val; _ix++) {
-          tooltip.select(`text.value_feature${_ix + 1}`)
-            .text(`${app.current_config.ratio_pretty_name[_ix]}: ${math_round(d.properties[app.current_config.ratio[_ix]] * 10) / 10}`);
-        }
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 - _ix * 12]})`);
-      });
-  }
-
+  // bindTooltip() {
+  //   this.target_layer.selectAll('path')
+  //     .on('mouseover', () => {
+  //       svg_map.select('.tooltip')
+  //         .style('display', null);
+  //     })
+  //     .on('mouseout', () => {
+  //       svg_map.select('.tooltip')
+  //         .style('display', 'none');
+  //     })
+  //     .on('mousemove', function (d) {
+  //       const tooltip = svg_map.select('.tooltip');
+  //       tooltip
+  //         .select('text.id_feature')
+  //         .text(`${d.properties[app.current_config.id_field_geom]}`);
+  //       let _ix, nb_val;
+  //       for (_ix = 0, nb_val = Math.min(app.current_config.ratio.length, 5); _ix < nb_val; _ix++) {
+  //         tooltip.select(`text.value_feature${_ix + 1}`)
+  //           .text(`${app.current_config.ratio_pretty_name[_ix]}: ${math_round(d.properties[app.current_config.ratio[_ix]] * 10) / 10}`);
+  //       }
+  //       tooltip
+  //         .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 - _ix * 12]})`);
+  //     });
+  // }
   resetZoom() {
     svg_map.transition()
       .duration(250)
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
-  updateLegend() {
+  static updateLegend() {
     d3.select('#svg_legend > g > .legend > text')
       .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
   }
@@ -193,7 +191,13 @@ class MapSelect {
     svg_map.select('.brush_map').call(this.brush_map.move, selection);
   }
 
-  bindBrush(chart) {
+  bindBrushClick(chart) {
+    if (chart.handleClickMap) {
+      document.getElementById('img_map_select').classList.remove('disabled');
+      document.getElementById('img_map_select').classList.add('active');
+    } else {
+      document.getElementById('img_map_select').classList.add('disabled');
+    }
     if (chart.handle_brush_map) {
       document.getElementById('img_rect_selec').classList.remove('disabled');
       document.getElementById('img_rect_selec').classList.add('active');
@@ -215,7 +219,7 @@ class MapSelect {
     }
   }
 
-  unbindBrush() {
+  unbindBrushClick() {
     this.brush_map = null;
     svg_map.select('.brush_map')
       .remove();
