@@ -144,9 +144,15 @@ class MapSelect {
   resetColors(current_ids) {
     const id_field_geom = app.current_config.id_field_geom;
     this.target_layer.selectAll('path')
-      .attr('fill', d => (current_ids.indexOf(d.properties[id_field_geom]) > -1
-        ? (app.colors[d.properties[id_field_geom]] || color_countries)
-        : color_disabled));
+      .attr('fill', (d) => {
+        const id = d.properties[id_field_geom];
+        if (id === app.current_config.my_region) {
+          return color_highlight;
+        } else if (current_ids.indexOf(id) > -1) {
+          return app.colors[id] || color_countries;
+        }
+        return color_disabled;
+      });
   }
   // bindTooltip() {
   //   this.target_layer.selectAll('path')

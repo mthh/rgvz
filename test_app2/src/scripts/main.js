@@ -425,7 +425,7 @@ export function bindTopButtons(chart, map_elem) {
         chart.bindMap(map_elem);
       } else if (value === 'BoxPlot1') {
         console.log('BoxPlot1');
-        // makeTable(app.current_data, app.current_config);
+        makeTable(app.current_data, app.current_config);
         chart = new BoxPlot1(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
@@ -450,7 +450,7 @@ function loadData() {
       const [
         full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs, agg_n2,
       ] = results;
-      console.log(agg_n2);
+      app.agg_n2 = agg_n2;
       variables_info = prepareVariablesInfo(metadata_indicateurs);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');

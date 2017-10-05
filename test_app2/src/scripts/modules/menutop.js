@@ -68,7 +68,7 @@ export function makeTopMenu() {
     .html('INÉGALITÉS');
 
   inegalite.append('span')
-    .attrs({ class: 'type_chart chart_t1 disabled', value: 'BoxPlot1' })
+    .attrs({ class: 'type_chart chart_t1', value: 'BoxPlot1' })
     .html('1 ind.');
 
   inegalite.append('span')

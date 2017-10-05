@@ -6,8 +6,8 @@ import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
 export const svg_bar = d3.select('svg#svg_bar'),
-  margin = { top: 10, right: 20, bottom: 100, left: 40 },
-  margin2 = { top: 430, right: 20, bottom: 15, left: 40 },
+  margin = { top: 10, right: 20, bottom: 100, left: 45 },
+  margin2 = { top: 430, right: 20, bottom: 15, left: 45 },
   width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom,
   height2 = +svg_bar.attr('height') - margin2.top - margin2.bottom;
@@ -146,7 +146,7 @@ export class BarChart1 {
 
     x.domain(this.current_ids);
     y.domain([
-      d3.min(this.data, d => d[ratio_to_use]) - 2,
+      0,
       d3.max(this.data, d => d[ratio_to_use]),
     ]);
     x2.domain(x.domain());
@@ -715,7 +715,8 @@ export class BarChart1 {
     const max_serie = d3.max(this.data, d => d[ratio_to_use]);
     const offset_y = (max_serie - min_serie) / 20;
     this.y.domain([
-      min_serie - offset_y, max_serie,
+      // min_serie - offset_y, max_serie,
+      0, max_serie,
     ]);
     this.x2.domain(this.x.domain());
     this.y2.domain(this.y.domain());

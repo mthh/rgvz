@@ -193,6 +193,7 @@ export class SimilarityChart {
   update() {
     const self = this;
     svg_bar.select('.tooltip').selectAll('text').text('');
+    svg_bar.select('#title-axis-y').remove();
     if (this.current_type === 'global') {
       const _max = d3.max(this.data, d => d.dissimilarity);
       this.x.domain(this.displayed_ids);
@@ -273,6 +274,16 @@ export class SimilarityChart {
           .tickFormat(''))
         .selectAll('line, path')
         .attr('stroke', 'lightgray');
+
+      svg_bar.append('text')
+        .attrs({
+          id: 'title-axis-y',
+          x: margin.left / 2,
+          y: margin.top + (height / 2) - 10,
+          transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
+        })
+        .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
+        .text('Indice de dissimilarité');
     } else if (this.current_type === 'detail') {
       const keys = this.variables.map(v => `ec_${v}`);
       this.x.domain(this.displayed_ids);

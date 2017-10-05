@@ -6,7 +6,7 @@ import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
-const margin = { top: 20, right: 20, bottom: 40, left: 20 };
+const margin = { top: 20, right: 40, bottom: 40, left: 40 };
 
 const width = +svg_bar.attr('width') - margin.left - margin.right;
 const height = +svg_bar.attr('height') - margin.top - margin.bottom;
@@ -21,7 +21,7 @@ export class ParallelCoords2 {
     const self = this;
     this.variables = app.current_config.ratio.slice();
     this.current_level = +app.current_config.current_level;
-    this.inf_level = +this.current_level + 1;
+    this.inf_level = +this.current_level + 2;
     this.plot = svg_bar.append('g')
       .attr('transform', `translate(${[margin.left, margin.top]})`);
 
@@ -33,8 +33,12 @@ export class ParallelCoords2 {
     const inf_level_features = app.full_dataset.filter(ft => +ft.level === this.inf_level);
     this.data.forEach((ft) => {
       const id = ft.id;
-      const children = inf_level_features.filter(
-        d => d[app.current_config.id_field].indexOf(id) > -1);
+      const children_ids = app.agg_n2.filter(d => d.NUTS1_2016 === id).map(d => d.geo);
+      // const children = inf_level_features.filter(
+      //   d => children_ids.indexOf(d[app.current_config.id_field]) > -1);
+      const children = inf_level_features
+        .filter(d => children_ids.indexOf(d[app.current_config.id_field].slice(0, 4)) > -1);
+
       if (children.length < 2) {
         ft.remove = true; // eslint-disable-line no-param-reassign
         return;
@@ -49,15 +53,24 @@ export class ParallelCoords2 {
       });
     });
     this.data = this.data.filter(d => !d.remove);
+    this.dimensions = Object.keys(this.data[0])
+      .filter(v => v.indexOf('rsd_') === 0);
+    const extents = this.dimensions.map(v => d3.extent(this.data, p => +p[v]));
+    const common_domain = [d3.min(extents, d => d[0]), d3.max(extents, d => d[1])];
+
     this.current_ids = this.data.map(d => d.id);
-    this.dimensions = d3.keys(this.data[0]).filter((d) => {
-      return d.indexOf('rsd_') === 0 && (this.y[d] = d3.scaleLinear()
-        .domain(d3.extent(this.data, p => +p[d]))
-        .range([height, 0]));
-    });
     this.x.domain(this.dimensions);
     this.x.rangeRound([0, width + this.x.step() * 1.5]);
-    const background = this.plot.append('g')
+
+    this.dimensions.forEach((d) => {
+      this.y[d] = d3.scaleLinear()
+        // use the same domain for each axis :
+        .domain(common_domain)
+        // .domain(d3.extent(this.data, p => +p[d]))
+        .range([height, 0]);
+    });
+
+    this.background = this.plot.append('g')
       .attr('class', 'background')
       .selectAll('path')
       .data(this.data)
