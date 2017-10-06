@@ -17,7 +17,7 @@ const width = +svg_bar.attr('width') - margin.left - margin.right,
 * and a grouped bar chart with negative value (for **dissimilarity**)
 */
 export class SimilarityChart {
-  /**
+   /**
    * Create a the bar chart on the `svg_bar` svg element previously defined.
    * @param {Array} ref_data - A reference to the subset of the dataset to be used
    * to create the scatterplot (should contain at least two field flagged as ratio
@@ -29,10 +29,8 @@ export class SimilarityChart {
     const x = d3.scaleBand().range([0, width]).padding(0.1);
     const x1 = d3.scaleBand().padding(0.05);
     const y = d3.scaleLinear().range([height, 0]);
-    console.log(d3.schemeCategory10);
     const z = d3.scaleOrdinal()
       .range(shuffle(d3.schemeCategory10));
-    console.log(d3.schemeCategory10);
     const xAxis = d3.axisBottom(x);
     const yAxis = d3.axisLeft(y);
     this.x = x;

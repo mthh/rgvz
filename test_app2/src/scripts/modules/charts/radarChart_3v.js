@@ -56,7 +56,6 @@ const swap = function swap(array, ix1, ix2) {
 };
 
 export const prepare_data_radar_default = (data, variables) => {
-  const features = [];
   // Prepare the data for "My Région":
   const v_my_region = data.find(d => d.id === app.current_config.my_region);
   const ojb_my_region = {
@@ -70,21 +69,7 @@ export const prepare_data_radar_default = (data, variables) => {
       axis: t, value: v_my_region[_v],
     });
   });
-  features.push(ojb_my_region);
-  const obj_mean = {
-    name: 'Moyenne du contexte d\'étude',
-    axes: [],
-  };
-  variables.forEach((v) => {
-    const t = variables_info.find(d => d.ratio === v).name;
-    const _v = `pr_${v}`;
-    obj_mean.axes.push({
-      axis: t,
-      value: _getPR(getMean(data.map(d => d[_v])), data.map(d => d[_v])),
-    });
-  });
-  features.push(obj_mean);
-  return features;
+  return ojb_my_region;
 };
 
 export const prepare_data_radar_ft = (data, variables, ft) => {
@@ -270,6 +255,8 @@ export class RadarChart3 {
       .attr('id', elem.name.indexOf(' ') > -1 ? 'ctx' : elem.name)
       .attr('class', 'radarCircleWrapper');
 
+    blobCircleWrapper.node().__data__ = elem;
+
     // Append a set of invisible circles on top for the mouseover pop-up
     blobCircleWrapper.selectAll('.radarInvisibleCircle')
       .data(elem.axes)
@@ -310,23 +297,20 @@ export class RadarChart3 {
     this.variables.forEach((d, i) => {
       computePercentileRank(this.ref_data, d, this.rank_variables[i]);
     });
-    this.data = prepare_data_radar_default(this.ref_data, this.variables);
+    this.data = [prepare_data_radar_default(this.ref_data, this.variables)];
     this.displayed_ids = this.data.map(d => d.name);
     this.current_ids = this.ref_data.map(d => d.id);
     this.id_my_region = app.current_config.my_region;
-    // const ref_ids = [];
+
     // If the supplied maxValue is smaller than the actual one, replace by the max in the data
-    // var maxValue = max(cfg.maxValue, d3.max(data, function(i){return d3.max(i.map(function(o){return o.value;}))}));
     let maxValue = 0;
     for (let j = 0; j < this.data.length; j++) {
       const on_axes = [];
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
-        // on_axes.push(this.data[j].name);
         if (this.data[j].axes[i].value > maxValue) {
           maxValue = this.data[j].axes[i].value;
         }
-        // ref_ids.push(on_axes);
       }
     }
 
@@ -352,7 +336,6 @@ export class RadarChart3 {
     const cfg = this.cfg;
     const g = this.g;
     const radius = this.radius;
-    const Format = this.Format;
     const maxValue = this.maxValue;
     const rScale = this.rScale;
     const angleSlice = this.angleSlice;
@@ -393,17 +376,17 @@ export class RadarChart3 {
       .style('fill-opacity', cfg.opacityCircles)
       .style('filter', 'url(#glow)');
 
-    // Text indicating at what % each level is
-    axisGrid.selectAll('.axisLabel')
-      .data(d3.range(1, (cfg.levels + 1)).reverse())
-      .enter().append('text')
-      .attr('class', 'axisLabel')
-      .attr('x', 4)
-      .attr('y', d => -d * radius / cfg.levels)
-      .attr('dy', '0.4em')
-      .style('font-size', '10px')
-      .attr('fill', '#737373')
-      .text(d => Format(maxValue * d / cfg.levels) + cfg.unit);
+    // // Text indicating at what % each level is
+    // axisGrid.selectAll('.axisLabel')
+    //   .data(d3.range(1, (cfg.levels + 1)).reverse())
+    //   .enter().append('text')
+    //   .attr('class', 'axisLabel')
+    //   .attr('x', 4)
+    //   .attr('y', d => -d * radius / cfg.levels)
+    //   .attr('dy', '0.4em')
+    //   .style('font-size', '10px')
+    //   .attr('fill', '#737373')
+    //   .text(d => Format(maxValue * d / cfg.levels) + cfg.unit);
 
     // Create the straight lines radiating outward from the center
     const axis = axisGrid.selectAll('.axis')
@@ -473,18 +456,23 @@ export class RadarChart3 {
       // Create rectangles markers
       legendEnter
         .append('rect')
-        .attr('x', cfg.w - 65)
-        .attr('y', (d, i) => i * 20)
-        .attr('width', 10)
-        .attr('height', 10)
+        .attrs((d, i) => ({
+          x: cfg.w - 65,
+          y: i * 20,
+          width: 10,
+          height: 10,
+        }))
         .style('fill', d => cfg.color(d));
+
       // Create labels
       legendEnter
         .append('text')
-        .attr('x', cfg.w - 52)
-        .attr('y', (d, i) => i * 20 + 9)
-        .attr('font-size', '11px')
-        .attr('fill', '#737373')
+        .attrs((d, i) => ({
+          x: cfg.w - 52,
+          y: i * 20 + 9,
+          fill: '#737373',
+          'font-size': '11px',
+        }))
         .text(d => d);
 
       legend.merge(legendEnter).selectAll('rect')
@@ -492,8 +480,10 @@ export class RadarChart3 {
         .style('fill', d => cfg.color(d));
 
       legend.merge(legendEnter).selectAll('text')
-        .attr('x', cfg.w - 52)
-        .attr('y', (d, i) => i * 20 + 9)
+        .attrs((d, i) => ({
+          x: cfg.w - 52,
+          y: i * 20 + 9,
+        }))
         .text(d => d);
 
       legend.exit().remove();
@@ -609,18 +599,15 @@ export class RadarChart3 {
       });
 
     const tooltip = g.append('text')
-      .attr('class', 'tooltip')
-      .attr('x', 0)
-      .attr('y', 0)
-      .style('font-size', '12px')
-      .style('display', 'none')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em');
+      .attrs({ class: 'tooltip', x: 0, y: 0, dy: '0.35em', 'text-anchor': 'middle' })
+      .styles({ 'font-size': '12px', display: 'none' });
 
     this.legendZone = svg_bar.append('g')
-      .attr('id', 'legendZone')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`);
+      .attrs({
+        id: 'legendZone',
+        class: 'legend',
+        transform: `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`,
+      });
   }
 
   update() {
@@ -652,15 +639,17 @@ export class RadarChart3 {
       //   // wrap(parent.selectAll('text.legend'), cfg.wrapWidth);
       // });
     update_axis.select('text.legend')
-      .attr('id', (d, i) => i)
-      .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
-      .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
+      .attrs((d, i) => ({
+        id: i,
+        x: rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI),
+        y: rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI),
+      }))
       .text(d => d)
       .call(wrap, cfg.wrapWidth);
 
     const update_blobWrapper = this.g.selectAll('.radarWrapper')
       .data(this.data, d => d.name);
-    console.log(this.data);
+
     update_blobWrapper.select('.radarArea')
       .transition(t)
       .attr('d', d => this.radarLine(d.axes));
@@ -673,10 +662,17 @@ export class RadarChart3 {
       .data(d => d.axes);
     circle
       .transition(t)
-      .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
-      .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
-      .style('fill', d => cfg.color(d.id))
-      .style('fill-opacity', 0.8);
+      .attrs((d, i) => ({
+        cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
+        cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
+      }))
+      .styles(d => ({
+        fill: cfg.color(d.id),
+        'fill-opacity': 0.8,
+      }));
+
+    console.log(this.g.selectAll('.radarCircleWrapper'));
+    console.log(this.data);
 
     const update_blobCircleWrapper = this.g.selectAll('.radarCircleWrapper')
       .data(this.data, d => d.name);
@@ -685,8 +681,10 @@ export class RadarChart3 {
       .data(d => d.axes);
     invisibleCircle
       .transition(t)
-      .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
-      .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI));
+      .attrs((d, i) => ({
+        cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
+        cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
+      }));
   }
 
   round_stroke(val) {
@@ -722,23 +720,8 @@ export class RadarChart3 {
   }
 
   changeStudyZone() {
-    // this.variables = app.current_config.ratio;
-    // this.ref_data = app.current_data.slice().filter(
-    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
-    // this.rank_variables = this.variables.map(d => `pr_${d}`);
-    // this.variables.forEach((d, i) => {
-    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    // });
-    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    // this.current_ids = this.ref_data.map(d => d.id);
-    // this.displayed_ids = this.data.map(d => d.name);
-    // resetColors();
-    // this.nbFt = this.data.length;
-    // this.updateMapRegio();
-    // this.updateTableStat();
-    // this.update();
     const old_my_region = this.id_my_region;
-    const other_features = this.displayed_ids.filter(d => d !== old_my_region && d !== 'Moyenne du contexte d\'étude');
+    const other_features = this.displayed_ids.filter(d => d !== old_my_region);
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -758,7 +741,7 @@ export class RadarChart3 {
   }
 
   addVariable(code_variable, name_variable) {
-    const other_features = this.displayed_ids.filter(d => d !== this.id_my_region && d !== 'Moyenne du contexte d\'étude');
+    const other_features = this.displayed_ids.filter(d => d !== this.id_my_region);
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -774,24 +757,10 @@ export class RadarChart3 {
     });
     this.updateMapRegio();
     this.updateTableStat();
-    // this.update();
-    // this.variables = app.current_config.ratio;
-    // this.ref_data = app.current_data.slice().filter(
-    //   ft => this.variables.map(v => !!ft[v]).every(d => d === true));
-    // this.rank_variables = this.variables.map(d => `pr_${d}`);
-    // this.variables.forEach((d, i) => {
-    //   computePercentileRank(this.ref_data, d, this.rank_variables[i]);
-    // });
-    // this.data = prepare_data_radar_default(this.ref_data, this.variables);
-    // this.current_ids = this.ref_data.map(d => d.id);
-    // resetColors();
-    // this.nbFt = this.data.length;
-    // this.updateMapRegio();
-    // this.updateTableStat();
-    // this.update();
   }
 
   removeVariable(code_variable) {
+    const other_features = this.displayed_ids.filter(d => d !== this.id_my_region);
     this.g.remove();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
@@ -801,6 +770,11 @@ export class RadarChart3 {
     this.drawAxisGrid();
     this.drawArea();
     this.handleLegend();
+    other_features.forEach((id) => {
+      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+      this.add_element(a);
+    });
+    this.updateMapRegio();
     this.updateTableStat();
   }
 
@@ -833,6 +807,7 @@ export class RadarChart3 {
       this.displayed_ids = this.data.map(_d => _d.name);
       this.update();
     }
+    this.updateMapRegio();
   }
 
   updateCompletude() {

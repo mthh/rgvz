@@ -416,21 +416,22 @@ export function bindTopButtons(chart, map_elem) {
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
-      } else if (value === 'ParallelCoords2') {
-        console.log('ParallelCoords2');
-        // makeTable(app.current_data, app.current_config);
-        chart = new ParallelCoords2(app.current_data);
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
-      } else if (value === 'BoxPlot1') {
-        console.log('BoxPlot1');
-        makeTable(app.current_data, app.current_config);
-        chart = new BoxPlot1(app.current_data);
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       }
+      //  else if (value === 'ParallelCoords2') {
+      //   console.log('ParallelCoords2');
+      //   // makeTable(app.current_data, app.current_config);
+      //   chart = new ParallelCoords2(app.current_data);
+      //   bindUI_chart(chart, map_elem);
+      //   map_elem.bindBrushClick(chart);
+      //   chart.bindMap(map_elem);
+      // } else if (value === 'BoxPlot1') {
+      //   console.log('BoxPlot1');
+      //   makeTable(app.current_data, app.current_config);
+      //   chart = new BoxPlot1(app.current_data);
+      //   bindUI_chart(chart, map_elem);
+      //   map_elem.bindBrushClick(chart);
+      //   chart.bindMap(map_elem);
+      // }
     });
 }
 

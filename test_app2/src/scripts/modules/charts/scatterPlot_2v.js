@@ -44,8 +44,16 @@ export class ScatterPlot2 {
         this.y.invert(bottomright[1]),
         this.y.invert(topleft[1]),
       ];
-      const t1 = this.rank_variable1;
-      const t2 = this.rank_variable2;
+      let t1;
+      let t2;
+      if (this.type === 'value') {
+        t1 = this.variable1;
+        t2 = this.variable2;
+      } else {
+        t1 = this.rank_variable1;
+        t2 = this.rank_variable2;
+      }
+
       this.data
         .filter(ft => ft[t1] > range_x[0]
           && ft[t1] < range_x[1]
@@ -66,6 +74,7 @@ export class ScatterPlot2 {
     // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 2;
     const self = this;
+    this.type = 'rank';
     this.variable1 = app.current_config.ratio[0];
     this.variable2 = app.current_config.ratio[1];
     this.rank_variable1 = `pr_${this.variable1}`;
@@ -128,13 +137,6 @@ export class ScatterPlot2 {
     this.scatter.append('g')
       .attr('class', 'brush')
       .call(this.brush);
-
-    this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
-    this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
-    this.mean_variable1 = _getPR(
-      getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
-    this.mean_variable2 = _getPR(
-      getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
 
     this.makeGrid();
 
@@ -250,6 +252,34 @@ export class ScatterPlot2 {
           .style('display', null);
       }
     };
+
+    const menu_selection = d3.select(svg_bar.node().parentElement)
+      .append('div')
+      .attr('id', 'menu_selection')
+      .styles({ top: '-20px', 'margin-left': '30px', position: 'relative' });
+
+    const chart_type = menu_selection.append('p')
+      .styles({
+        float: 'right',
+        display: 'inline-grid',
+      });
+
+    chart_type.append('span')
+      .attrs({
+        id: 'ind_raw_values',
+        class: 'choice_ind',
+      })
+      .text('Valeurs brutes');
+
+    chart_type.append('span')
+      .attrs({
+        id: 'ind_ranks',
+        class: 'choice_ind active',
+      })
+      .text('Valeurs de rang');
+
+    this.bindMenu();
+
     // this.update();
     this.makeTableStat();
   }
@@ -270,6 +300,26 @@ export class ScatterPlot2 {
       .call(this.yAxis2
         .tickSize(-width)
         .tickFormat(''));
+  }
+
+
+  updateAxisGrid() {
+    this.plot.select('.grid-x')
+      .transition()
+      .duration(125)
+      .call(this.xAxis2.tickSize(-height).tickFormat(''));
+    this.plot.select('.grid-y')
+      .transition()
+      .duration(125)
+      .call(this.yAxis2.tickSize(-width).tickFormat(''));
+    this.plot.select('#axis--x')
+      .transition()
+      .duration(125)
+      .call(this.xAxis);
+    this.plot.select('#axis--y')
+      .transition()
+      .duration(125)
+      .call(this.yAxis);
     this.plot.selectAll('.grid')
       .selectAll('line')
       .attr('stroke', 'lightgray');
@@ -332,62 +382,152 @@ export class ScatterPlot2 {
   update() {
     const self = this;
     const data = self.data;
-    const rank_variable1 = this.rank_variable1;
-    const rank_variable2 = this.rank_variable2;
-    const x = this.x;
-    const y = this.y;
-    const default_color = 'gray';
-    const dots = this.scatter.selectAll('.dot')
-      .data(data, d => d.id);
 
-    dots
-      .attrs(d => ({
-        r: 5,
-        cx: x(d[rank_variable1]),
-        cy: y(d[rank_variable2]),
-      }))
-      .styles(d => ({
-        fill: app.colors[d.id] || default_color,
-      }));
+    if (this.type === 'rank') {
+      this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
+      this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
+      this.mean_variable1 = _getPR(
+        getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
+      this.mean_variable2 = _getPR(
+        getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
 
-    dots.enter()
-      .insert('circle')
-      .styles(d => ({
-        fill: app.colors[d.id] || default_color,
-      }))
-      .attrs(d => ({
-        r: 5,
-        cx: x(d[rank_variable1]),
-        cy: y(d[rank_variable2]),
-        class: 'dot',
-      }))
-      .call((selection) => {
-        selection.on('mouseover.tooltip', () => {
-          svg_bar.select('.tooltip').style('display', null);
-        })
-        .on('mousemove.tooltip', function (d) {
-          const tooltip = svg_bar.select('.tooltip')
-            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
-          tooltip.select('rect').attrs({ width: 0, height: 0 });
-          tooltip.select('text.id_feature')
-            .text(`${d.id}`);
-          tooltip.select('text.value_feature1')
-            .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
-          tooltip.select('text.value_feature2')
-            .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
-          tooltip.select('text.value_feature3')
-            .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
-          tooltip.select('text.value_feature4')
-          .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
-          const b = tooltip.node().getBoundingClientRect();
-          tooltip.select('rect')
-            .attrs({ width: b.width + 20, height: b.height + 7.5 });
-        })
-        .on('mouseout.tooltip', () => {
-          svg_bar.select('.tooltip').style('display', 'none');
+
+      const rank_variable1 = this.rank_variable1;
+      const rank_variable2 = this.rank_variable2;
+      const x = this.x;
+      const y = this.y;
+      const default_color = 'gray';
+
+      const dots = this.scatter.selectAll('.dot')
+        .data(data, d => d.id);
+
+      dots
+        .transition()
+        .duration(125)
+        .attrs(d => ({
+          r: 5,
+          cx: x(d[rank_variable1]),
+          cy: y(d[rank_variable2]),
+        }))
+        .styles(d => ({
+          fill: app.colors[d.id] || default_color,
+        }))
+        .on('end', () => {
+          dots.call((selection) => {
+            selection
+              .on('mouseover.tooltip', () => {
+                svg_bar.select('.tooltip').style('display', null);
+              })
+              .on('mousemove.tooltip', function (d) {
+                const tooltip = svg_bar.select('.tooltip')
+                  .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+                tooltip.select('rect').attrs({ width: 0, height: 0 });
+                tooltip.select('text.id_feature')
+                  .text(`${d.id}`);
+                tooltip.select('text.value_feature1')
+                  .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
+                tooltip.select('text.value_feature2')
+                  .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+                tooltip.select('text.value_feature3')
+                  .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
+                tooltip.select('text.value_feature4')
+                .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+                const b = tooltip.node().getBoundingClientRect();
+                tooltip.select('rect')
+                  .attrs({ width: b.width + 20, height: b.height + 7.5 });
+              })
+              .on('mouseout.tooltip', () => {
+                svg_bar.select('.tooltip').style('display', 'none');
+              });
+          });
         });
-      });
-    dots.exit().transition().duration(225).remove();
+
+      dots.enter()
+        .insert('circle')
+        .transition()
+        .duration(125)
+        .styles(d => ({
+          fill: app.colors[d.id] || default_color,
+        }))
+        .attrs(d => ({
+          r: 5,
+          cx: x(d[rank_variable1]),
+          cy: y(d[rank_variable2]),
+          class: 'dot',
+        }));
+      dots.exit().transition().duration(125).remove();
+    } else if (this.type === 'value') {
+      const variable1 = this.variable1;
+      const variable2 = this.variable2;
+      this.x.domain(d3.extent(this.data, d => d[variable1])).nice();
+      this.y.domain(d3.extent(this.data, d => d[variable2])).nice();
+      this.mean_variable1 = getMean(this.data.map(d => d[variable1]));
+      this.mean_variable2 = getMean(this.data.map(d => d[variable2]));
+
+      const x = this.x;
+      const y = this.y;
+      const default_color = 'gray';
+
+      this.plot.select('#axis--x').transition().duration(125).call(this.xAxis);
+      this.plot.select('#axis--y').transition().duration(125).call(this.yAxis);
+
+      const dots = this.scatter.selectAll('.dot')
+        .data(data, d => d.id);
+
+      dots
+        .transition()
+        .duration(125)
+        .attrs(d => ({
+          r: 5,
+          cx: x(d[variable1]),
+          cy: y(d[variable2]),
+        }))
+        .styles(d => ({
+          fill: app.colors[d.id] || default_color,
+        }))
+        .on('end', () => {
+          dots.call((selection) => {
+            selection
+              .on('mouseover.tooltip', () => {
+                svg_bar.select('.tooltip').style('display', null);
+              })
+              .on('mousemove.tooltip', function (d) {
+                const tooltip = svg_bar.select('.tooltip')
+                  .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+                tooltip.select('rect').attrs({ width: 0, height: 0 });
+                tooltip.select('text.id_feature')
+                  .text(`${d.id}`);
+                tooltip.select('text.value_feature1')
+                  .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+                tooltip.select('text.value_feature2')
+                .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+                const b = tooltip.node().getBoundingClientRect();
+                tooltip.select('rect')
+                  .attrs({ width: b.width + 20, height: b.height + 7.5 });
+              })
+              .on('mouseout.tooltip', () => {
+                svg_bar.select('.tooltip').style('display', 'none');
+              });
+          });
+        });
+
+      dots.enter()
+        .insert('circle')
+        .transition()
+        .duration(125)
+        .styles(d => ({
+          fill: app.colors[d.id] || default_color,
+        }))
+        .attrs(d => ({
+          r: 5,
+          cx: x(d[variable1]),
+          cy: y(d[variable2]),
+          class: 'dot',
+        }));
+      dots.exit().transition().duration(125).remove();
+    }
+    this.updateMeanValue();
+    this.updateAxisGrid();
   }
 
   updateCompletude() {
@@ -468,21 +608,26 @@ export class ScatterPlot2 {
   }
 
   updateMeanValue() {
-    this.mean_variable1 = _getPR(
-      getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
-    this.mean_variable2 = _getPR(
-      getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
+    if (this.type === 'value') {
+      this.mean_variable1 = getMean(this.data.map(d => d[this.variable1]));
+      this.mean_variable2 = getMean(this.data.map(d => d[this.variable2]));
+    } else if (this.type === 'rank') {
+      this.mean_variable1 = _getPR(
+        getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
+      this.mean_variable2 = _getPR(
+        getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
+    }
     const grp_mean = this.plot.select('g.mean');
     grp_mean.select('#mean_x')
       .transition()
-      .duration(225)
+      .duration(125)
       .attrs({
         x1: this.x(this.mean_variable1),
         x2: this.x(this.mean_variable1),
       });
     grp_mean.select('#mean_y')
       .transition()
-      .duration(225)
+      .duration(125)
       .attrs({
         y1: this.y(this.mean_variable2),
         y2: this.y(this.mean_variable2),
@@ -524,11 +669,8 @@ export class ScatterPlot2 {
     this.ref_value1 = tmp_my_region[this.variable1];
     this.ref_value2 = tmp_my_region[this.variable2];
 
-    this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
-    this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
     this.map_elem.removeRectBrush();
     this.updateItemsCtxMenu();
-    this.updateMeanValue();
     this.updateMapRegio();
     this.updateTableStat();
     this.update();
@@ -556,9 +698,6 @@ export class ScatterPlot2 {
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
     this.ref_value1 = this.data.find(
       d => d.id === app.current_config.my_region)[this.variable1];
-    this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
-    // this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
-    this.updateMeanValue();
     this.updateMapRegio();
     this.updateTableStat();
     this.update();
@@ -586,9 +725,6 @@ export class ScatterPlot2 {
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
     this.ref_value2 = this.data.find(
       d => d.id === app.current_config.my_region)[this.variable2];
-    // this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
-    this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
-    this.updateMeanValue();
     this.updateMapRegio();
     this.updateTableStat();
     this.update();
@@ -655,6 +791,37 @@ export class ScatterPlot2 {
     this.map_elem = map_elem;
     this.updateMapRegio();
     this.update();
+  }
+
+  bindMenu() {
+    const self = this;
+    const menu = d3.select('#menu_selection');
+
+    menu.select('#ind_raw_values')
+      .on('click', function () {
+        if (this.classList.contains('active')) {
+          return;
+        }
+        self.type = 'value';
+        this.classList.add('active');
+        menu.select('#ind_ranks')
+          .attr('class', 'choice_ind');
+        // self.g_bar.selectAll('g').remove();
+        self.update();
+      });
+
+    menu.select('#ind_ranks')
+      .on('click', function () {
+        if (this.classList.contains('active')) {
+          return;
+        }
+        self.type = 'rank';
+        this.classList.add('active');
+        menu.select('#ind_raw_values')
+          .attr('class', 'choice_ind');
+        // self.g_bar.selectAll('rect').remove();
+        self.update();
+      });
   }
 
   prepareTableStat() {

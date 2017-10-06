@@ -8,7 +8,7 @@ export function makeTopMenu() {
   const t = document.querySelector('#bar_section').getBoundingClientRect().width;
   const width_central_chart = `${t}px`;
   const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 35}px`;
-  const width_type_comp = `${(t - 80) / 3 - 2}px`;
+  const width_type_comp = `${(t - 80) / 2 - 2}px`;
   top_menu
     .append('div')
     .attrs({ class: 'title_section' })
@@ -58,22 +58,22 @@ export function makeTopMenu() {
     .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
     .html('+2 ind.');
 
-  const inegalite = type_chart
-    .append('div')
-    .attr('class', 'type_comparaison')
-    .styles({ width: width_type_comp });
-
-  inegalite.append('p')
-    .attr('class', 'title_type_comp')
-    .html('INÉGALITÉS');
-
-  inegalite.append('span')
-    .attrs({ class: 'type_chart chart_t1', value: 'BoxPlot1' })
-    .html('1 ind.');
-
-  inegalite.append('span')
-    .attrs({ class: 'type_chart chart_t2 disabled', value: 'ParallelCoords2' })
-    .html('+2 ind.');
+  // const inegalite = type_chart
+  //   .append('div')
+  //   .attr('class', 'type_comparaison')
+  //   .styles({ width: width_type_comp });
+  //
+  // inegalite.append('p')
+  //   .attr('class', 'title_type_comp')
+  //   .html('INÉGALITÉS');
+  //
+  // inegalite.append('span')
+  //   .attrs({ class: 'type_chart chart_t1', value: 'BoxPlot1' })
+  //   .html('1 ind.');
+  //
+  // inegalite.append('span')
+  //   .attrs({ class: 'type_chart chart_t2 disabled', value: 'ParallelCoords2' })
+  //   .html('+2 ind.');
 
   top_menu
     .append('div')
