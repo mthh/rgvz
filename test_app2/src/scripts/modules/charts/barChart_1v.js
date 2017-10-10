@@ -294,7 +294,6 @@ export class BarChart1 {
       }
     };
 
-    //
     const header_bar_section = d3.select('#header_chart');
 
     this.selec_var = header_bar_section
@@ -671,8 +670,8 @@ export class BarChart1 {
     if (app.current_config.filter_key !== undefined) {
       this.changeStudyZone();
     } else {
-      this.ref_value = this.data.filter(
-        ft => ft.id === app.current_config.my_region)[0][this.ratio_to_use];
+      this.ref_value = this.data.find(
+        ft => ft.id === app.current_config.my_region)[this.ratio_to_use];
       this.update();
       this.updateContext(0, this.data.length);
       this.updateMapRegio();
@@ -711,9 +710,9 @@ export class BarChart1 {
     this.ref_value = this.data.find(
       ft => ft.id === app.current_config.my_region)[ratio_to_use];
     this.x.domain(this.current_ids);
-    const min_serie = d3.min(this.data, d => d[ratio_to_use]);
+    // const min_serie = d3.min(this.data, d => d[ratio_to_use]);
     const max_serie = d3.max(this.data, d => d[ratio_to_use]);
-    const offset_y = (max_serie - min_serie) / 20;
+    // const offset_y = (max_serie - min_serie) / 20;
     this.y.domain([
       // min_serie - offset_y, max_serie,
       0, max_serie,

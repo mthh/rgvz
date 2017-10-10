@@ -58,6 +58,10 @@ export function makeTopMenu() {
     .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
     .html('+2 ind.');
 
+  ressemblance.append('span')
+    .attrs({ class: 'type_chart chart_t1', value: 'Similarity1plus' })
+    .html('+1 ind.');
+
   // const inegalite = type_chart
   //   .append('div')
   //   .attr('class', 'type_comparaison')

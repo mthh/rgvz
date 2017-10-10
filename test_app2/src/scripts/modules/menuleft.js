@@ -60,7 +60,11 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   for (let i = 0, len_i = study_zones.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const zone = study_zones[i];
-    entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square'></span><span class="label_chk">${zone.name}</span><span class="i_info">i</span>`;
+    if (zone.id === 'filter_dist') {
+      entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square'></span><span class="label_chk">${zone.name}</span><input value="450" disabled="disabled" style="width: 55px; height: 13px;" type="number" min="0" max="100000" id="dist_filter"></input><span> km</span><span class="i_info">i</span>`;
+    } else {
+      entry.innerHTML = `<span filter-value="${zone.id}" class='filter_v square'></span><span class="label_chk">${zone.name}</span><span class="i_info">i</span>`;
+    }
     section3.appendChild(entry);
   }
 

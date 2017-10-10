@@ -227,6 +227,7 @@ class MapSelect {
 
   getUnitsWithin(dist_km) {
     const dist = dist_km * 1000;
+    if (!this.dist_to_my_region) this.computeDistMat();
     return this.dist_to_my_region.filter(d => d.dist <= dist).map(d => d.id);
   }
 

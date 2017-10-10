@@ -34,7 +34,7 @@ export function prepare_dataset(full_dataset, app) {
 *    without features containing empty ratios.
 *
 */
-export function filterLevelVar(app, filter_id) {
+export function filterLevelVar(app) {
   // Fetch the name(s) of the ratio (and associated num and denum variable),
   // the name of the targeted region and the current level :
   const {
@@ -45,9 +45,9 @@ export function filterLevelVar(app, filter_id) {
 
   // Prepare the data:
   let temp;
-  if (filter_id) {
+  if (filter_key instanceof Array) {
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && filter_id.indexOf(ft[id_field]) > -1);
+      .filter(ft => +ft.level === current_level && filter_key.indexOf(ft[id_field]) > -1);
   } else if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
@@ -79,7 +79,6 @@ export function filterLevelVar(app, filter_id) {
 *
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
-  console.log(metadata_indicateurs);
   return metadata_indicateurs
     .filter(ft => ft['Type statistique'] === 'Ratio')
     .map(ft => ({
@@ -108,20 +107,26 @@ export function applyFilter(app, filter_type) {
   } else if (filter_type === 'no_filter') {
     app.current_config.filter_key = undefined;
     filterLevelVar(app);
+  } else if (filter_type instanceof Array) {
+    app.current_config.filter_key = filter_type;
+    filterLevelVar(app);
   } else {
     app.current_config.filter_key = 'type_test';
     filterLevelVar(app);
   }
-
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
 }
 
 // TODO : Doc
-export function changeRegion(app, id_region) {
+export function changeRegion(app, id_region, map_elem) {
   app.current_config.my_region = id_region;
   app.current_config.my_region_pretty_name = app.feature_names[app.current_config.my_region];
-  if (app.current_config.filter_key !== undefined) {
+  if (app.current_config.filter_key instanceof Array) {
+    map_elem.computeDistMat();
+    app.current_config.filter_key = map_elem.getUnitsWithin(+d3.select('#dist_filter').property('value'));
+    filterLevelVar(app);
+  } else if (app.current_config.filter_key) {
     filterLevelVar(app);
   }
   // Reset the color to use on the chart/map:

@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
+import { Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -34,7 +34,7 @@ export class ScatterPlot2 {
       }
 
       resetColors();
-      const self = this;
+      // const self = this;
       const [topleft, bottomright] = d3.event.selection;
       const range_x = [
         this.x.invert(topleft[0]),
@@ -54,17 +54,26 @@ export class ScatterPlot2 {
         t2 = this.rank_variable2;
       }
 
-      this.data
-        .filter(ft => ft[t1] > range_x[0]
-          && ft[t1] < range_x[1]
-          && ft[t2] > range_y[0]
-          && ft[t2] < range_y[1])
-        .forEach((ft) => {
+      // this.data
+      //   .filter(ft => ft[t1] > range_x[0]
+      //     && ft[t1] < range_x[1]
+      //     && ft[t2] > range_y[0]
+      //     && ft[t2] < range_y[1])
+      //   .forEach((ft) => {
+      //     app.colors[ft.id] = comp2(
+      //       ft[this.variable1], ft[this.variable2],
+      //       self.ref_value1, self.ref_value2,
+      //       self.xInversed, self.yInversed);
+      //   });
+      for (let i = 0, len_i = this.data.length; i < len_i; i++) {
+        const ft = this.data[i];
+        if (ft[t1] > range_x[0] && ft[t1] < range_x[1] && ft[t2] > range_y[0] && ft[t2] < range_y[1]) {
           app.colors[ft.id] = comp2(
             ft[this.variable1], ft[this.variable2],
-            self.ref_value1, self.ref_value2,
-            self.xInversed, self.yInversed);
-        });
+            this.ref_value1, this.ref_value2,
+            this.xInversed, this.yInversed);
+        }
+      }
       app.colors[app.current_config.my_region] = color_highlight;
       this.update();
       this.updateMapRegio();
@@ -411,36 +420,7 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
-        }))
-        .on('end', () => {
-          dots.call((selection) => {
-            selection
-              .on('mouseover.tooltip', () => {
-                svg_bar.select('.tooltip').style('display', null);
-              })
-              .on('mousemove.tooltip', function (d) {
-                const tooltip = svg_bar.select('.tooltip')
-                  .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
-                tooltip.select('rect').attrs({ width: 0, height: 0 });
-                tooltip.select('text.id_feature')
-                  .text(`${d.id}`);
-                tooltip.select('text.value_feature1')
-                  .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
-                tooltip.select('text.value_feature2')
-                  .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
-                tooltip.select('text.value_feature3')
-                  .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
-                tooltip.select('text.value_feature4')
-                .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
-                const b = tooltip.node().getBoundingClientRect();
-                tooltip.select('rect')
-                  .attrs({ width: b.width + 20, height: b.height + 7.5 });
-              })
-              .on('mouseout.tooltip', () => {
-                svg_bar.select('.tooltip').style('display', 'none');
-              });
-          });
-        });
+        }));
 
       dots.enter()
         .insert('circle')
@@ -454,7 +434,34 @@ export class ScatterPlot2 {
           cx: x(d[rank_variable1]),
           cy: y(d[rank_variable2]),
           class: 'dot',
-        }));
+        }))
+        .on('end', () => {
+          dots
+            .on('mouseover.tooltip', () => {
+              svg_bar.select('.tooltip').style('display', null);
+            })
+            .on('mousemove.tooltip', function (d) {
+              const tooltip = svg_bar.select('.tooltip')
+                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+              tooltip.select('rect').attrs({ width: 0, height: 0 });
+              tooltip.select('text.id_feature')
+                .text(`${d.id}`);
+              tooltip.select('text.value_feature1')
+                .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
+              tooltip.select('text.value_feature2')
+                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+              tooltip.select('text.value_feature3')
+                .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
+              tooltip.select('text.value_feature4')
+              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+              const b = tooltip.node().getBoundingClientRect();
+              tooltip.select('rect')
+                .attrs({ width: b.width + 20, height: b.height + 7.5 });
+            })
+            .on('mouseout.tooltip', () => {
+              svg_bar.select('.tooltip').style('display', 'none');
+            });
+        });
       dots.exit().transition().duration(125).remove();
     } else if (this.type === 'value') {
       const variable1 = this.variable1;
@@ -484,32 +491,7 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
-        }))
-        .on('end', () => {
-          dots.call((selection) => {
-            selection
-              .on('mouseover.tooltip', () => {
-                svg_bar.select('.tooltip').style('display', null);
-              })
-              .on('mousemove.tooltip', function (d) {
-                const tooltip = svg_bar.select('.tooltip')
-                  .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
-                tooltip.select('rect').attrs({ width: 0, height: 0 });
-                tooltip.select('text.id_feature')
-                  .text(`${d.id}`);
-                tooltip.select('text.value_feature1')
-                  .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
-                tooltip.select('text.value_feature2')
-                .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
-                const b = tooltip.node().getBoundingClientRect();
-                tooltip.select('rect')
-                  .attrs({ width: b.width + 20, height: b.height + 7.5 });
-              })
-              .on('mouseout.tooltip', () => {
-                svg_bar.select('.tooltip').style('display', 'none');
-              });
-          });
-        });
+        }));
 
       dots.enter()
         .insert('circle')
@@ -523,7 +505,31 @@ export class ScatterPlot2 {
           cx: x(d[variable1]),
           cy: y(d[variable2]),
           class: 'dot',
-        }));
+        }))
+        .on('end', () => {
+          dots
+            .on('mouseover.tooltip', () => {
+              svg_bar.select('.tooltip').style('display', null);
+            })
+            .on('mousemove.tooltip', function (d) {
+              const tooltip = svg_bar.select('.tooltip')
+                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
+              tooltip.select('rect').attrs({ width: 0, height: 0 });
+              tooltip.select('text.id_feature')
+                .text(`${d.id}`);
+              tooltip.select('text.value_feature1')
+                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+              tooltip.select('text.value_feature2')
+              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+              const b = tooltip.node().getBoundingClientRect();
+              tooltip.select('rect')
+                .attrs({ width: b.width + 20, height: b.height + 7.5 });
+            })
+            .on('mouseout.tooltip', () => {
+              svg_bar.select('.tooltip').style('display', 'none');
+            });
+        });
+
       dots.exit().transition().duration(125).remove();
     }
     this.updateMeanValue();
