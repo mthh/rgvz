@@ -1,6 +1,6 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { math_round, prepareTooltip, getSvgPathType } from './helpers';
+import { math_round, prepareTooltip, getSvgPathType, euclidian_distance } from './helpers';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
@@ -223,6 +223,29 @@ class MapSelect {
       document.getElementById('img_map_zoom').classList.remove('active');
       document.getElementById('img_map_select').classList.add('active');
     }
+  }
+
+  getUnitsWithin(dist_km) {
+    const dist = dist_km * 1000;
+    return this.dist_to_my_region.filter(d => d.dist <= dist).map(d => d.id);
+  }
+
+  computeDistMat() {
+    const features = Array.prototype.slice
+      .call(this.target_layer.node().querySelectorAll('path'));
+    const nb_ft = features.length;
+    const my_region_geom = features.find(
+      d => d.__data__.properties[app.current_config.id_field_geom] === app.current_config.my_region,
+      ).__data__.geometry;
+    const my_region_centroid = turf.centroid(my_region_geom);
+    const result_dist = [];
+    for (let i = 0; i < nb_ft; i++) {
+      const id = features[i].__data__.properties[app.current_config.id_field_geom];
+      const dist = euclidian_distance(
+        my_region_centroid, turf.centroid(features[i].__data__.geometry));
+      result_dist.push({ id, dist });
+    }
+    this.dist_to_my_region = result_dist;
   }
 
   unbindBrushClick() {

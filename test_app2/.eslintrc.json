@@ -16,6 +16,7 @@
     "no-mixed-operators": 0
   },
   "globals": {
-    "d3": false
+    "d3": false,
+    "turf": false
   }
 }

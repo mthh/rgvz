@@ -236,6 +236,7 @@ const getStdDev = (serie, mean_value) => {
   }
   let sum = 0;
   for (let i = 0; i < nb_values; i++) {
+    // eslint-disable-next-line no-restricted-properties
     sum += math_pow(serie[i] - mean_value, 2);
   }
   return math_sqrt((1 / nb_values) * sum);
@@ -255,6 +256,14 @@ const shuffle = (array) => {
   }
   return array;
 };
+
+function euclidian_distance(feature1, feature2) {
+  const [x1, y1] = feature1.geometry.coordinates;
+  const [x2, y2] = feature2.geometry.coordinates;
+  const a = x1 - x2;
+  const b = y1 - y2;
+  return math_sqrt(a * a + b * b);
+}
 
 export {
   comp,
@@ -280,4 +289,5 @@ export {
   getStdDev,
   getStandardizedMeanStdDev,
   shuffle,
+  euclidian_distance,
 };
