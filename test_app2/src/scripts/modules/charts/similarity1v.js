@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
+import { comp, math_round, math_abs, math_sqrt, Rect, PropSizer, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -17,8 +17,8 @@ export class Similarity1plus {
     app.current_config.nb_var = 1;
     this.ratios = app.current_config.ratio;
     this.nums = app.current_config.num;
-    this.my_region = ref_data.find(d => d.id === app.current_config.my_region);
     this.data = ref_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.my_region = this.data.find(d => d.id === app.current_config.my_region);
     this.data.forEach((ft) => {
       this.ratios.forEach((v) => {
         ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
@@ -35,12 +35,9 @@ export class Similarity1plus {
     resetColors();
     this.highlight_selection = [];
     this.serie_inversed = false;
-    const draw_group = svg_bar
+    this.draw_group = svg_bar
       .append('g')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
-    draw_group.append('g')
-      .attrs({ class: 'axis axis--x', transform: `translate(0, ${height / 2})` });
-    this.draw_group = draw_group;
 
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
@@ -77,7 +74,7 @@ export class Similarity1plus {
     const selection_close = d3.select(svg_bar.node().parentElement)
       .append('div')
       .attr('id', 'menu_selection')
-      .styles({ top: '-100px', 'margin-left': '30px', position: 'relative' })
+      .styles({ top: '-10px', 'margin-left': '30px', position: 'relative' })
       .append('p');
 
     selection_close.append('span')
@@ -128,13 +125,15 @@ export class Similarity1plus {
   applySelection(nb) {
     app.colors = {};
     if (nb > 0) {
-      const ratio_to_use = this.ratio_to_use;
+      const ratio_to_use = this.ratios[0];
 
-      this.highlight_selection = this.data.map(d => ({
-        dist: d.dist,
-        ratio: +d[ratio_to_use],
-        id: d.id,
-      }));
+      this.highlight_selection = this.data.map((ft) => {
+        const global_dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(ft[v], 2)).reduce((a, b) => a + b));
+        return {
+          id: ft.id,
+          dist: global_dist,
+        };
+      });
 
       this.highlight_selection.sort((a, b) => a.dist - b.dist);
       this.highlight_selection = this.highlight_selection.slice(1, nb + 1);
@@ -149,122 +148,138 @@ export class Similarity1plus {
     const self = this;
     const data = self.data;
     const highlight_selection = self.highlight_selection;
-    const my_region_value = self.my_region_value;
-    const ratio_to_use = self.ratio_to_use;
-    const stock_to_use = self.stock_to_use;
+    const nb_variables = self.ratios.length;
+    let offset = height / nb_variables + 1;
+    let height_to_use = offset / 2;
+    for (let i = 0; i < nb_variables; i++) {
+      const ratio_name = self.ratios[i];
+      const num_name = self.nums[i];
+      const my_region_value = self.my_region[ratio_name];
+      const ratio_values = this.data.map(d => d[ratio_name]);
+      let g = this.draw_group.select(`#${ratio_name}`);
+      let axis = this.draw_group.select(`g.axis--x.${ratio_name}`);
+      if (!g.node()) {
+        g = this.draw_group
+          .append('g')
+          .attr('id', ratio_name);
+        axis = g.append('g')
+          .attrs({ class: `axis axis--x ${ratio_name}`, transform: 'translate(0, 10)' });
+      }
+      g.attr('transform', `translate(0, ${height_to_use})`);
+      let _min, _max;
+      this.data.sort((a, b) => b[`dist_${ratio_name}`] - a[`dist_${ratio_name}`]);
+      if (highlight_selection.length > 0) {
+        const dist_min = math_abs(my_region_value - +d3.min(highlight_selection, d => d.ratio));
+        const dist_max = math_abs(+d3.max(highlight_selection, d => d.ratio) - my_region_value);
+        const dist_axis = Math.max(dist_min, dist_max);
+        const margin_min_max = math_round(dist_axis) / 8;
+        _min = my_region_value - dist_axis - margin_min_max;
+        _max = my_region_value + dist_axis + margin_min_max;
+        if (_min > _max) { console.log('a'); [_min, _max] = [_max, _min]; }
+      } else {
+        const dist_min = math_abs(my_region_value - d3.min(ratio_values));
+        const dist_max = math_abs(d3.max(ratio_values) - my_region_value);
+        const dist_axis = Math.max(dist_min, dist_max);
+        const margin_min_max = math_round(dist_axis) / 8;
+        _min = my_region_value - dist_axis - margin_min_max;
+        _max = my_region_value + dist_axis + margin_min_max;
+      }
 
-    let _min;
-    let _max;
-    if (highlight_selection.length > 0) {
-      const dist_min = math_abs(my_region_value - +d3.min(highlight_selection, d => d.ratio));
-      const dist_max = math_abs(+d3.max(highlight_selection, d => d.ratio) - my_region_value);
-      const dist_axis = Math.max(dist_min, dist_max);
-      const margin_min_max = math_round(dist_axis) / 8;
-      _min = my_region_value - dist_axis - margin_min_max;
-      _max = my_region_value + dist_axis + margin_min_max;
-      if (_min > _max) { console.log('a'); [_min, _max] = [_max, _min]; }
-    } else {
-      const dist_min = math_abs(my_region_value - d3.min(data, d => d[ratio_to_use]));
-      const dist_max = math_abs(d3.max(data, d => d[ratio_to_use]) - my_region_value);
-      const dist_axis = Math.max(dist_min, dist_max);
-      const margin_min_max = math_round(dist_axis) / 8;
-      _min = my_region_value - dist_axis - margin_min_max;
-      _max = my_region_value + dist_axis + margin_min_max;
-    }
-
-    this.highlight_selection.forEach((elem) => {
-      app.colors[elem.id] = comp(elem.ratio, my_region_value, this.serie_inversed);
-    });
-
-    app.colors[app.current_config.my_region] = color_highlight;
-    const prop_sizer = new PropSizer(d3.max(data, d => d[stock_to_use]), 30);
-    const xScale = d3.scaleLinear()
-      .domain([_min, _max])
-      .range([0, width]);
-
-    this.draw_group.select('g.axis--x')
-      .transition()
-      .duration(225)
-      .call(d3.axisBottom(xScale));
-
-    const bubbles = this.draw_group.selectAll('.bubble')
-      .data(data, d => d.id);
-
-    bubbles
-      .transition()
-      .duration(225)
-      .attrs((d) => {
-        let x_value = xScale(d[ratio_to_use]);
-        if (x_value > width) x_value = width + 200;
-        else if (x_value < 0) x_value = -200;
-        return {
-          cx: x_value,
-          cy: height / 2,
-          r: prop_sizer.scale(d[stock_to_use]),
-        };
-      })
-      .styles(d => ({
-        fill: app.colors[d.id] || color_countries,
-        'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
-        stroke: 'darkgray',
-        'stroke-width': 0.75,
-        'stroke-opacity': 0.75,
-      }));
-
-    bubbles
-      .enter()
-      .insert('circle')
-      .styles(d => ({
-        fill: app.colors[d.id] || color_countries,
-        'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
-        stroke: 'darkgray',
-        'stroke-width': 0.75,
-        'stroke-opacity': 0.75,
-      }))
-      .transition()
-      .duration(225)
-      .attrs((d) => {
-        let x_value = xScale(d[ratio_to_use]);
-        if (x_value > width) x_value = width + 200;
-        else if (x_value < 0) x_value = -200;
-        return {
-          class: 'bubble',
-          cx: x_value,
-          cy: height / 2,
-          r: prop_sizer.scale(d[stock_to_use]),
-        };
-      })
-      .on('end', () => {
-        this.draw_group.selectAll('.bubble')
-          .on('mouseover', () => {
-            svg_bar.select('.tooltip').style('display', null);
-          })
-          .on('mouseout', () => {
-            svg_bar.select('.tooltip').style('display', 'none');
-          })
-          .on('mousemove', function (d) {
-            const tooltip = svg_bar.select('.tooltip');
-            const _ratio_to_use = self.ratio_to_use;
-            const _stock_to_use = self.stock_to_use;
-            tooltip.select('rect').attrs({ width: 0, height: 0 });
-            tooltip
-              .select('text.id_feature')
-              .text(`${d.id}`);
-            tooltip.select('text.value_feature1')
-              .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
-            tooltip.select('text.value_feature2')
-              .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
-            const b = tooltip.node().getBoundingClientRect();
-            tooltip.select('rect')
-              .attrs({
-                width: b.width + 20,
-                height: b.height + 7.5,
-              });
-            tooltip
-              .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
-          });
+      this.highlight_selection.forEach((elem) => {
+        app.colors[elem.id] = comp(this.data.find(d => d.id === elem.id)[ratio_name], my_region_value, this.serie_inversed);
       });
-    bubbles.exit().transition().duration(225).remove();
+
+      app.colors[app.current_config.my_region] = color_highlight;
+      const prop_sizer = new PropSizer(d3.max(data, d => d[num_name]), 30);
+      const xScale = d3.scaleLinear()
+        .domain([_min, _max])
+        .range([0, width]);
+
+      axis
+        .transition()
+        .duration(225)
+        .call(d3.axisBottom(xScale));
+
+      const bubbles = g.selectAll('.bubble')
+        .data(data, d => d.id);
+
+      bubbles
+        .transition()
+        .duration(225)
+        .attrs((d) => {
+          let x_value = xScale(d[ratio_name]);
+          if (x_value > width) x_value = width + 200;
+          else if (x_value < 0) x_value = -200;
+          return {
+            cx: x_value,
+            cy: 10,
+            r: prop_sizer.scale(d[num_name]),
+          };
+        })
+        .styles(d => ({
+          fill: app.colors[d.id] || color_countries,
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+          stroke: 'darkgray',
+          'stroke-width': 0.75,
+          'stroke-opacity': 0.75,
+        }));
+
+      bubbles
+        .enter()
+        .insert('circle')
+        .styles(d => ({
+          fill: app.colors[d.id] || color_countries,
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+          stroke: 'darkgray',
+          'stroke-width': 0.75,
+          'stroke-opacity': 0.75,
+        }))
+        .transition()
+        .duration(225)
+        .attrs((d) => {
+          let x_value = xScale(d[ratio_name]);
+          if (x_value > width) x_value = width + 200;
+          else if (x_value < 0) x_value = -200;
+          return {
+            class: 'bubble',
+            cx: x_value,
+            cy: 10,
+            r: prop_sizer.scale(d[num_name]),
+          };
+        })
+        .on('end', () => {
+          this.draw_group.selectAll('.bubble')
+            .on('mouseover', () => {
+              svg_bar.select('.tooltip').style('display', null);
+            })
+            .on('mouseout', () => {
+              svg_bar.select('.tooltip').style('display', 'none');
+            })
+            .on('mousemove', function (d) {
+              const tooltip = svg_bar.select('.tooltip');
+              const _ratio_to_use = self.ratio_to_use;
+              const _stock_to_use = self.stock_to_use;
+              tooltip.select('rect').attrs({ width: 0, height: 0 });
+              tooltip
+                .select('text.id_feature')
+                .text(`${d.id}`);
+              tooltip.select('text.value_feature1')
+                .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
+              tooltip.select('text.value_feature2')
+                .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
+              const b = tooltip.node().getBoundingClientRect();
+              tooltip.select('rect')
+                .attrs({
+                  width: b.width + 20,
+                  height: b.height + 7.5,
+                });
+              tooltip
+                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+            });
+        });
+      bubbles.exit().transition().duration(225).remove();
+      height_to_use += offset;
+    }
   }
 
   updateCompletude() {
@@ -316,29 +331,29 @@ export class Similarity1plus {
       this.changeStudyZone();
     } else {
       this.map_elem.updateLegend();
-      this.my_region_value = this.data.find(
-        d => d.id === app.current_config.my_region)[this.ratio_to_use];
+      this.my_region = this.data.find(d => d.id === app.current_config.my_region);
       this.data
         .forEach((ft) => {
-          // eslint-disable-next-line no-param-reassign
-          ft.dist = math_abs(+ft[this.ratio_to_use] - this.my_region_value);
+          this.ratios.forEach(v => {
+            ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
+          });
         });
       this.updateTableStats();
-      this.applySelection(this.highlight_selection.length);
+      // this.applySelection(this.highlight_selection.length);
     }
   }
 
   changeStudyZone() {
     this.map_elem.updateLegend();
-    this.my_region_value = app.current_data.find(
-      d => d.id === app.current_config.my_region)[this.ratio_to_use];
-    this.data = app.current_data.filter(ft => !!ft[this.ratio_to_use]).slice();
-    this.data
-      .forEach((ft) => {
-        // eslint-disable-next-line no-param-reassign
-        ft.dist = math_abs(+ft[this.ratio_to_use] - this.my_region_value);
+    this.ratios = app.current_config.ratio;
+    this.nums = app.current_config.num;
+    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.my_region = this.data.find(d => d.id === app.current_config.my_region);
+    this.data.forEach((ft) => {
+      this.ratios.forEach((v) => {
+        ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
       });
-    this.data.sort((a, b) => b.dist - a.dist);
+    });
     this.current_ids = this.data.map(d => d.id);
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
@@ -346,30 +361,30 @@ export class Similarity1plus {
     this.applySelection(temp);
   }
 
-  changeVariable(code_variable) {
-    this.ratio_to_use = code_variable;
-    this.stock_to_use = variables_info.find(d => d.ratio === code_variable).num;
-  }
-
 
   addVariable(code_variable, name_variable) {
-    // Add the variable to the input element allowing to choose variables:
-    this.selec_var.append('option')
-      .attr('value', code_variable)
-      .text(name_variable);
-
+    this.ratios = app.current_config.ratio.slice();
+    this.nums = app.current_config.num.slice();
+    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.my_region = this.data.find(d => d.id === app.current_config.my_region);
+    this.data.forEach((ft) => {
+      this.ratios.forEach((v) => {
+        ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
+      });
+    });
     // And use it immediatly:
-    this.selec_var.node().value = code_variable;
-    this.selec_var.dispatch('change');
+    this.update();
   }
 
   removeVariable(code_variable) {
-    // Add the variable to the input element allowing to choose variables:
-    this.selec_var.select(`option[value=${code_variable}]`).remove();
-    if (this.ratio_to_use === code_variable) {
-      this.selec_var.node().value = this.selec_var.select('option').node().value;
-      this.selec_var.dispatch('change');
-    }
+    this.ratios = app.current_config.ratio.slice();
+    this.nums = app.current_config.num.slice();
+    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.my_region = this.data.find(d => d.id === app.current_config.my_region);
+
+    this.draw_group.select(`g#${code_variable}`).remove();
+    // And use it immediatly:
+    this.update();
   }
 
   bindMenu() {
