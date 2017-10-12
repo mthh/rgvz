@@ -82,13 +82,13 @@ export function prepareVariablesInfo(metadata_indicateurs) {
   return metadata_indicateurs
     .filter(ft => ft['Type statistique'] === 'Ratio')
     .map(ft => ({
-      ratio: ft['id'],
-      num: `${ft['id1']}_${ft['Année']}`,
-      denum: `${ft['id2']}_${ft['Année']}`,
-      name: `${ft['Nom']} (${ft['Année']})`,
+      ratio: ft.id,
+      num: `${ft.id1}_${ft.Année}`,
+      denum: `${ft.id2}_${ft.Année}`,
+      name: `${ft.Nom} (${ft.Année})`,
       group: ft['Thème'],
       methodo: ft['Méthodologie'],
-      source: ft['Source'],
+      source: ft.Source,
       last_update: ft['Dernière mise à jour'],
     }));
 }

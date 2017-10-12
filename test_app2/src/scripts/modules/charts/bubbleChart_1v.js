@@ -1,7 +1,7 @@
-import { comp, math_round, math_abs, Rect, PropSizer, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
-import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
+import { comp, math_round, math_abs, PropSizer, prepareTooltip, getMean } from './../helpers';
+import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
-import { svg_map } from './../map';
+// import { svg_map } from './../map';
 import { app, variables_info, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 

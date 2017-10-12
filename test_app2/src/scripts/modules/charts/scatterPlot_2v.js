@@ -67,7 +67,8 @@ export class ScatterPlot2 {
       //   });
       for (let i = 0, len_i = this.data.length; i < len_i; i++) {
         const ft = this.data[i];
-        if (ft[t1] > range_x[0] && ft[t1] < range_x[1] && ft[t2] > range_y[0] && ft[t2] < range_y[1]) {
+        if (ft[t1] > range_x[0] && ft[t1] < range_x[1]
+            && ft[t2] > range_y[0] && ft[t2] < range_y[1]) {
           app.colors[ft.id] = comp2(
             ft[this.variable1], ft[this.variable2],
             this.ref_value1, this.ref_value2,

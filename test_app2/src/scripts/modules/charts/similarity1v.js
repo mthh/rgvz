@@ -1,15 +1,15 @@
-import { comp, math_round, math_abs, math_sqrt, Rect, PropSizer, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
-import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
+import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip, getMean } from './../helpers';
+import { color_disabled, color_countries, color_default_dissim, color_highlight } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
-import { svg_map } from './../map';
-import { app, variables_info, resetColors } from './../../main';
+// import { svg_map } from './../map';
+import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
 
-const width = +svg_bar.attr('width') - margin.left - margin.right,
-  height = +svg_bar.attr('height') - margin.top - margin.bottom;
+const width = +svg_bar.attr('width') - margin.left - margin.right;
+const height = +svg_bar.attr('height') - margin.top - margin.bottom;
 
 export class Similarity1plus {
   constructor(ref_data) {
@@ -21,16 +21,10 @@ export class Similarity1plus {
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
     this.data.forEach((ft) => {
       this.ratios.forEach((v) => {
+        // eslint-disable-next-line no-param-reassign
         ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
       });
     });
-    // this.data = ref_data.filter(ft => !!ft[ratio_to_use]).slice();
-    // this.data
-    //   .forEach((ft) => {
-    //     // eslint-disable-next-line no-param-reassign
-    //     ft.dist = math_abs(+ft[ratio_to_use] - this.my_region_value);
-    //   });
-    // this.data.sort((a, b) => b.dist - a.dist);
     this.current_ids = this.data.map(d => d.id);
     resetColors();
     this.highlight_selection = [];
@@ -91,50 +85,23 @@ export class Similarity1plus {
       .html('régions les plus proches');
 
     this.bindMenu();
-
-    // const header_bar_section = d3.select('#header_chart');
-    //
-    // this.selec_var = header_bar_section
-    //   .insert('select', '#img_table')
-    //   .attrs({ class: 'title_variable' })
-    //   .styles({
-    //     'font-family': '\'Signika\', sans-serif',
-    //     'font-weight': '800',
-    //     'font-size': '14px',
-    //     'margin-top': '12px',
-    //     'margin-left': '40px',
-    //     float: 'left',
-    //   });
-    //
-    // for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
-    //   this.selec_var.append('option')
-    //     .attr('value', available_ratios[i])
-    //     .text(app.current_config.ratio_pretty_name[i]);
-    // }
-    //
-    // this.selec_var.on('change', function () {
-    //   const code_variable = this.value;
-    //   self.changeVariable(code_variable);
-    //   self.changeStudyZone();
-    //   self.updateCompletude();
-    // });
-
     this.makeTableStat();
   }
 
   applySelection(nb) {
     app.colors = {};
     if (nb > 0) {
-      const ratio_to_use = this.ratios[0];
-
       this.highlight_selection = this.data.map((ft) => {
+        // eslint-disable-next-line no-restricted-properties
         const global_dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(ft[v], 2)).reduce((a, b) => a + b));
-        return {
+        const obj = {
           id: ft.id,
           dist: global_dist,
         };
+        this.ratios.forEach((v) => { obj[v] = ft[v]; });
+        // this.ratios.forEach(v => { obj[v] = ft[v]});
+        return obj;
       });
-
       this.highlight_selection.sort((a, b) => a.dist - b.dist);
       this.highlight_selection = this.highlight_selection.slice(1, nb + 1);
     } else {
@@ -149,7 +116,7 @@ export class Similarity1plus {
     const data = self.data;
     const highlight_selection = self.highlight_selection;
     const nb_variables = self.ratios.length;
-    let offset = height / nb_variables + 1;
+    const offset = height / nb_variables + 1;
     let height_to_use = offset / 2;
     for (let i = 0; i < nb_variables; i++) {
       const ratio_name = self.ratios[i];
@@ -161,21 +128,25 @@ export class Similarity1plus {
       if (!g.node()) {
         g = this.draw_group
           .append('g')
-          .attr('id', ratio_name);
+          .attr('id', ratio_name)
+          .attr('num', num_name);
         axis = g.append('g')
           .attrs({ class: `axis axis--x ${ratio_name}`, transform: 'translate(0, 10)' });
       }
       g.attr('transform', `translate(0, ${height_to_use})`);
-      let _min, _max;
+      let _min;
+      let _max;
       this.data.sort((a, b) => b[`dist_${ratio_name}`] - a[`dist_${ratio_name}`]);
       if (highlight_selection.length > 0) {
-        const dist_min = math_abs(my_region_value - +d3.min(highlight_selection, d => d.ratio));
-        const dist_max = math_abs(+d3.max(highlight_selection, d => d.ratio) - my_region_value);
+        const dist_min = math_abs(
+          my_region_value - +d3.min(highlight_selection, d => d[ratio_name]));
+        const dist_max = math_abs(
+          +d3.max(highlight_selection, d => d[ratio_name]) - my_region_value);
         const dist_axis = Math.max(dist_min, dist_max);
         const margin_min_max = math_round(dist_axis) / 8;
         _min = my_region_value - dist_axis - margin_min_max;
         _max = my_region_value + dist_axis + margin_min_max;
-        if (_min > _max) { console.log('a'); [_min, _max] = [_max, _min]; }
+        if (_min > _max) { [_min, _max] = [_max, _min]; }
       } else {
         const dist_min = math_abs(my_region_value - d3.min(ratio_values));
         const dist_max = math_abs(d3.max(ratio_values) - my_region_value);
@@ -184,9 +155,8 @@ export class Similarity1plus {
         _min = my_region_value - dist_axis - margin_min_max;
         _max = my_region_value + dist_axis + margin_min_max;
       }
-
       this.highlight_selection.forEach((elem) => {
-        app.colors[elem.id] = comp(this.data.find(d => d.id === elem.id)[ratio_name], my_region_value, this.serie_inversed);
+        app.colors[elem.id] = comp(elem[ratio_name], my_region_value, this.serie_inversed);
       });
 
       app.colors[app.current_config.my_region] = color_highlight;
@@ -257,16 +227,17 @@ export class Similarity1plus {
             })
             .on('mousemove', function (d) {
               const tooltip = svg_bar.select('.tooltip');
-              const _ratio_to_use = self.ratio_to_use;
-              const _stock_to_use = self.stock_to_use;
+              const ratio_n = this.parentElement.id;
+              const num_n = this.parentElement.getAttribute('num');
+              const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].split(')')[0];
               tooltip.select('rect').attrs({ width: 0, height: 0 });
               tooltip
                 .select('text.id_feature')
                 .text(`${d.id}`);
               tooltip.select('text.value_feature1')
-                .text(`Ratio: ${Math.round(d[_ratio_to_use] * 10) / 10}`);
+                .text(`Ratio: ${Math.round(d[ratio_n] * 10) / 10}`);
               tooltip.select('text.value_feature2')
-                .text(`Stock: ${Math.round(d[_stock_to_use] * 10) / 10}`);
+                .text(`Stock: ${Math.round(d[num_n] * 10) / 10}`);
               const b = tooltip.node().getBoundingClientRect();
               tooltip.select('rect')
                 .attrs({
@@ -274,7 +245,7 @@ export class Similarity1plus {
                   height: b.height + 7.5,
                 });
               tooltip
-                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
             });
         });
       bubbles.exit().transition().duration(225).remove();
@@ -292,8 +263,10 @@ export class Similarity1plus {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
+      .attr('fill', d => (
+        this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+        ? (app.colors[d.properties[app.current_config.id_field_geom]]
+          ? color_default_dissim : color_countries)
         : color_disabled));
   }
 
@@ -310,17 +283,18 @@ export class Similarity1plus {
       // Change the color on the map:
       d3.select(parent).attr('fill', color_countries);
     } else {
-      const value = +d.properties[this.ratio_to_use];
-      const color = comp(value, this.my_region_value, this.serie_inversed);
-      // app.colors[id] = color;
+      app.colors[id] = color_default_dissim;
       // Change the color on the map:
-      d3.select(parent).attr('fill', color);
+      d3.select(parent).attr('fill', color_default_dissim);
       // Add the clicked feature on the colored selection on the chart:
-      this.highlight_selection.push({
+      // eslint-disable-next-line no-restricted-properties
+      const global_dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(+d.properties[v], 2)).reduce((a, b) => a + b));
+      const obj = {
         id,
-        ratio: value,
-        dist: math_abs(value - this.my_region_value),
-      });
+        dist: global_dist,
+      };
+      this.ratios.forEach((v) => { obj[v] = +d.properties[v]; });
+      this.highlight_selection.push(obj);
     }
     this.highlight_selection.sort((a, b) => a.dist - b.dist);
     this.update();
@@ -334,11 +308,13 @@ export class Similarity1plus {
       this.my_region = this.data.find(d => d.id === app.current_config.my_region);
       this.data
         .forEach((ft) => {
-          this.ratios.forEach(v => {
+          this.ratios.forEach((v) => {
+            // eslint-disable-next-line no-param-reassign
             ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
           });
         });
-      this.updateTableStats();
+      this.updateTableStat();
+      this.update();
       // this.applySelection(this.highlight_selection.length);
     }
   }
@@ -347,43 +323,58 @@ export class Similarity1plus {
     this.map_elem.updateLegend();
     this.ratios = app.current_config.ratio;
     this.nums = app.current_config.num;
-    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.data = app.current_data.filter(
+      ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
     this.data.forEach((ft) => {
       this.ratios.forEach((v) => {
+        // eslint-disable-next-line no-param-reassign
         ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
       });
     });
     this.current_ids = this.data.map(d => d.id);
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
-    this.updateTableStats();
+    this.updateTableStat();
     this.applySelection(temp);
   }
-
 
   addVariable(code_variable, name_variable) {
     this.ratios = app.current_config.ratio.slice();
     this.nums = app.current_config.num.slice();
-    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.data = app.current_data.filter(
+      ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
     this.data.forEach((ft) => {
       this.ratios.forEach((v) => {
+        // eslint-disable-next-line no-param-reassign
         ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
       });
     });
+    this.highlight_selection = this.highlight_selection.map((d) => {
+      const obj = Object.assign(d, {});
+      const ft = this.data.find(elem => elem.id === obj.id);
+      this.ratios.forEach((v) => {
+        obj[v] = +ft[v];
+        obj[`dist_${v}`] = +ft[`dist_${v}`];
+      });
+      return obj;
+    });
     // And use it immediatly:
+    this.updateTableStat();
     this.update();
   }
 
   removeVariable(code_variable) {
     this.ratios = app.current_config.ratio.slice();
     this.nums = app.current_config.num.slice();
-    this.data = app.current_data.filter(ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.data = app.current_data.filter(
+      ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
 
     this.draw_group.select(`g#${code_variable}`).remove();
     // And use it immediatly:
+    this.updateTableStat();
     this.update();
   }
 
@@ -412,35 +403,37 @@ export class Similarity1plus {
     this.map_elem = null;
     this.table_stats.remove();
     this.table_stats = null;
-    this.selec_var.remove();
     svg_bar.html('');
   }
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
-    this.update();
-  }
-
-  updateTableStats() {
-    this.table_stats.removeAll();
-    this.table_stats.addFeature(this.prepareTableStat());
+    this.applySelection(5);
   }
 
   prepareTableStat() {
-    const values = this.data.map(d => d[this.ratio_to_use]);
-    return {
+    const ratios = this.ratios;
+    const all_values = ratios.map(v => this.data.map(d => +d[v]));
+    const my_region = this.my_region;
+    const features = all_values.map((values, i) => ({
       Min: d3.min(values),
       Max: d3.max(values),
       Moyenne: getMean(values),
-      id: this.ratio_to_use,
-      Variable: this.ratio_to_use,
-      'Ma région': this.my_region_value,
-    };
+      id: this.ratios[i],
+      Variable: this.ratios[i],
+      'Ma région': my_region[this.ratios[i]],
+    }));
+    return features;
+  }
+
+  updateTableStat() {
+    this.table_stats.removeAll();
+    this.table_stats.addFeatures(this.prepareTableStat());
   }
 
   makeTableStat() {
-    const feature = this.prepareTableStat();
-    this.table_stats = new TableResumeStat([feature]);
+    const features = this.prepareTableStat();
+    this.table_stats = new TableResumeStat(features);
   }
 }

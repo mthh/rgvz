@@ -1,6 +1,6 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { math_round, prepareTooltip, getSvgPathType, euclidian_distance } from './helpers';
+import { prepareTooltip, getSvgPathType, euclidian_distance } from './helpers';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
@@ -184,7 +184,7 @@ class MapSelect {
       .call(this.zoom_map.transform, d3.zoomIdentity);
   }
 
-  updateLegend() {
+  static updateLegend() {
     d3.select('#svg_legend > g > .legend > text')
       .text(`Ma région : ${app.current_config.my_region_pretty_name}`);
   }

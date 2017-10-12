@@ -2,7 +2,7 @@ import {
   math_max, math_sin, math_cos, HALF_PI, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
 import { calcPopCompletudeSubset } from './../prepare_data';
-import { app, variables_info, resetColors } from './../../main';
+import { app, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
@@ -19,8 +19,8 @@ const wrap = (_text, _width) => {
       y = text.attr('y'),
       x = text.attr('x'),
       dy = parseFloat(text.attr('dy'));
-    let line = [],
-      lineNumber = 0;
+    let line = [];
+    let lineNumber = 0;
     let tspan = text.text(null)
       .append('tspan')
       .attr('x', x)
@@ -115,8 +115,12 @@ export class RadarChart3 {
     this.cfg = cfg;
     // Put all of the options into a variable called cfg
     if (typeof options !== 'undefined') {
-      for (const i in options) {
-        if (typeof options[i] !== 'undefined') { cfg[i] = options[i]; }
+      const opts_key = Object.keys(options);
+      for (let i = 0, len_i = opts_key.length; i < len_i; i++) {
+        const k = opts_key[i];
+        if (typeof options[k] !== 'undefined') {
+          cfg[k] = options[k];
+        }
       }
     }
 
@@ -305,7 +309,6 @@ export class RadarChart3 {
     // If the supplied maxValue is smaller than the actual one, replace by the max in the data
     let maxValue = 0;
     for (let j = 0; j < this.data.length; j++) {
-      const on_axes = [];
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
         if (this.data[j].axes[i].value > maxValue) {
@@ -358,7 +361,6 @@ export class RadarChart3 {
     const labelCtxMenu = function labelCtxMenu(label) {
       d3.event.stopPropagation();
       d3.event.preventDefault();
-      const ix = +this.id;
       self.inverse_data(label);
     };
 
