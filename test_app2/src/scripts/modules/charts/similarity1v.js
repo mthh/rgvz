@@ -129,7 +129,8 @@ export class Similarity1plus {
         g = this.draw_group
           .append('g')
           .attr('id', ratio_name)
-          .attr('num', num_name);
+          .attr('num', num_name)
+          .attr('class', 'grp_var');
         axis = g.append('g')
           .attrs({ class: `axis axis--x ${ratio_name}`, transform: 'translate(0, 10)' });
       }
@@ -167,7 +168,7 @@ export class Similarity1plus {
 
       axis
         .transition()
-        .duration(225)
+        .duration(125)
         .call(d3.axisBottom(xScale));
 
       const bubbles = g.selectAll('.bubble')
@@ -175,7 +176,7 @@ export class Similarity1plus {
 
       bubbles
         .transition()
-        .duration(225)
+        .duration(125)
         .attrs((d) => {
           let x_value = xScale(d[ratio_name]);
           if (x_value > width) x_value = width + 200;
@@ -188,7 +189,7 @@ export class Similarity1plus {
         })
         .styles(d => ({
           fill: app.colors[d.id] || color_countries,
-          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.1,
           stroke: 'darkgray',
           'stroke-width': 0.75,
           'stroke-opacity': 0.75,
@@ -199,18 +200,19 @@ export class Similarity1plus {
         .insert('circle')
         .styles(d => ({
           fill: app.colors[d.id] || color_countries,
-          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.3,
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.1,
           stroke: 'darkgray',
           'stroke-width': 0.75,
           'stroke-opacity': 0.75,
         }))
         .transition()
-        .duration(225)
+        .duration(125)
         .attrs((d) => {
           let x_value = xScale(d[ratio_name]);
           if (x_value > width) x_value = width + 200;
           else if (x_value < 0) x_value = -200;
           return {
+            id: d.id,
             class: 'bubble',
             cx: x_value,
             cy: 10,
@@ -246,9 +248,10 @@ export class Similarity1plus {
                 });
               tooltip
                 .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
-            });
+            })
+            .on('click', (d) => { self.displayLine(d.id); });
         });
-      bubbles.exit().transition().duration(225).remove();
+      bubbles.exit().transition().duration(125).remove();
       height_to_use += offset;
     }
   }
@@ -298,6 +301,32 @@ export class Similarity1plus {
     }
     this.highlight_selection.sort((a, b) => a.dist - b.dist);
     this.update();
+    setTimeout(() => { this.displayLine(id); }, 150);
+  }
+
+  displayLine(id_region) {
+    if (this.ratios.length === 1) return;
+    const coords = [];
+    svg_bar.selectAll('.grp_var')
+      .selectAll(`#${id_region}.bubble`)
+      .each(function () {
+        const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].replace(')', '');
+        coords.push([this.cx.baseVal.value, this.cy.baseVal.value + ty]);
+      });
+
+    const l = this.draw_group.append('path')
+      .datum(coords)
+      .attr('fill', 'none')
+      .attr('stroke', 'steelblue')
+      .attr('stroke-linejoin', 'round')
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-width', 1.5)
+      .attr('d', d3.line()
+        .x(_d => _d[0])
+        .y(_d => _d[1]));
+    setTimeout(() => {
+      l.remove();
+    }, 5000);
   }
 
   updateChangeRegion() {
