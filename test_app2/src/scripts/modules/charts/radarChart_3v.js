@@ -101,7 +101,7 @@ export class RadarChart3 {
       maxValue: 100, // What is the value that the biggest circle will represent
       labelFactor: 1.3, // How much farther than the radius of the outer circle should the labels be placed
       wrapWidth: 85, // The number of pixels after which a label needs to be given a new line
-      opacityArea: 0.35, // The opacity of the area of the blob
+      opacityArea: 0.10, // The opacity of the area of the blob
       dotRadius: 4, // The size of the colored circles of each blog
       opacityCircles: 0.1, // The opacity of the circles of each blob
       strokeWidth: 2, // The width of the stroke around each blob
@@ -200,9 +200,9 @@ export class RadarChart3 {
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
-        blobWrapper.selectAll('.radarArea')
+        self.g.selectAll('.radarArea')
           .transition().duration(200)
-          .style('fill-opacity', 0.1);
+          .style('fill-opacity', 0);
         // Bring back the hovered over blob
         d3.select(this)
           .transition().duration(200)
@@ -210,7 +210,7 @@ export class RadarChart3 {
       })
       .on('mouseout', () => {
         // Bring back all blobs
-        blobWrapper.selectAll('.radarArea')
+        self.g.selectAll('.radarArea')
           .transition().duration(200)
           .style('fill-opacity', cfg.opacityArea);
       });
@@ -278,7 +278,7 @@ export class RadarChart3 {
           .attr('y', this.cy.baseVal.value - 10)
           .transition()
           .style('display', 'block')
-          .text(this.Format(d.value) + cfg.unit);
+          .text(self.Format(d.value) + cfg.unit);
       })
       .on('mouseout', () => {
         self.g.select('.tooltip').transition()
@@ -517,7 +517,7 @@ export class RadarChart3 {
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
-        blobWrapper.selectAll('.radarArea')
+        g.selectAll('.radarArea')
           .transition().duration(200)
           .style('fill-opacity', 0.1);
         // Bring back the hovered over blob
@@ -526,22 +526,10 @@ export class RadarChart3 {
           .style('fill-opacity', 0.7);
       })
       .on('mouseout', () => {
-        // Bring back all blobs
-        blobWrapper.selectAll('.radarArea')
+        g.selectAll('.radarArea')
           .transition().duration(200)
           .style('fill-opacity', cfg.opacityArea);
       });
-      // .on('click', function () {
-      //   const p = this.parentElement;
-      //   if (p.previousSibling.className !== 'tooltip') {
-      //     const group = g.node();
-      //     group.insertBefore(p, group.querySelector('.tooltip'));
-      //     const new_order = [];
-      //     g.selectAll('.radarWrapper').each(d => new_order.push(d.name));
-      //     new_order.reverse();
-      //     updateLegend(new_order);
-      //   }
-      // });
 
     // Create the outlines
     blobWrapper.append('path')
@@ -673,9 +661,6 @@ export class RadarChart3 {
         'fill-opacity': 0.8,
       }));
 
-    console.log(this.g.selectAll('.radarCircleWrapper'));
-    console.log(this.data);
-
     const update_blobCircleWrapper = this.g.selectAll('.radarCircleWrapper')
       .data(this.data, d => d.name);
 
@@ -804,7 +789,7 @@ export class RadarChart3 {
     } else {
       this.g.selectAll(`#${id}.radarWrapper`).remove();
       this.g.selectAll(`#${id}.radarCircleWrapper`).remove();
-      const ix = this.data.map((_d, i) => [i, _d.name === id]).find(_d => _d[1] === true);
+      const ix = this.data.map((_d, i) => [i, _d.name === id]).find(_d => _d[1] === true)[0];
       this.data.splice(ix, 1);
       this.displayed_ids = this.data.map(_d => _d.name);
       this.update();

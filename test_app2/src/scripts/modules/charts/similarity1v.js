@@ -99,7 +99,6 @@ export class Similarity1plus {
           dist: global_dist,
         };
         this.ratios.forEach((v) => { obj[v] = ft[v]; });
-        // this.ratios.forEach(v => { obj[v] = ft[v]});
         return obj;
       });
       this.highlight_selection.sort((a, b) => a.dist - b.dist);
@@ -107,6 +106,7 @@ export class Similarity1plus {
     } else {
       this.highlight_selection = [];
     }
+    this.removeLines();
     this.update();
     this.updateMapRegio();
   }
@@ -249,7 +249,9 @@ export class Similarity1plus {
               tooltip
                 .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
             })
-            .on('click', (d) => { self.displayLine(d.id); });
+            .on('click', function (d) {
+              if (this.style.fill !== color_countries) self.displayLine(d.id);
+            });
         });
       bubbles.exit().transition().duration(125).remove();
       height_to_use += offset;
@@ -300,6 +302,7 @@ export class Similarity1plus {
       this.highlight_selection.push(obj);
     }
     this.highlight_selection.sort((a, b) => a.dist - b.dist);
+    this.removeLines();
     this.update();
     setTimeout(() => { this.displayLine(id); }, 150);
   }
@@ -316,6 +319,7 @@ export class Similarity1plus {
 
     const l = this.draw_group.append('path')
       .datum(coords)
+      .attr('class', 'regio_line')
       .attr('fill', 'none')
       .attr('stroke', 'steelblue')
       .attr('stroke-linejoin', 'round')
@@ -330,6 +334,7 @@ export class Similarity1plus {
   }
 
   updateChangeRegion() {
+    this.removeLines();
     if (app.current_config.filter_key !== undefined) {
       this.changeStudyZone();
     } else {
@@ -349,6 +354,7 @@ export class Similarity1plus {
   }
 
   changeStudyZone() {
+    this.removeLines();
     this.map_elem.updateLegend();
     this.ratios = app.current_config.ratio;
     this.nums = app.current_config.num;
@@ -369,6 +375,7 @@ export class Similarity1plus {
   }
 
   addVariable(code_variable, name_variable) {
+    this.removeLines();
     this.ratios = app.current_config.ratio.slice();
     this.nums = app.current_config.num.slice();
     this.data = app.current_data.filter(
@@ -395,6 +402,7 @@ export class Similarity1plus {
   }
 
   removeVariable(code_variable) {
+    this.removeLines();
     this.ratios = app.current_config.ratio.slice();
     this.nums = app.current_config.num.slice();
     this.data = app.current_data.filter(
@@ -425,6 +433,10 @@ export class Similarity1plus {
       .on('wheel', applychange);
     menu.select('.nb_select')
       .on('keyup', applychange);
+  }
+
+  removeLines() {
+    this.draw_group.selectAll('.regio_line').remove();
   }
 
   remove() {

@@ -240,7 +240,7 @@ export class ScatterPlot2 {
 
     // Create the "complétude" text:
     this.completude = svg_bar.append('text')
-      .attrs({ id: 'chart_completude', x: 60, y: 40 })
+      .attrs({ id: 'chart_completude', x: 40, y: 15 })
       .styles({ 'font-family': '\'Signika\', sans-serif' })
       .text(`Complétude : ${this.completude_value}%`);
 
@@ -437,7 +437,7 @@ export class ScatterPlot2 {
           class: 'dot',
         }))
         .on('end', () => {
-          dots
+          this.scatter.selectAll('.dot')
             .on('mouseover.tooltip', () => {
               svg_bar.select('.tooltip').style('display', null);
             })
@@ -508,7 +508,7 @@ export class ScatterPlot2 {
           class: 'dot',
         }))
         .on('end', () => {
-          dots
+          this.scatter.selectAll('.dot')
             .on('mouseover.tooltip', () => {
               svg_bar.select('.tooltip').style('display', null);
             })
@@ -519,8 +519,12 @@ export class ScatterPlot2 {
               tooltip.select('text.id_feature')
                 .text(`${d.id}`);
               tooltip.select('text.value_feature1')
-                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+                .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
               tooltip.select('text.value_feature2')
+                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+              tooltip.select('text.value_feature3')
+                .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
+              tooltip.select('text.value_feature4')
               .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
               const b = tooltip.node().getBoundingClientRect();
               tooltip.select('rect')
