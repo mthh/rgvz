@@ -78,7 +78,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   for (let i = 0, len_i = territorial_mesh.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const territ_level = territorial_mesh[i];
-    entry.innerHTML = `<span value="${territ_level.id}" class='square territ_level'></span><span class="label_chk">${territ_level.name}</span><span class="i_info">i</span>`;
+    entry.innerHTML = `<span value="${territ_level.id}" class='territ_level square'></span><span class="label_chk">${territ_level.name}</span><span class="i_info">i</span>`;
     section4.appendChild(entry);
   }
 

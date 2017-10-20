@@ -375,7 +375,7 @@ export class RadarChart3 {
       .attr('r', d => radius / cfg.levels * d)
       .style('fill', '#CDCDCD')
       .style('stroke', '#CDCDCD')
-      .style('fill-opacity', cfg.opacityCircles)
+      .style('fill-opacity', d => d === 5 ? cfg.opacityCircles * 2 : cfg.opacityCircles)
       .style('filter', 'url(#glow)');
 
     // // Text indicating at what % each level is

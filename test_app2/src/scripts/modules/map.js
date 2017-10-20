@@ -1,6 +1,7 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
 import { prepareTooltip, getSvgPathType, euclidian_distance } from './helpers';
+import { filterLevelGeom } from './prepare_data';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
@@ -13,7 +14,7 @@ const styles = {
   seaboxes: { id: 'seaboxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
   remote: { id: 'remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
   seaboxes2: { id: 'seaboxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
-  nuts1: { id: 'nuts1', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  nuts: { id: 'nuts', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
 };
 
 let projection;
@@ -70,15 +71,18 @@ function map_zoomed() {
 }
 
 class MapSelect {
-  constructor(nuts1, countries, remote, template, seaboxes) {
+  constructor(nuts, countries, remote, template, seaboxes, filter = 'NUTS1') {
     projection = d3.geoIdentity()
       .fitExtent([[0, 0], [width_map, height_map]], template)
       .reflectY(true);
 
+    console.log(filterLevelGeom(nuts.features, filter));
+    console.log(nuts.features);
+
     path = d3.geoPath().projection(projection);
     const layers = svg_map.append('g')
       .attr('id', 'layers');
-
+    this.nuts = nuts;
     this.zoom_map = d3.zoom()
       .scaleExtent([1, 5])
       .translateExtent([[0, 0], [width_map, height_map]])
@@ -128,9 +132,9 @@ class MapSelect {
       .attrs({ d: path });
 
     this.target_layer = layers.append('g')
-      .attrs(styles.nuts1);
+      .attrs(styles.nuts);
     this.target_layer.selectAll('path')
-      .data(nuts1.features)
+      .data(filterLevelGeom(this.nuts.features, filter))
       .enter()
       .append('path')
       .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
@@ -139,6 +143,25 @@ class MapSelect {
     fitLayer();
     prepareTooltip(svg_map);
     // this.bindTooltip();
+  }
+
+  updateLevelRegion(filter = 'NUTS1') {
+    const new_selection = filterLevelGeom(this.nuts.features, filter);
+    console.log(filterLevelGeom(this.nuts.features, filter));
+    console.log(filter)
+    const selection = this.target_layer
+      .selectAll('path')
+      .data(new_selection);
+    selection.enter()
+      .append('path')
+      .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
+      .attr('d', path);
+    selection
+      .transition()
+      .duration(225)
+      .attr('d', path);
+    selection.exit().remove();
+    this.resetColors(new_selection.map(d => d.properties[app.current_config.id_field_geom]));
   }
 
   resetColors(current_ids) {

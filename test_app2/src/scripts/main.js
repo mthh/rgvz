@@ -11,8 +11,6 @@ import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { SimilarityChart } from './modules/charts/similarity_2v';
 import { Similarity1plus } from './modules/charts/similarity1v';
-// import { BoxPlot1 } from './modules/charts/boxPlot_1v';
-// import { ParallelCoords2 } from './modules/charts/parallelCoords_2v';
 import { unbindUI } from './modules/helpers';
 import {
   prepare_dataset,
@@ -36,8 +34,7 @@ const study_zones = [
 
 const territorial_mesh = [
   { id: 'NUTS1', name: 'NUTS1' },
-  { id: 'NUTS12stat', name: 'NUTS1/2 (statistique)' },
-];
+  { id: 'NUTS_decision', name: 'NUTS1/2 (niveau de décision)' }];
 
 export const app = {
   // A mapping id -> color, containing the color to use for each
@@ -66,13 +63,13 @@ function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level
     // The name of the field of the geojson layer containing the ID of each feature
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
-    id_field_geom: 'NUTS1_2016',
+    id_field_geom: 'id',
     num: ['CHOM_1574_2016'],
     denum: ['ACT_1574_2016'],
     ratio: [variable],
     ratio_pretty_name: ['Taux de chômage (15-74 ans) (2016)'],
     // The level currently in use:
-    current_level: 1,
+    current_level: 'NUTS1',
     // The ID of the region currently in use:
     my_region: code,
     // The name of the region currently in use:
@@ -292,6 +289,11 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  d3.selectAll('span.territ_level')
+    .on('click', function () {
+      map_elem.updateLevelRegion(this.getAttribute('value'));
+    });
+
   // Dispatch a click event on the associated checkbox when the text is clicked:
   d3.selectAll('span.label_chk')
     .on('click', function () {
@@ -444,21 +446,6 @@ export function bindTopButtons(chart, map_elem) {
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       }
-      //  else if (value === 'ParallelCoords2') {
-      //   console.log('ParallelCoords2');
-      //   // makeTable(app.current_data, app.current_config);
-      //   chart = new ParallelCoords2(app.current_data);
-      //   bindUI_chart(chart, map_elem);
-      //   map_elem.bindBrushClick(chart);
-      //   chart.bindMap(map_elem);
-      // } else if (value === 'BoxPlot1') {
-      //   console.log('BoxPlot1');
-      //   makeTable(app.current_data, app.current_config);
-      //   chart = new BoxPlot1(app.current_data);
-      //   bindUI_chart(chart, map_elem);
-      //   map_elem.bindBrushClick(chart);
-      //   chart.bindMap(map_elem);
-      // }
     });
 }
 
@@ -466,7 +453,7 @@ export function bindTopButtons(chart, map_elem) {
 function loadData() {
   d3.queue(4)
     .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
-    .defer(d3.json, 'data/cget-nuts1-3035.geojson')
+    .defer(d3.json, 'data/cget-nuts.geojson')
     .defer(d3.json, 'data/countries3035.geojson')
     .defer(d3.json, 'data/remote3035.geojson')
     .defer(d3.json, 'data/template3035.geojson')
@@ -476,14 +463,14 @@ function loadData() {
     .awaitAll((error, results) => {
       if (error) throw error;
       const [
-        full_dataset, nuts1, countries, remote, template, seaboxes, metadata_indicateurs, agg_n2,
+        full_dataset, nuts, countries, remote, template, seaboxes, metadata_indicateurs, agg_n2,
       ] = results;
       app.agg_n2 = agg_n2;
       variables_info = prepareVariablesInfo(metadata_indicateurs);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
-        && +ft.level === app.current_config.current_level);
+        && +ft.level === 1);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
       bindHelpMenu();
       makeTopMenu();
@@ -491,7 +478,7 @@ function loadData() {
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
       filterLevelVar(app);
       console.log(app);
-      const map_elem = new MapSelect(nuts1, countries, remote, template, seaboxes);
+      const map_elem = new MapSelect(nuts, countries, remote, template, seaboxes);
       const chart = new BarChart1(app.current_data);
       makeTable(app.current_data, app.current_config);
       makeHeaderMapSection();

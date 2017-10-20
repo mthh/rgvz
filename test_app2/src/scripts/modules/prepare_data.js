@@ -24,8 +24,6 @@ export function prepare_dataset(full_dataset, app) {
 
 
 /**
-* Attach the full_dataset Array to the app Object and create a dictionnary
-* allowing to obtain territorial units name from their Id.
 *
 * @param {Object} app - The variable containing the global parameters about
 *   the current state of the application.
@@ -47,14 +45,14 @@ export function filterLevelVar(app) {
   let temp;
   if (filter_key instanceof Array) {
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && filter_key.indexOf(ft[id_field]) > -1);
+      .filter(ft => ft[current_level] && filter_key.indexOf(ft[id_field]) > -1);
   } else if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
+      .filter(ft => ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level);
+      .filter(ft => ft[current_level]);
   }
   temp = temp.map((ft) => {
     const props_feature = {
@@ -68,6 +66,14 @@ export function filterLevelVar(app) {
   });
 
   app.current_data = temp;
+}
+
+
+/**
+* TODO
+*/
+export function filterLevelGeom(nuts_features, filter = 'NUTS1') {
+  return nuts_features.filter(d => !!d.properties[filter]);
 }
 
 /**
@@ -209,10 +215,10 @@ export function calcCompletudeSubset(app, vars) {
   if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
+      .filter(ft => ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level);
+      .filter(ft => ft[current_level]);
   }
   const total_length = temp.length;
 
@@ -253,10 +259,10 @@ export function calcPopCompletudeSubset(app, vars) {
   if (filter_key) {
     const my_category = app.full_dataset.find(ft => ft[id_field] === my_region)[filter_key];
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level && ft[filter_key] === my_category);
+      .filter(ft => !!ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => +ft.level === current_level);
+      .filter(ft => !!ft[current_level]);
   }
   let total_pop = 0;
   for (let i = 0, len = temp.length; i < len; i++) {
