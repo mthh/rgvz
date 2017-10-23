@@ -453,20 +453,24 @@ export function bindTopButtons(chart, map_elem) {
 function loadData() {
   d3.queue(4)
     .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
-    .defer(d3.json, 'data/cget-nuts.geojson')
+    .defer(d3.json, 'data/CGET_nuts_all3035.geojson')
     .defer(d3.json, 'data/countries3035.geojson')
-    .defer(d3.json, 'data/remote3035.geojson')
-    .defer(d3.json, 'data/template3035.geojson')
-    .defer(d3.json, 'data/sea_boxes.geojson')
+    .defer(d3.json, 'data/countries-remote3035.geojson')
+    .defer(d3.json, 'data/coasts3035.geojson')
+    .defer(d3.json, 'data/coasts-remote3035.geojson')
+    .defer(d3.json, 'data/frame3035.geojson')
+    .defer(d3.json, 'data/boxes3035.geojson')
     .defer(d3.csv, 'data/indicateurs_meta.csv')
     .defer(d3.csv, 'data/nuts2_aggreg.csv')
     .awaitAll((error, results) => {
       if (error) throw error;
       const [
-        full_dataset, nuts, countries, remote, template, seaboxes, metadata_indicateurs, agg_n2,
+        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, metadata_indicateurs, agg_n2,
       ] = results;
       app.agg_n2 = agg_n2;
       variables_info = prepareVariablesInfo(metadata_indicateurs);
+      console.log(variables_info);
+      console.log(full_dataset);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
@@ -478,7 +482,8 @@ function loadData() {
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
       filterLevelVar(app);
       console.log(app);
-      const map_elem = new MapSelect(nuts, countries, remote, template, seaboxes);
+      const map_elem = new MapSelect(nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes);
+      console.log(nuts);
       const chart = new BarChart1(app.current_data);
       makeTable(app.current_data, app.current_config);
       makeHeaderMapSection();

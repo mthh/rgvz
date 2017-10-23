@@ -113,7 +113,7 @@ export class BarChart1 {
     const available_ratios = app.current_config.ratio;
     const ratio_to_use = available_ratios[0];
     this.ratio_to_use = ratio_to_use;
-
+    console.log(ratio_to_use, ref_data);
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     this.current_ids = this.data.map(d => d.id);

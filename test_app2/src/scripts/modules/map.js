@@ -9,11 +9,13 @@ const svg_map = d3.select('svg#svg_map'),
   height_map = +svg_map.attr('height') - margin_map.top - margin_map.bottom;
 
 const styles = {
-  template: { id: 'template', fill: 'rgb(247, 252, 254)', 'fill-opacity': 1 },
+  frame: { id: 'frame', fill: 'rgb(247, 252, 254)', 'fill-opacity': 1 },
   countries: { id: 'countries', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
-  seaboxes: { id: 'seaboxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
-  remote: { id: 'remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
-  seaboxes2: { id: 'seaboxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
+  boxes: { id: 'boxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
+  countries_remote: { id: 'countries_remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  // boxes2: { id: 'boxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
+  coasts: { id: 'coasts', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
+  coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
   nuts: { id: 'nuts', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
 };
 
@@ -36,7 +38,7 @@ function get_bbox_layer_path(name) {
 
 function fitLayer() {
   projection.scale(1).translate([0, 0]);
-  const b = get_bbox_layer_path('template');
+  const b = get_bbox_layer_path('frame');
   const s = 1 / Math.max((b[1][0] - b[0][0]) / width_map, (b[1][1] - b[0][1]) / height_map);
   const t = [(width_map - s * (b[1][0] + b[0][0])) / 2, (height_map - s * (b[1][1] + b[0][1])) / 2];
   projection.scale(s).translate(t);
@@ -71,9 +73,9 @@ function map_zoomed() {
 }
 
 class MapSelect {
-  constructor(nuts, countries, remote, template, seaboxes, filter = 'NUTS1') {
+  constructor(nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, filter = 'NUTS1') {
     projection = d3.geoIdentity()
-      .fitExtent([[0, 0], [width_map, height_map]], template)
+      .fitExtent([[0, 0], [width_map, height_map]], frame)
       .reflectY(true);
 
     console.log(filterLevelGeom(nuts.features, filter));
@@ -91,9 +93,9 @@ class MapSelect {
     svg_map.call(this.zoom_map);
 
     layers.append('g')
-      .attrs(styles.template)
+      .attrs(styles.frame)
       .selectAll('path')
-      .data(template.features)
+      .data(frame.features)
       .enter()
       .append('path')
       .attrs({ d: path });
@@ -108,28 +110,44 @@ class MapSelect {
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs(styles.seaboxes)
+      .attrs(styles.boxes)
       .selectAll('path')
-      .data(seaboxes.features)
+      .data(boxes.features)
       .enter()
       .append('path')
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs(styles.remote)
+      .attrs(styles.countries_remote)
       .selectAll('path')
-      .data(remote.features)
+      .data(countries_remote.features)
       .enter()
       .append('path')
       .attrs({ d: path });
 
     layers.append('g')
-      .attrs(styles.seaboxes2)
+      .attrs(styles.coasts)
       .selectAll('path')
-      .data(seaboxes.features)
+      .data(coasts.features)
       .enter()
       .append('path')
       .attrs({ d: path });
+
+    layers.append('g')
+      .attrs(styles.coasts_remote)
+      .selectAll('path')
+      .data(coasts_remote.features)
+      .enter()
+      .append('path')
+      .attrs({ d: path });
+
+    // layers.append('g')
+    //   .attrs(styles.boxes2)
+    //   .selectAll('path')
+    //   .data(boxes.features)
+    //   .enter()
+    //   .append('path')
+    //   .attrs({ d: path });
 
     this.target_layer = layers.append('g')
       .attrs(styles.nuts);
