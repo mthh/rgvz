@@ -45,14 +45,14 @@ export function filterLevelVar(app) {
   let temp;
   if (filter_key instanceof Array) {
     temp = app.full_dataset
-      .filter(ft => ft[current_level] && filter_key.indexOf(ft[id_field]) > -1);
+      .filter(ft => +ft[current_level] && filter_key.indexOf(ft[id_field]) > -1);
   } else if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => ft[current_level] && ft[filter_key] === my_category);
+      .filter(ft => +ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => ft[current_level]);
+      .filter(ft => +ft[current_level]);
   }
   temp = temp.map((ft) => {
     const props_feature = {
@@ -89,9 +89,9 @@ export function prepareVariablesInfo(metadata_indicateurs) {
     .filter(ft => ft['Type statistique'] === 'Ratio')
     .map(ft => ({
       ratio: ft.id,
-      num: `${ft.id1}_${ft.Année}`,
-      denum: `${ft.id2}_${ft.Année}`,
-      name: `${ft.Nom} (${ft.Année})`,
+      num: `${ft.id1}_${parseInt(ft.Année, 10)}`,
+      denum: `${ft.id2}_${parseInt(ft.Année, 10)}`,
+      name: `${ft.Nom} (${parseInt(ft.Année, 10)})`,
       group: ft['Thème'],
       methodo: ft['Méthodologie'],
       source: ft.Source,

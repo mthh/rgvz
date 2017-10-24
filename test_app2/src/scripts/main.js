@@ -291,7 +291,15 @@ function bindUI_chart(chart, map_elem) {
 
   d3.selectAll('span.territ_level')
     .on('click', function () {
-      map_elem.updateLevelRegion(this.getAttribute('value'));
+      if (!this.classList.contains('checked')) {
+        d3.selectAll('span.territ_level').attr('class', 'territ_level square');
+        this.classList.add('checked');
+        const level_value = this.getAttribute('value');
+        app.current_config.current_level = level_value;
+        filterLevelVar(app);
+        map_elem.updateLevelRegion(level_value);
+        chart.changeStudyZone();
+      }
     });
 
   // Dispatch a click event on the associated checkbox when the text is clicked:
@@ -461,13 +469,11 @@ function loadData() {
     .defer(d3.json, 'data/frame3035.geojson')
     .defer(d3.json, 'data/boxes3035.geojson')
     .defer(d3.csv, 'data/indicateurs_meta.csv')
-    .defer(d3.csv, 'data/nuts2_aggreg.csv')
     .awaitAll((error, results) => {
       if (error) throw error;
       const [
-        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, metadata_indicateurs, agg_n2,
+        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, metadata_indicateurs,
       ] = results;
-      app.agg_n2 = agg_n2;
       variables_info = prepareVariablesInfo(metadata_indicateurs);
       console.log(variables_info);
       console.log(full_dataset);

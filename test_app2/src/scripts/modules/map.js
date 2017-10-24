@@ -298,19 +298,20 @@ class MapSelect {
 }
 
 function makeSourceSection() {
+  const xmax = +svg_map.attr('width');
   const text_zone = d3.select('#svg_legend')
     .append('text')
     .attrs({ y: 32.5, 'text-anchor': 'end' })
     .style('font-size', '11px')
     .style('font-family', '\'Signika\', sans-serif');
   text_zone.append('tspan')
-    .attrs({ x: 470, dy: 12 })
+    .attrs({ x: xmax, dy: 12 })
     .text('Niveau régional : NUTS 1 (version 2016)');
   text_zone.append('tspan')
-    .attrs({ x: 470, dy: 12 })
+    .attrs({ x: xmax, dy: 12 })
     .text('Origine des données : Eurostat, 2016');
   text_zone.append('tspan')
-    .attrs({ x: 470, dy: 12 })
+    .attrs({ x: xmax, dy: 12 })
     .text('Limite administrative: UMS RIATE, CC-BY-SA');
 }
 
