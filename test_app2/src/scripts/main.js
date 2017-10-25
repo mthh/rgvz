@@ -28,7 +28,7 @@ export let variables_info;
 const study_zones = [
   { id: 'no_filter', name: 'UE28' },
   { id: 'filter_FR', name: 'Filtre national (France)' },
-  { id: 'filter_param2', name: 'Espace de comparaison n°2' },
+  // { id: 'filter_param2', name: 'Espace de comparaison n°2' },
   { id: 'filter_dist', name: 'Région dans un rayon de ' },
 ];
 

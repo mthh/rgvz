@@ -142,9 +142,9 @@ export function changeRegion(app, id_region, map_elem) {
 
 /**
 *
-*
-*
-*
+* @param app -
+* @param code_ratio - The code of the variable to be added.
+* @return {void}
 */
 export function addVariable(app, code_ratio) {
   const variable_info = variables_info.filter(d => d.ratio === code_ratio)[0];
@@ -159,9 +159,9 @@ export function addVariable(app, code_ratio) {
 
 /**
 *
-*
-*
-*
+* @param app -
+* @param code_ratio - The code of the variable to be remove.
+* @return {void}
 */
 export function removeVariable(app, code_ratio) {
   const ix = app.current_config.ratio.indexOf(code_ratio);
@@ -175,8 +175,9 @@ export function removeVariable(app, code_ratio) {
 /**
 * Reset the current variables in use.
 *
-*
-*
+* @param app -
+* @param codes_ratio -
+* @return {void}
 */
 export function resetVariables(app, codes_ratio) {
   app.colors = {};
@@ -200,12 +201,15 @@ export function resetVariables(app, codes_ratio) {
 * Compute the ratio of available (= not empty) values (the "complétude") within
 * the subset currently in use for all the variables in "vars".
 *
-* @param {Object} app -
-* @param {Array} vars -
-* @return {Number}
-*
+* @param {Object} app - The variable containing the global parameters about
+*   the current state of the application.
+* @param {Array} vars - A list of variable names for which completeness will be calculated.
+* @param {String} output - Whether to output the result as a Number or as an Array
+* @return {Number or Array} - Number: The ratios of features with available values within
+*    the study zone (in %) or, Array : the number of features with available values
+*    and the total number of features.
 */
-export function calcCompletudeSubset(app, vars) {
+export function calcCompletudeSubset(app, vars, output = 'ratio') {
   const {
     current_level, id_field, filter_key, my_region,
   } = app.current_config;
@@ -215,10 +219,10 @@ export function calcCompletudeSubset(app, vars) {
   if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => ft[current_level] && ft[filter_key] === my_category);
+      .filter(ft => !!+ft[current_level] && !!ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => ft[current_level]);
+      .filter(ft => !!+ft[current_level]);
   }
   const total_length = temp.length;
 
@@ -235,6 +239,11 @@ export function calcCompletudeSubset(app, vars) {
   }).filter(ft => vars.map(ratio_name => !!ft[ratio_name]).every(v => v === true));
   const filtered_length = temp.length;
 
+  if (!(output === 'ratio')) {
+    // Return the number of features with available values within
+    // the study zone, and the total number of features of the study zone
+    return [filtered_length, total_length];
+  }
   // Return the ratio of available values ("complétude") within
   // the study zone selected by the user:
   return Math.round((filtered_length / total_length) * 1000) / 10;
@@ -244,9 +253,11 @@ export function calcCompletudeSubset(app, vars) {
 * Compute the ratio of population covered by features on which all the variables
 * of "vars" are available.
 *
-* @param {Object} app -
-* @param {Array} vars -
-* @return {Number}
+* @param {Object} app -The variable containing the global parameters about
+*   the current state of the application.
+* @param {Array} vars - A list of variable names for which completeness will be calculated.
+* @return {Number} - The ratio (in %) of population covered by features for which
+*   are available within the study zone.
 *
 */
 export function calcPopCompletudeSubset(app, vars) {
@@ -259,10 +270,10 @@ export function calcPopCompletudeSubset(app, vars) {
   if (filter_key) {
     const my_category = app.full_dataset.find(ft => ft[id_field] === my_region)[filter_key];
     temp = app.full_dataset
-      .filter(ft => !!ft[current_level] && ft[filter_key] === my_category);
+      .filter(ft => !!+ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
-      .filter(ft => !!ft[current_level]);
+      .filter(ft => !!+ft[current_level]);
   }
   let total_pop = 0;
   for (let i = 0, len = temp.length; i < len; i++) {

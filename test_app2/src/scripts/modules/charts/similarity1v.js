@@ -268,14 +268,20 @@ export class Similarity1plus {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (
-        this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (app.colors[d.properties[app.current_config.id_field_geom]]
-          ? color_default_dissim : color_countries)
-        : color_disabled));
+      .attr('fill', (d) => {
+        const _id = d.properties[app.current_config.id_field_geom];
+        if (_id === app.current_config.my_region) {
+          return color_highlight;
+        } else if (this.current_ids.indexOf(_id) > -1) {
+          if (app.colors[_id]) return color_default_dissim;
+          return color_countries;
+        }
+        return color_disabled;
+      });
   }
 
   handleClickMap(d, parent) {
+    let to_display = false;
     const id = d.properties[app.current_config.id_field_geom];
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
@@ -300,11 +306,12 @@ export class Similarity1plus {
       };
       this.ratios.forEach((v) => { obj[v] = +d.properties[v]; });
       this.highlight_selection.push(obj);
+      to_display = true;
     }
     this.highlight_selection.sort((a, b) => a.dist - b.dist);
     this.removeLines();
     this.update();
-    setTimeout(() => { this.displayLine(id); }, 150);
+    if (to_display) setTimeout(() => { this.displayLine(id); }, 150);
   }
 
   displayLine(id_region) {
@@ -349,6 +356,7 @@ export class Similarity1plus {
         });
       this.updateTableStat();
       this.update();
+      this.updateMapRegio();
       // this.applySelection(this.highlight_selection.length);
     }
   }
