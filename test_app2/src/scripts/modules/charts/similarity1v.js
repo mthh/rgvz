@@ -1,9 +1,10 @@
 import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip, getMean } from './../helpers';
 import { color_disabled, color_countries, color_default_dissim, color_highlight } from './../options';
-import { calcPopCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 // import { svg_map } from './../map';
 import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
+import CompletudeSection from './../completude';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
@@ -36,14 +37,11 @@ export class Similarity1plus {
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
 
-    // Compute the "complétude" value for this ratio:
-    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
 
-    // Create the "complétude" text:
-    this.completude = svg_bar.append('text')
-      .attrs({ id: 'chart_completude', x: 60, y: 40 })
-      .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude.update(
+      calcCompletudeSubset(app, this.ratios, 'array'),
+      calcPopCompletudeSubset(app, this.ratios));
 
     // Create the button allowing to choose
     // if the colors are inversed
@@ -259,10 +257,9 @@ export class Similarity1plus {
   }
 
   updateCompletude() {
-    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
-
-    this.completude
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude.update(
+      calcCompletudeSubset(app, this.ratios, 'array'),
+      calcPopCompletudeSubset(app, this.ratios));
   }
 
   updateMapRegio() {
@@ -452,6 +449,8 @@ export class Similarity1plus {
     this.map_elem = null;
     this.table_stats.remove();
     this.table_stats = null;
+    this.completude.remove();
+    this.completude = null;
     svg_bar.html('');
   }
 

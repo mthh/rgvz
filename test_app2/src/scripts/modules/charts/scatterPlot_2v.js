@@ -1,9 +1,10 @@
 import { Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
-import { calcPopCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, variables_info, resetColors } from './../../main';
 import ContextMenu from './../contextMenu';
+import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
@@ -235,14 +236,10 @@ export class ScatterPlot2 {
         }
       });
 
-    // Compute the "complétude" value for this ratio:
-    this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
-
-    // Create the "complétude" text:
-    this.completude = svg_bar.append('text')
-      .attrs({ id: 'chart_completude', x: 40, y: 15 })
-      .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude.update(
+      calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
+      calcPopCompletudeSubset(app, [this.variable1, this.variable2]));
 
     // Deactivate the rect brush selection on the map
     // while the user press the Ctrl key:
@@ -542,8 +539,9 @@ export class ScatterPlot2 {
   }
 
   updateCompletude() {
-    this.completude_value = calcPopCompletudeSubset(app, [this.variable1, this.variable2]);
-    this.completude.text(`Complétude : ${this.completude_value}%`);
+    this.completude.update(
+      calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
+      calcPopCompletudeSubset(app, [this.ratio_to_use]));
   }
 
   updateMapRegio() {
@@ -709,6 +707,7 @@ export class ScatterPlot2 {
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
     this.ref_value1 = this.data.find(
       d => d.id === app.current_config.my_region)[this.variable1];
+    this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
     this.update();
@@ -736,6 +735,7 @@ export class ScatterPlot2 {
     computePercentileRank(this.data, this.variable2, this.rank_variable2);
     this.ref_value2 = this.data.find(
       d => d.id === app.current_config.my_region)[this.variable2];
+    this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
     this.update();
@@ -795,6 +795,8 @@ export class ScatterPlot2 {
     this.table_stats.remove();
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
+    this.completude.remove();
+    this.completude = null;
     svg_bar.html('');
   }
 

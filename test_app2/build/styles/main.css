@@ -191,6 +191,24 @@ span.label_chk.disabled {
 }
 /* End of styles for top menu */
 
+/* Styles for the completness section */
+.completude_section {
+  font-family: "Signika", sans-serif;
+  font-size: 11px;
+  text-align: center;
+}
+
+.completude_section > p {
+  display: none;
+  cursor: pointer;
+  margin: auto;
+}
+
+.completude_section > p.active {
+  display: inherit;
+}
+/* End of styles for completness section */
+
 /* Styles for buttons (used in various place) */
 .button_blue {
   border-top: 1px solid #96d1f8;

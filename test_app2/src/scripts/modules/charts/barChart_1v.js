@@ -1,9 +1,10 @@
 import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
-import { calcPopCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
 import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
+import CompletudeSection from './../completude';
 
 export const svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 45 },
@@ -231,12 +232,10 @@ export class BarChart1 {
       .call(brush_top)
       .call(brush_top.move, null);
 
-    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
-
-    this.completude = svg_bar.append('text')
-      .attrs({ id: 'chart_completude', x: 60, y: 40 })
-      .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude.update(
+      calcCompletudeSubset(app, [this.ratio_to_use], 'array'),
+      calcPopCompletudeSubset(app, [this.ratio_to_use]));
 
     svg_bar.append('image')
       .attrs({
@@ -352,10 +351,9 @@ export class BarChart1 {
   }
 
   updateCompletude() {
-    this.completude_value = calcPopCompletudeSubset(app, [this.ratio_to_use]);
-
-    this.completude
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude.update(
+      calcCompletudeSubset(app, [this.ratio_to_use], 'array'),
+      calcPopCompletudeSubset(app, [this.ratio_to_use]));
   }
 
   updateContext(min, max) {
@@ -763,6 +761,8 @@ export class BarChart1 {
     this.table_stats = null;
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
+    this.completude.remove();
+    this.completude = null;
     svg_bar.html('');
   }
 

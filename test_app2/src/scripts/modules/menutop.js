@@ -50,13 +50,13 @@ export function makeTopMenu() {
     .attr('class', 'title_type_comp')
     .html('RESSEMBLANCES');
 
-  ressemblance.append('span')
-    .attrs({ class: 'type_chart chart_t1', value: 'BubbleChart1' })
-    .html('1 ind.');
-
-  ressemblance.append('span')
-    .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
-    .html('+2 ind.');
+  // ressemblance.append('span')
+  //   .attrs({ class: 'type_chart chart_t1', value: 'BubbleChart1' })
+  //   .html('1 ind.');
+  //
+  // ressemblance.append('span')
+  //   .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
+  //   .html('+2 ind.');
 
   ressemblance.append('span')
     .attrs({ class: 'type_chart chart_t1', value: 'Similarity1plus' })

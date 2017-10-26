@@ -1,12 +1,13 @@
 import {
-  math_max, math_sin, math_cos, HALF_PI, _getPR, computePercentileRank, getMean } from './../helpers';
+  math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
-import { calcPopCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { app, variables_info } from './../../main';
+import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
-const margin = { top: 70, right: 70, bottom: 70, left: 70 };
+const margin = { top: 70, right: 70, bottom: 80, left: 70 };
 
 const width = +svg_bar.attr('width') - margin.left - margin.right,
   height = +svg_bar.attr('height') - margin.top - margin.bottom;
@@ -15,12 +16,15 @@ const wrap = (_text, _width) => {
   _text.each(function () {
     const text = d3.select(this),
       words = text.text().split(/\s+/).reverse(),
-      lineHeight = 1.4, // ems
-      y = text.attr('y'),
-      x = text.attr('x'),
-      dy = parseFloat(text.attr('dy'));
+      lineHeight = 1.4,
+      x = +text.attr('x'),
+      dy = parseFloat(text.attr('dy')); // ems
+    let y = +text.attr('y');
     let line = [];
     let lineNumber = 0;
+    if (y > height / 2 - 35) {
+      y -= 40;
+    }
     let tspan = text.text(null)
       .append('tspan')
       .attr('x', x)
@@ -100,7 +104,7 @@ export class RadarChart3 {
       levels: 10, // How many levels or inner circles should there be drawn
       maxValue: 100, // What is the value that the biggest circle will represent
       labelFactor: 1.3, // How much farther than the radius of the outer circle should the labels be placed
-      wrapWidth: 85, // The number of pixels after which a label needs to be given a new line
+      wrapWidth: 110, // The number of pixels after which a label needs to be given a new line
       opacityArea: 0.10, // The opacity of the area of the blob
       dotRadius: 4, // The size of the colored circles of each blog
       opacityCircles: 0.1, // The opacity of the circles of each blob
@@ -132,14 +136,12 @@ export class RadarChart3 {
     this.drawAxisGrid();
     this.drawArea();
     this.handleLegend();
-    // Compute the "complétude" value for these ratios:
-    this.completude_value = calcPopCompletudeSubset(app, this.variables);
 
-    // Create the "complétude" text:
-    this.completude = svg_bar.append('text')
-      .attrs({ id: 'chart_completude', x: 60, y: 40 })
-      .styles({ 'font-family': '\'Signika\', sans-serif' })
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    // Compute the "complétude" value for these ratios:
+    this.completude.update(
+      calcCompletudeSubset(app, this.variables, 'array'),
+      calcPopCompletudeSubset(app, this.variables));
 
     if (cfg.allowInverseData) {
       this.inverse_data = (field) => {
@@ -699,6 +701,8 @@ export class RadarChart3 {
     this.table_stats = null;
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
+    this.completude.remove();
+    this.completude = null;
     svg_bar.html('');
   }
 
@@ -742,6 +746,7 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
     });
+    this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
   }
@@ -761,6 +766,7 @@ export class RadarChart3 {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
     });
+    this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
   }
@@ -798,9 +804,9 @@ export class RadarChart3 {
   }
 
   updateCompletude() {
-    this.completude_value = calcPopCompletudeSubset(app, this.variables);
-    this.completude
-      .text(`Complétude : ${this.completude_value}%`);
+    this.completude.update(
+      calcCompletudeSubset(app, this.variables, 'array'),
+      calcPopCompletudeSubset(app, this.variables));
   }
 
   updateMapRegio() {

@@ -4,12 +4,10 @@ import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
 import { makeTable } from './modules/table';
-import { color_highlight } from './modules/options';
+import { color_highlight, MAX_VARIABLES } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
-import { BubbleChart1 } from './modules/charts/bubbleChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
-import { SimilarityChart } from './modules/charts/similarity_2v';
 import { Similarity1plus } from './modules/charts/similarity1v';
 import { unbindUI } from './modules/helpers';
 import {
@@ -244,8 +242,9 @@ function bindUI_chart(chart, map_elem) {
           elem => !!elem.classList.contains('checked')).length;
       // Select a new variable and trigger the appropriate changes on the current chart:
       if (!this.classList.contains('checked')) {
-        // We don't want the user to be able to select more than 8 variables simultaneously:
-        if (nb_var >= 8) return;
+        // We don't want the user to be able to select more than
+        // MAX_VARIABLES (default = 7) variables simultaneously:
+        if (nb_var >= MAX_VARIABLES) return;
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
         const name_variable = variables_info.find(d => d.ratio === code_variable).name;
@@ -418,13 +417,6 @@ export function bindTopButtons(chart, map_elem) {
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
-      } else if (value === 'BubbleChart1') {
-        console.log('BubbleChart1');
-        makeTable(app.current_data, app.current_config);
-        chart = new BubbleChart1(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         console.log('ScatterPlot2');
         makeTable(app.current_data, app.current_config);
@@ -436,13 +428,6 @@ export function bindTopButtons(chart, map_elem) {
         console.log('RadarChart3');
         makeTable(app.current_data, app.current_config);
         chart = new RadarChart3(app.current_data);
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
-      } else if (value === 'SimilarityChart') {
-        console.log('SimilarityChart');
-        makeTable(app.current_data, app.current_config);
-        chart = new SimilarityChart(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);

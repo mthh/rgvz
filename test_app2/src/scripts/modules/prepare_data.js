@@ -210,6 +210,7 @@ export function resetVariables(app, codes_ratio) {
 *    and the total number of features.
 */
 export function calcCompletudeSubset(app, vars, output = 'ratio') {
+  console.log(app, vars);
   const {
     current_level, id_field, filter_key, my_region,
   } = app.current_config;
@@ -219,7 +220,7 @@ export function calcCompletudeSubset(app, vars, output = 'ratio') {
   if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
-      .filter(ft => !!+ft[current_level] && !!ft[filter_key] === my_category);
+      .filter(ft => !!+ft[current_level] && ft[filter_key] === my_category);
   } else {
     temp = app.full_dataset
       .filter(ft => !!+ft[current_level]);
@@ -246,7 +247,7 @@ export function calcCompletudeSubset(app, vars, output = 'ratio') {
   }
   // Return the ratio of available values ("complétude") within
   // the study zone selected by the user:
-  return Math.round((filtered_length / total_length) * 1000) / 10;
+  return Math.round((filtered_length / total_length) * 10000) / 100;
 }
 
 /**
@@ -297,6 +298,6 @@ export function calcPopCompletudeSubset(app, vars) {
   }
   // Return the ratio of population values ("complétude") within
   // the study zone selected by the user:
-  return Math.round((subset_pop / total_pop) * 1000) / 10;
+  return Math.round((subset_pop / total_pop) * 10000) / 100;
 }
 /* eslint-enable no-param-reassign */
