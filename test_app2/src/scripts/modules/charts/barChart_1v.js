@@ -1,8 +1,8 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip, svgPathToCoords, getMean } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip, getMean, svgPathToCoords, selectFirstAvailableVar } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
-import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
+import { calcPopCompletudeSubset, calcCompletudeSubset, addVariable } from './../prepare_data';
 import { svg_map } from './../map';
-import { app, resetColors } from './../../main';
+import { app, resetColors, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
 
@@ -46,7 +46,7 @@ export class BarChart1 {
       this.update();
       this.updateContext(current_range[0], current_range[1]);
       svg_bar.select('.brush_top').call(this.brush_top.move, null);
-      this.brushed_top();
+      // this.brushed_top();
     };
 
     this.brushed_top = () => {
@@ -55,8 +55,9 @@ export class BarChart1 {
       const d3_event = d3.event;
       const ratio_to_use = this.ratio_to_use;
       const ref_value = this.ref_value;
-      if (d3_event && d3_event.selection
-            && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
+      // if (d3_event && d3_event.selection
+      //       && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
+      if (d3_event && d3_event.selection && d3_event.sourceEvent && d3_event.sourceEvent.target) {
         this.map_elem.removeRectBrush();
         const s = d3_event.selection;
         current_range_brush = [
@@ -114,7 +115,7 @@ export class BarChart1 {
     const available_ratios = app.current_config.ratio;
     const ratio_to_use = available_ratios[0];
     this.ratio_to_use = ratio_to_use;
-    console.log(ratio_to_use, ref_data);
+    this.unit = variables_info.find(ft => ft.ratio === ratio_to_use).unit;
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     this.current_ids = this.data.map(d => d.id);
@@ -194,7 +195,7 @@ export class BarChart1 {
         'fill-opacity': '0.8',
         'font-family': '\'Signika\', sans-serif',
       })
-      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
+      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10} ${this.unit}`);
 
     groupe_line_mean.append('line')
       .attrs({
@@ -397,7 +398,7 @@ export class BarChart1 {
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
-          .text(`${math_round(d[self.ratio_to_use] * 10) / 10}`);
+          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
         const b = tooltip.node().getBoundingClientRect();
         tooltip.select('rect')
           .attrs({
@@ -687,7 +688,7 @@ export class BarChart1 {
     this.mean_value = getMean(this.data.map(d => d[ratio_to_use]));
     grp_mean.select('text')
       .attr('y', y(this.mean_value) + 20)
-      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10}`);
+      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10} ${this.unit}`);
     grp_mean.select('.mean_line')
       .attrs({ y1: y(this.mean_value), y2: y(this.mean_value) });
     grp_mean.select('.transp_mean_line')
@@ -697,7 +698,9 @@ export class BarChart1 {
   changeStudyZone() {
     const ratio_to_use = this.ratio_to_use;
     this.data = app.current_data.filter(ft => !!ft[ratio_to_use]);
-
+    this.ref_value = this.data.find(
+      ft => ft.id === app.current_config.my_region)[ratio_to_use];
+    this.current_ranks = this.data.map((d, i) => i + 1);
     if (this.serie_inversed) {
       this.data.sort((a, b) => b[ratio_to_use] - a[ratio_to_use]);
     } else {
@@ -726,6 +729,7 @@ export class BarChart1 {
     app.colors = {};
     app.colors[app.current_config.my_region] = color_highlight;
     this.updateTableStats();
+    this.updateCompletude();
     this.updateMapRegio();
   }
 
@@ -751,6 +755,7 @@ export class BarChart1 {
 
   changeVariable(code_variable) {
     this.ratio_to_use = code_variable;
+    this.unit = variables_info.find(ft => ft.ratio === code_variable).unit;
   }
 
   remove() {

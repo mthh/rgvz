@@ -1,6 +1,7 @@
+import tippy from 'tippy.js';
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { prepareTooltip, getSvgPathType, euclidian_distance } from './helpers';
+import { prepareTooltip, getSvgPathType, svgPathToCoords, euclidian_distance } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
 const svg_map = d3.select('svg#svg_map'),
@@ -78,9 +79,6 @@ class MapSelect {
       .fitExtent([[0, 0], [width_map, height_map]], frame)
       .reflectY(true);
 
-    console.log(filterLevelGeom(nuts.features, filter));
-    console.log(nuts.features);
-
     path = d3.geoPath().projection(projection);
     const layers = svg_map.append('g')
       .attr('id', 'layers');
@@ -155,23 +153,34 @@ class MapSelect {
       .data(filterLevelGeom(this.nuts.features, filter))
       .enter()
       .append('path')
+      .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
       .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
       .attr('d', path);
-    app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
+
     fitLayer();
     prepareTooltip(svg_map);
     // this.bindTooltip();
+    app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
+    this.target_layer.selectAll('path')
+      .each(function () {
+        this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
+      });
+    tippy(this.target_layer.node().querySelectorAll('path'), {
+      animation: 'fade',
+      duration: 50,
+      followCursor: true,
+      performance: true,
+    });
   }
 
   updateLevelRegion(filter = 'NUTS1') {
     const new_selection = filterLevelGeom(this.nuts.features, filter);
-    console.log(filterLevelGeom(this.nuts.features, filter));
-    console.log(filter)
     const selection = this.target_layer
       .selectAll('path')
       .data(new_selection);
     selection.enter()
       .append('path')
+      .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
       .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
       .attr('d', path);
     selection
@@ -180,6 +189,17 @@ class MapSelect {
       .attr('d', path);
     selection.exit().remove();
     this.resetColors(new_selection.map(d => d.properties[app.current_config.id_field_geom]));
+    this.computeDistMat();
+    this.target_layer.selectAll('path')
+      .each(function () {
+        this._pts = undefined;
+      });
+    tippy(this.target_layer.node().querySelectorAll('path'), {
+      animation: 'fade',
+      duration: 20,
+      followCursor: true,
+      performance: true,
+    });
   }
 
   resetColors(current_ids) {
@@ -195,30 +215,7 @@ class MapSelect {
         return color_disabled;
       });
   }
-  // bindTooltip() {
-  //   this.target_layer.selectAll('path')
-  //     .on('mouseover', () => {
-  //       svg_map.select('.tooltip')
-  //         .style('display', null);
-  //     })
-  //     .on('mouseout', () => {
-  //       svg_map.select('.tooltip')
-  //         .style('display', 'none');
-  //     })
-  //     .on('mousemove', function (d) {
-  //       const tooltip = svg_map.select('.tooltip');
-  //       tooltip
-  //         .select('text.id_feature')
-  //         .text(`${d.properties[app.current_config.id_field_geom]}`);
-  //       let _ix, nb_val;
-  //       for (_ix = 0, nb_val = Math.min(app.current_config.ratio.length, 5); _ix < nb_val; _ix++) {
-  //         tooltip.select(`text.value_feature${_ix + 1}`)
-  //           .text(`${app.current_config.ratio_pretty_name[_ix]}: ${math_round(d.properties[app.current_config.ratio[_ix]] * 10) / 10}`);
-  //       }
-  //       tooltip
-  //         .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 - _ix * 12]})`);
-  //     });
-  // }
+
   resetZoom() {
     svg_map.transition()
       .duration(250)

@@ -28,7 +28,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   section2.style.height = '170px';
 
   // Filter the "variables" variable to fetch the group names :
-  const groups_var = removeDuplicates(variables.map(d => d.group));
+  const groups_var = removeDuplicates(variables.map(d => d.group).filter(d => d !== 'Num/dénom'));
 
   for (let i = 0, len_i = groups_var.length; i < len_i; i++) {
     const gp_name = groups_var[i];

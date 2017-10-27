@@ -29,7 +29,7 @@ export class ScatterPlot2 {
         }
         app.colors = {};
         app.colors[app.current_config.my_region] = color_highlight;
-        this.update();
+        this.updateLight();
         this.updateMapRegio();
         return;
       }
@@ -45,6 +45,8 @@ export class ScatterPlot2 {
         this.y.invert(bottomright[1]),
         this.y.invert(topleft[1]),
       ];
+      if (this.xInversed) range_x.reverse();
+      if (this.yInversed) range_y.reverse();
       let t1;
       let t2;
       if (this.type === 'value') {
@@ -55,17 +57,6 @@ export class ScatterPlot2 {
         t2 = this.rank_variable2;
       }
 
-      // this.data
-      //   .filter(ft => ft[t1] > range_x[0]
-      //     && ft[t1] < range_x[1]
-      //     && ft[t2] > range_y[0]
-      //     && ft[t2] < range_y[1])
-      //   .forEach((ft) => {
-      //     app.colors[ft.id] = comp2(
-      //       ft[this.variable1], ft[this.variable2],
-      //       self.ref_value1, self.ref_value2,
-      //       self.xInversed, self.yInversed);
-      //   });
       for (let i = 0, len_i = this.data.length; i < len_i; i++) {
         const ft = this.data[i];
         if (ft[t1] > range_x[0] && ft[t1] < range_x[1]
@@ -77,7 +68,7 @@ export class ScatterPlot2 {
         }
       }
       app.colors[app.current_config.my_region] = color_highlight;
-      this.update();
+      this.updateLight();
       this.updateMapRegio();
       this.map_elem.removeRectBrush();
     };
@@ -90,6 +81,8 @@ export class ScatterPlot2 {
     this.variable2 = app.current_config.ratio[1];
     this.rank_variable1 = `pr_${this.variable1}`;
     this.rank_variable2 = `pr_${this.variable2}`;
+    this.unit1 = variables_info.find(ft => ft.ratio === this.variable1).unit;
+    this.unit2 = variables_info.find(ft => ft.ratio === this.variable2).unit;
     this.pretty_name1 = app.current_config.ratio_pretty_name[0];
     this.pretty_name2 = app.current_config.ratio_pretty_name[1];
     this.data = ref_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
@@ -205,9 +198,10 @@ export class ScatterPlot2 {
       })
       .on('click', () => {
         this.xInversed = !this.xInversed;
-        for (let i = 0; i < this.nbFt; i++) {
-          self.data[i][self.rank_variable1] = 100 - self.data[i][self.rank_variable1];
-        }
+        // for (let i = 0; i < this.nbFt; i++) {
+        //   self.data[i][self.rank_variable1] = 100 - self.data[i][self.rank_variable1];
+        // }
+
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
         } else {
@@ -226,9 +220,9 @@ export class ScatterPlot2 {
       })
       .on('click', () => {
         this.yInversed = !this.yInversed;
-        for (let i = 0; i < this.nbFt; i++) {
-          this.data[i][this.rank_variable2] = 100 - this.data[i][this.rank_variable2];
-        }
+        // for (let i = 0; i < this.nbFt; i++) {
+        //   this.data[i][this.rank_variable2] = 100 - this.data[i][this.rank_variable2];
+        // }
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
         } else {
@@ -386,21 +380,38 @@ export class ScatterPlot2 {
       });
   }
 
+  updateLight() {
+    const default_color = 'gray';
+    this.scatter.selectAll('.dot')
+      .transition()
+      .duration(125)
+      .styles(d => ({
+        fill: app.colors[d.id] || default_color,
+      }));
+  }
+
   update() {
     const self = this;
     const data = self.data;
 
     if (this.type === 'rank') {
-      this.x.domain(d3.extent(this.data, d => d[this.rank_variable1])).nice();
-      this.y.domain(d3.extent(this.data, d => d[this.rank_variable2])).nice();
-      this.mean_variable1 = _getPR(
-        getMean(this.data.map(d => d[this.variable1])), this.data.map(d => d[this.variable1]));
-      this.mean_variable2 = _getPR(
-        getMean(this.data.map(d => d[this.variable2])), this.data.map(d => d[this.variable2]));
-
-
       const rank_variable1 = this.rank_variable1;
       const rank_variable2 = this.rank_variable2;
+      const range_x = this.xInversed
+        ? d3.extent(this.data, d => d[rank_variable1]).reverse()
+        : d3.extent(this.data, d => d[rank_variable1]);
+      const range_y = this.yInversed
+        ? d3.extent(this.data, d => d[rank_variable2]).reverse()
+        : d3.extent(this.data, d => d[rank_variable2]);
+      const serie_x = this.data.map(d => d[this.variable1]);
+      const serie_y = this.data.map(d => d[this.variable2]);
+      this.x.domain(range_x).nice();
+      this.y.domain(range_y).nice();
+      this.mean_variable1 = _getPR(
+        getMean(serie_x), serie_x);
+      this.mean_variable2 = _getPR(
+        getMean(serie_y), serie_y);
+
       const x = this.x;
       const y = this.y;
       const default_color = 'gray';
@@ -447,11 +458,11 @@ export class ScatterPlot2 {
               tooltip.select('text.value_feature1')
                 .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
               tooltip.select('text.value_feature2')
-                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`);
               tooltip.select('text.value_feature3')
                 .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
               tooltip.select('text.value_feature4')
-              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`);
               const b = tooltip.node().getBoundingClientRect();
               tooltip.select('rect')
                 .attrs({ width: b.width + 20, height: b.height + 7.5 });
@@ -464,10 +475,18 @@ export class ScatterPlot2 {
     } else if (this.type === 'value') {
       const variable1 = this.variable1;
       const variable2 = this.variable2;
-      this.x.domain(d3.extent(this.data, d => d[variable1])).nice();
-      this.y.domain(d3.extent(this.data, d => d[variable2])).nice();
-      this.mean_variable1 = getMean(this.data.map(d => d[variable1]));
-      this.mean_variable2 = getMean(this.data.map(d => d[variable2]));
+      const serie_x = this.data.map(d => d[variable1]);
+      const serie_y = this.data.map(d => d[variable2]);
+      const range_x = this.xInversed
+        ? d3.extent(serie_x).reverse()
+        : d3.extent(serie_x);
+      const range_y = this.yInversed
+        ? d3.extent(serie_y).reverse()
+        : d3.extent(serie_y);
+      this.x.domain(range_x).nice();
+      this.y.domain(range_y).nice();
+      this.mean_variable1 = getMean(serie_x);
+      this.mean_variable2 = getMean(serie_y);
 
       const x = this.x;
       const y = this.y;
@@ -518,11 +537,11 @@ export class ScatterPlot2 {
               tooltip.select('text.value_feature1')
                 .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
               tooltip.select('text.value_feature2')
-                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10}`);
+                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`);
               tooltip.select('text.value_feature3')
                 .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
               tooltip.select('text.value_feature4')
-              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10}`);
+              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`);
               const b = tooltip.node().getBoundingClientRect();
               tooltip.select('rect')
                 .attrs({ width: b.width + 20, height: b.height + 7.5 });
@@ -590,7 +609,7 @@ export class ScatterPlot2 {
         }
         return color_countries;
       });
-    self.update();
+    self.updateLight();
   }
 
   handleClickMap(d, parent) {
@@ -613,7 +632,7 @@ export class ScatterPlot2 {
       d3.select(parent).attr('fill', color);
       // Add the clicked feature on the colored selection on the chart:
     }
-    this.update();
+    this.updateLight();
   }
 
   updateMeanValue() {
@@ -682,13 +701,16 @@ export class ScatterPlot2 {
     this.updateItemsCtxMenu();
     this.updateMapRegio();
     this.updateTableStat();
+    this.updateCompletude();
     this.update();
   }
 
   changeVariableX(code_variable) {
     this.variable1 = code_variable;
     this.rank_variable1 = `pr_${this.variable1}`;
-    this.pretty_name1 = variables_info.find(ft => ft.ratio === code_variable).name;
+    const var_info = variables_info.find(ft => ft.ratio === code_variable);
+    this.pretty_name1 = var_info.name;
+    this.unit1 = var_info.unit;
     svg_bar.select('#title-axis-x')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie
@@ -716,7 +738,9 @@ export class ScatterPlot2 {
   changeVariableY(code_variable) {
     this.variable2 = code_variable;
     this.rank_variable2 = `pr_${this.variable2}`;
-    this.pretty_name2 = variables_info.find(ft => ft.ratio === code_variable).name;
+    const var_info = variables_info.find(ft => ft.ratio === code_variable);
+    this.pretty_name2 = var_info.name;
+    this.unit2 = var_info.unit;
     svg_bar.select('#title-axis-y')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie

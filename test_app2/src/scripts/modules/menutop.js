@@ -30,7 +30,7 @@ export function makeTopMenu() {
     .html('POSITION');
 
   position.append('span')
-    .attrs({ class: 'type_chart chart_t1', value: 'BarChart1' })
+    .attrs({ class: 'type_chart chart_t1 selected', value: 'BarChart1' })
     .html('1 ind.');
 
   position.append('span')
@@ -136,22 +136,34 @@ export function makeHeaderChart() {
       id: 'img_table',
     })
     .styles({ margin: '3px', float: 'right' })
-    .on('click', function () {
-      if (document.querySelector('.dataTable-wrapper').style.display) {
-        document.querySelector('#svg_map').style.display = 'none';
-        document.querySelector('#svg_legend').style.display = 'none';
-        document.querySelector('#header_map').style.display = 'none';
-        document.querySelector('#header_table').style.display = null;
-        document.querySelector('.dataTable-wrapper').style.display = null;
-        this.style.filter = 'invert(75%)';
-      } else {
-        document.querySelector('#svg_map').style.display = null;
-        document.querySelector('#svg_legend').style.display = null;
-        document.querySelector('#header_map').style.display = null;
-        document.querySelector('#header_table').style.display = 'none';
-        document.querySelector('.dataTable-wrapper').style.display = 'none';
-        this.style.filter = null;
-      }
+    .on('click', () => {
+      const columns = Object.keys(app.current_data[0]);
+      const content = [
+        columns.join(','), '\r\n',
+        app.current_data.map(d => columns.map(c => d[c]).join(',')).join('\r\n'),
+      ].join('');
+      const elem = document.createElement('a');
+      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
+      elem.setAttribute('download', 'Regioviz_export.csv');
+      elem.style.display = 'none';
+      document.body.appendChild(elem);
+      elem.click();
+      document.body.removeChild(elem);
+      // if (document.querySelector('.dataTable-wrapper').style.display) {
+      //   document.querySelector('#svg_map').style.display = 'none';
+      //   document.querySelector('#svg_legend').style.display = 'none';
+      //   document.querySelector('#header_map').style.display = 'none';
+      //   document.querySelector('#header_table').style.display = null;
+      //   document.querySelector('.dataTable-wrapper').style.display = null;
+      //   this.style.filter = 'invert(75%)';
+      // } else {
+      //   document.querySelector('#svg_map').style.display = null;
+      //   document.querySelector('#svg_legend').style.display = null;
+      //   document.querySelector('#header_map').style.display = null;
+      //   document.querySelector('#header_table').style.display = 'none';
+      //   document.querySelector('.dataTable-wrapper').style.display = 'none';
+      //   this.style.filter = null;
+      // }
     });
 
   header_bar_section.insert('img')

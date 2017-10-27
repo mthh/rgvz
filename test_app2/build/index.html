@@ -3,20 +3,26 @@
 <title>Regioviz</title>
 <link href="vendor/vanilla-dataTables.min.css" rel="stylesheet">
 <link href="vendor/tingle.min.css" rel="stylesheet">
+<link href="vendor/tippy.css" rel="stylesheet">
+<link href="vendor/alertify.min.css" rel="stylesheet">
+<link href="vendor/semantic.min.css" rel="stylesheet">
 <link href="styles/main.css" rel="stylesheet">
-<div id="menutop" style="width:1400px;"></div>
-<div style="width:1400px; clear: both;">
-  <div id="menu" style="width:340px;float: left;">
+<body class='loading'>
+  <div class="spinner"><div class="cube1"></div><div class="cube2"></div></div>
+  <div id="menutop" style="width:1400px;"></div>
+  <div style="width:1400px; clear: both;">
+    <div id="menu" style="width:340px;float: left;">
+    </div>
+    <div id="map_section" style="width:460px;float:right;padding-top:20px;">
+      <svg id="svg_map" width="420" height="470"></svg>
+      <svg id="svg_legend" width="420" height="80"></svg>
+    </div>
+    <div id="bar_section" style="width:540px;float:left;margin-left: 15px;">
+      <svg id="svg_bar" width="540" height="500"></svg>
+    </div>
   </div>
-  <div id="map_section" style="width:460px;float:right;padding-top:20px;">
-    <svg id="svg_map" width="420" height="470"></svg>
-    <svg id="svg_legend" width="420" height="100"></svg>
-  </div>
-  <div id="bar_section" style="width:540px;float:left;margin-left: 20px;">
-    <svg id="svg_bar" width="540" height="500"></svg>
-  </div>
-</div>
-<script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
-<script src="vendor/d3.v4.min.js"></script>
-<script src="vendor/d3-selection-multi.v1.min.js"></script>
-<script src="js/main.min.js"></script>
+  <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+  <script src="vendor/d3.v4.min.js"></script>
+  <script src="vendor/d3-selection-multi.v1.min.js"></script>
+  <script src="js/main.min.js"></script>
+</body>

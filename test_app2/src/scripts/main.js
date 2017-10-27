@@ -1,15 +1,16 @@
 // import debug from 'debug';
 import tingle from 'tingle.js';
+import alertify from 'alertifyjs';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
-import { makeTable } from './modules/table';
+// import { makeTable } from './modules/table';
 import { color_highlight, MAX_VARIABLES } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { Similarity1plus } from './modules/charts/similarity1v';
-import { unbindUI } from './modules/helpers';
+import { unbindUI, selectFirstAvailableVar } from './modules/helpers';
 import {
   prepare_dataset,
   filterLevelVar,
@@ -25,7 +26,7 @@ export let variables_info;
 
 const study_zones = [
   { id: 'no_filter', name: 'UE28' },
-  { id: 'filter_FR', name: 'Filtre national (France)' },
+  { id: 'filter_country', name: 'Filtre national (France)' },
   // { id: 'filter_param2', name: 'Espace de comparaison n°2' },
   { id: 'filter_dist', name: 'Région dans un rayon de ' },
 ];
@@ -66,6 +67,7 @@ function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level
     denum: ['ACT_1574_2016'],
     ratio: [variable],
     ratio_pretty_name: ['Taux de chômage (15-74 ans) (2016)'],
+    ratio_unit: ['%'],
     // The level currently in use:
     current_level: 'NUTS1',
     // The ID of the region currently in use:
@@ -95,23 +97,6 @@ export function resetColors() {
 }
 
 /**
-* Function to select the first variable on the left menu
-* (triggered after changing region, if no more variable was selected)
-*
-* @return {void}
-*/
-function selectFirstAvailableVar() {
-  const menu = document.querySelector('#menu');
-  const v = menu.querySelectorAll('.target_variable');
-  for (let i = 0; i < v.length; i++) {
-    if (!v[i].classList.contains('disabled')) {
-      v[i].classList.add('checked');
-      return v[i].getAttribute('value');
-    }
-  }
-}
-
-/**
 * Function to update the availables ratios in the left menu (after changing region)
 * If a selected variable is not available anymore it will be deselected.
 * If there selected variable (all the previously selected variables are unavailable for this region)
@@ -124,7 +109,7 @@ function selectFirstAvailableVar() {
 * @return {Number} - The new number of selected ratios.
 *
 */
-function updateAvailablesRatios(my_region) {
+function updateAvailableRatios(my_region) {
   const data_my_feature = app.full_dataset.filter(
     ft => ft[app.current_config.id_field] === my_region)[0];
   const menu = document.querySelector('#menu');
@@ -157,6 +142,24 @@ function updateAvailablesRatios(my_region) {
 }
 
 /**
+*
+*
+*
+*
+*/
+function updateAvailableCharts(nb_var) {
+  if (nb_var === 1) { // Allow all kind of vizu with 1 variable:
+    d3.selectAll('.chart_t1').each(function () { this.classList.remove('disabled'); });
+    d3.selectAll('.chart_t2, .chart_t3').each(function () { this.classList.add('disabled'); });
+  } else if (nb_var === 2) { // Allow all kind of vizu with 2 variables:
+    d3.selectAll('.chart_t1, .chart_t2').each(function () { this.classList.remove('disabled'); });
+    d3.selectAll('.chart_t3').each(function () { this.classList.add('disabled'); });
+  } else if (nb_var > 2) { // Allow all kind of vizu with 3 variables:
+    d3.selectAll('.chart_t1, .chart_t2, .chart_t3').each(function () { this.classList.remove('disabled'); });
+  }
+}
+
+/**
 * Create handlers for user event on the left menu and on the map for charts only
 * allowing to use 1 variable.
 *
@@ -183,7 +186,7 @@ function bindUI_chart(chart, map_elem) {
           document.getElementById('dist_filter').setAttribute('disabled', 'disabled');
           applyFilter(app, filter_type);
         }
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart.changeStudyZone();
         chart.updateCompletude();
       }
@@ -193,7 +196,7 @@ function bindUI_chart(chart, map_elem) {
     .on('change, keyup', function () {
       const ids = map_elem.getUnitsWithin(+this.value);
       applyFilter(app, ids);
-      makeTable(app.current_data, app.current_config);
+      // makeTable(app.current_data, app.current_config);
       chart.changeStudyZone();
       chart.updateCompletude();
     });
@@ -205,18 +208,26 @@ function bindUI_chart(chart, map_elem) {
         d3.selectAll('span.target_region').attr('class', 'target_region square');
         this.classList.add('checked');
         const id_region = this.getAttribute('value');
+        const old_nb_var = app.current_config.ratio.length;
         changeRegion(app, id_region, map_elem);
         // Update the availables ratio on the left menu
         // (this may change the current selected ratio(s) as some variables are
         // not available for some features) and fetch the number of selected
         // variables after that:
-        const new_nb_var = updateAvailablesRatios(id_region);
+        const new_nb_var = updateAvailableRatios(id_region);
+        updateAvailableCharts(new_nb_var);
         if (new_nb_var >= app.current_config.nb_var) {
-          chart.updateChangeRegion();
+          if (old_nb_var === new_nb_var) {
+            chart.updateChangeRegion();
+          } else {
+            d3.select('span.type_chart.selected').dispatch('click');
+            alertify.warning('Une variable précédemment sélectionnée n\'est pas disponible pour cette région.');
+          }
         } else {
           // If there fewer selected variables than requested by the current chart,
           // redraw the first (default) kind of chart:
           d3.select('span.chart_t1[value="BarChart1"]').dispatch('click');
+          alertify.warning('Des variables sélectionnées sont indisponibles pour cette région. Un changement de représentation est nécessaire.');
         }
       }
     });
@@ -244,12 +255,15 @@ function bindUI_chart(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         // We don't want the user to be able to select more than
         // MAX_VARIABLES (default = 7) variables simultaneously:
-        if (nb_var >= MAX_VARIABLES) return;
+        if (nb_var >= MAX_VARIABLES) {
+          alertify.warning('Le nombre maximal de variables sélectionnées est atteint.');
+          return;
+        }
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
         const name_variable = variables_info.find(d => d.ratio === code_variable).name;
         addVariable(app, code_variable);
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
         nb_var += 1;
       } else { // Remove a variable from the selection:
@@ -264,40 +278,28 @@ function bindUI_chart(chart, map_elem) {
         this.classList.remove('checked');
         removeVariable(app, code_variable);
         chart.removeVariable(code_variable);
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
       }
       // Update the top menu to display available charts according to the current
       // number of available variables:
-      if (nb_var === 1) { // Allow all kind of vizu with 1 variable:
-        d3.selectAll('.chart_t1')
-          .attr('class', 'type_chart chart_t1');
-        d3.selectAll('.chart_t2')
-          .attr('class', 'type_chart chart_t2 disabled');
-        d3.selectAll('.chart_t3')
-          .attr('class', 'type_chart chart_t3 disabled');
-      } else if (nb_var === 2) { // Allow all kind of vizu with 2 variables:
-        d3.selectAll('.chart_t2')
-          .attr('class', 'type_chart chart_t2');
-        d3.selectAll('.chart_t3')
-          .attr('class', 'type_chart chart_t3 disabled');
-      } else if (nb_var > 2) { // Allow all kind of vizu with 3 variables:
-        d3.selectAll('.chart_t2')
-          .attr('class', 'type_chart chart_t2');
-        d3.selectAll('.chart_t3')
-          .attr('class', 'type_chart chart_t3');
-      }
+      updateAvailableCharts(nb_var);
     });
 
   d3.selectAll('span.territ_level')
     .on('click', function () {
       if (!this.classList.contains('checked')) {
+        // Reset the study zone :
+        d3.select('span.filter_v[filter-value="no_filter"]').dispatch('click');
         d3.selectAll('span.territ_level').attr('class', 'territ_level square');
         this.classList.add('checked');
         const level_value = this.getAttribute('value');
         app.current_config.current_level = level_value;
         filterLevelVar(app);
+        resetColors();
         map_elem.updateLevelRegion(level_value);
         chart.changeStudyZone();
+        map_elem.unbindBrushClick();
+        map_elem.bindBrushClick(chart);
       }
     });
 
@@ -368,27 +370,28 @@ function bindUI_chart(chart, map_elem) {
     }
   }
 
-  const header_table_section = d3.select('#map_section')
-      .insert('p', 'svg')
-      .attr('id', 'header_table')
-      .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
+  // const header_table_section = d3.select('#map_section')
+  //     .insert('p', 'svg')
+  //     .attr('id', 'header_table')
+  //     .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
 
-  header_table_section.append('span')
-    .attr('class', 'button_blue')
-    .html('CSV')
-    .on('click', () => {
-      const content = [
-        'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
-        app.current_data.map(d => [d.id, d.num, d.denum, d.ratio, d.rang].join(',')).join('\r\n'),
-      ].join('');
-      const elem = document.createElement('a');
-      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
-      elem.setAttribute('download', 'table.csv');
-      elem.style.display = 'none';
-      document.body.appendChild(elem);
-      elem.click();
-      document.body.removeChild(elem);
-    });
+  // header_table_section.append('span')
+  //   .attr('class', 'button_blue')
+  //   .html('CSV')
+  //   .on('click', () => {
+  //     const columns = Object.keys(app.current_data[0]);
+  //     const content = [
+  //       'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
+  //       app.current_data.map(d => columns.map(c => d[c]).join(',')).join('\r\n'),
+  //     ].join('');
+  //     const elem = document.createElement('a');
+  //     elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
+  //     elem.setAttribute('download', 'Regioviz_export.csv');
+  //     elem.style.display = 'none';
+  //     document.body.appendChild(elem);
+  //     elem.click();
+  //     document.body.removeChild(elem);
+  //   });
   bindTopButtons(chart, map_elem);
 }
 
@@ -404,6 +407,9 @@ export function bindTopButtons(chart, map_elem) {
   d3.selectAll('.type_chart')
     .on('click', function () {
       if (this.classList.contains('disabled')) return;
+      // if (this.classList.contains('selected')) return;
+      document.querySelector('.type_chart.selected').classList.remove('selected');
+      this.classList.add('selected');
       chart.remove();
       chart = null; // eslint-disable-line no-param-reassign
       unbindUI();
@@ -412,28 +418,28 @@ export function bindTopButtons(chart, map_elem) {
       const value = this.getAttribute('value');
       if (value === 'BarChart1') {
         console.log('BarChart1');
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         console.log('ScatterPlot2');
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'RadarChart3') {
         console.log('RadarChart3');
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart = new RadarChart3(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'Similarity1plus') {
         console.log('Similarity1plus');
-        makeTable(app.current_data, app.current_config);
+        // makeTable(app.current_data, app.current_config);
         chart = new Similarity1plus(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
@@ -453,15 +459,17 @@ function loadData() {
     .defer(d3.json, 'data/coasts-remote3035.geojson')
     .defer(d3.json, 'data/frame3035.geojson')
     .defer(d3.json, 'data/boxes3035.geojson')
+    .defer(d3.json, 'data/line3035.geojson')
     .defer(d3.csv, 'data/indicateurs_meta.csv')
     .awaitAll((error, results) => {
       if (error) throw error;
+      document.body.classList.remove('loading');
+      document.querySelector('.spinner').remove();
       const [
-        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, metadata_indicateurs,
+        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, line, metadata_indicateurs,
       ] = results;
+      alertify.set('notifier', 'position', 'bottom-left');
       variables_info = prepareVariablesInfo(metadata_indicateurs);
-      console.log(variables_info);
-      console.log(full_dataset);
       prepare_dataset(full_dataset, app);
       setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
       const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
@@ -472,11 +480,9 @@ function loadData() {
       makeHeaderChart();
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
       filterLevelVar(app);
-      console.log(app);
       const map_elem = new MapSelect(nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes);
-      console.log(nuts);
       const chart = new BarChart1(app.current_data);
-      makeTable(app.current_data, app.current_config);
+      // makeTable(app.current_data, app.current_config);
       makeHeaderMapSection();
       makeSourceSection();
       makeMapLegend();

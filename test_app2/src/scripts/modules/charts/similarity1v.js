@@ -376,6 +376,7 @@ export class Similarity1plus {
     const temp = this.highlight_selection.length;
     this.highlight_selection = [];
     this.updateTableStat();
+    this.updateCompletude();
     this.applySelection(temp);
   }
 
@@ -385,6 +386,7 @@ export class Similarity1plus {
     this.nums = app.current_config.num.slice();
     this.data = app.current_data.filter(
       ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.current_ids = this.data.map(d => d.id);
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
     this.data.forEach((ft) => {
       this.ratios.forEach((v) => {
@@ -395,15 +397,17 @@ export class Similarity1plus {
     this.highlight_selection = this.highlight_selection.map((d) => {
       const obj = Object.assign(d, {});
       const ft = this.data.find(elem => elem.id === obj.id);
+      if (!ft) return undefined;
       this.ratios.forEach((v) => {
         obj[v] = +ft[v];
         obj[`dist_${v}`] = +ft[`dist_${v}`];
       });
       return obj;
-    });
+    }).filter(d => !!d);
     // And use it immediatly:
-    this.updateTableStat();
+    this.updateTableStat
     this.update();
+    this.updateMapRegio();
   }
 
   removeVariable(code_variable) {

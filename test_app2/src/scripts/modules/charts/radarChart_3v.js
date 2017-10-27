@@ -98,19 +98,19 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
 export class RadarChart3 {
   constructor(data, options) {
     const cfg = {
-      w: width, // Width of the circle
-      h: height, // Height of the circle
+      w: width - 20, // Width of the circle
+      h: height - 20, // Height of the circle
       margin: margin, // The margins of the SVG
       levels: 10, // How many levels or inner circles should there be drawn
       maxValue: 100, // What is the value that the biggest circle will represent
       labelFactor: 1.3, // How much farther than the radius of the outer circle should the labels be placed
-      wrapWidth: 110, // The number of pixels after which a label needs to be given a new line
+      wrapWidth: 95, // The number of pixels after which a label needs to be given a new line
       opacityArea: 0.10, // The opacity of the area of the blob
       dotRadius: 4, // The size of the colored circles of each blog
       opacityCircles: 0.1, // The opacity of the circles of each blob
       strokeWidth: 2, // The width of the stroke around each blob
-      roundStrokes: false, // If true the area and stroke will follow a round path (cardinal-closed)
-      color: d3.scaleOrdinal(d3.schemeCategory10), // Color function,
+      roundStrokes: true, // If true the area and stroke will follow a round path (cardinal-closed)
+      color: d3.scaleOrdinal([color_highlight].concat(d3.schemeCategory10)), // Color function,
       format: '.2', // The format string to be used by d3.format
       unit: '%', // The unit to display after the number on the axis and point tooltips (like $, €, %, etc)
       legend: false,
@@ -198,7 +198,6 @@ export class RadarChart3 {
       .attr('class', 'radarArea')
       .attr('d', this.radarLine(elem.axes))
       .style('fill', cfg.color(n))
-      .style('fill-opacity', 0)
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
@@ -208,7 +207,7 @@ export class RadarChart3 {
         // Bring back the hovered over blob
         d3.select(this)
           .transition().duration(200)
-          .style('fill-opacity', 0.7);
+          .style('fill-opacity', 0.3);
       })
       .on('mouseout', () => {
         // Bring back all blobs
@@ -246,7 +245,7 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => this.rScale(d.value) * math_cos(this.angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => this.rScale(d.value) * math_sin(this.angleSlice * i - HALF_PI))
-      .style('fill', d => cfg.color(d.id))
+      .style('fill', cfg.color(n))
       .style('fill-opacity', 0.8);
 
     blobWrapper.node().__data__ = elem;
@@ -515,7 +514,6 @@ export class RadarChart3 {
       .attr('class', 'radarArea')
       .attr('d', d => this.radarLine(d.axes))
       .style('fill', (d, i) => cfg.color(i))
-      .style('fill-opacity', 0)
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
@@ -551,7 +549,7 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
-      .style('fill', d => cfg.color(d.id))
+      .style('fill', cfg.color(0))
       .style('fill-opacity', 0.8);
 
     // ///////////////////////////////////////////////////////
@@ -728,6 +726,7 @@ export class RadarChart3 {
       this.add_element(a);
     });
     this.updateMapRegio();
+    this.updateCompletude();
     this.updateTableStat();
   }
 

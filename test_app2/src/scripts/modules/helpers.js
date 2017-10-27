@@ -265,6 +265,23 @@ function euclidian_distance(feature1, feature2) {
   return math_sqrt(a * a + b * b);
 }
 
+/**
+* Function to select the first variable on the left menu
+* (triggered after changing region, if no more variable was selected)
+*
+* @return {void}
+*/
+function selectFirstAvailableVar() {
+  const menu = document.querySelector('#menu');
+  const v = menu.querySelectorAll('.target_variable');
+  for (let i = 0; i < v.length; i++) {
+    if (!v[i].classList.contains('disabled')) {
+      v[i].classList.add('checked');
+      return v[i].getAttribute('value');
+    }
+  }
+}
+
 export {
   comp,
   comp2,
@@ -290,4 +307,5 @@ export {
   getStandardizedMeanStdDev,
   shuffle,
   euclidian_distance,
+  selectFirstAvailableVar,
 };
