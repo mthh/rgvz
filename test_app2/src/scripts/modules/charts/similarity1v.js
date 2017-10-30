@@ -183,7 +183,7 @@ export class Similarity1plus {
           if (x_value > width) x_value = width + 200;
           else if (x_value < 0) x_value = -200;
           return {
-            cx: xScale(d[ratio_name]),
+            cx: x_value,
             cy: 10,
             r: prop_sizer.scale(d[num_name]),
           };
@@ -215,7 +215,7 @@ export class Similarity1plus {
           return {
             id: d.id,
             class: 'bubble',
-            cx: xScale(d[ratio_name]),
+            cx: x_value,
             cy: 10,
             r: prop_sizer.scale(d[num_name]),
           };

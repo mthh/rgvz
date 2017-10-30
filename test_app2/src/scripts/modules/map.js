@@ -1,7 +1,7 @@
 import tippy from 'tippy.js';
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './options';
-import { prepareTooltip, getSvgPathType, svgPathToCoords, euclidian_distance } from './helpers';
+import { getSvgPathType, svgPathToCoords, euclidian_distance } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
 const svg_map = d3.select('svg#svg_map'),
@@ -11,17 +11,17 @@ const svg_map = d3.select('svg#svg_map'),
 
 const styles = {
   frame: { id: 'frame', fill: '#e9f4fe', 'fill-opacity': 1 },
-  countries: { id: 'countries', fill: '#bebecd', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
-  boxes: { id: 'boxes', fill: '#e9f4fe', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
+  countries: { id: 'countries', fill: '#bebecd', 'fill-opacity': 1 },
+  boxes: { id: 'boxes', fill: '#e9f4fe', 'fill-opacity': 1 },
   nuts: { id: 'nuts', fill: '#9390fc', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#f7fcfe', 'stroke-opacity': 0.9 },
   countries_remote: { id: 'countries_remote', fill: '#bebecd', 'fill-opacity': 1 },
   cyprus_non_espon_space: { id: 'cyprus_non_espon_space', fill: '#ffffff', 'fill-opacity': 1 },
-  borders: { id: 'borders', fill: 'none', 'stroke-width': 0.5, stroke: '#ffffff' },
-  countries_remote_boundaries: { id: 'countries_remote_boundaries', fill: 'none', 'stroke-width': 0.5, stroke: '#ffffff' },
-  coasts: { id: 'coasts', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.8 },
-  coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.8 },
+  borders: { id: 'borders', fill: 'none', 'stroke-width': 1, stroke: '#ffffff' },
+  countries_remote_boundaries: { id: 'countries_remote_boundaries', fill: 'none', 'stroke-width': 1, stroke: '#ffffff' },
+  coasts: { id: 'coasts', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.5 },
+  coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.5 },
   boxes2: { id: 'boxes2', stroke: '#7a7a7a', 'stroke-width': 1, fill: 'none' },
-  line: { id: 'line', stroke: '#bebecd', 'stroke-width': 1, fill: 'none' },
+  line: { id: 'line', stroke: '#bebecd', 'stroke-width': 1.5, fill: 'none' },
 };
 
 let projection;
@@ -123,7 +123,7 @@ class MapSelect {
     this.target_layer = layers.append('g')
       .attrs(styles.nuts);
     this.target_layer.selectAll('path')
-      .data(filterLevelGeom(this.nuts.features, filter))
+      .data(filterLevelGeom(this.nuts.features, filter), d => d.properties[app.current_config.id_field_geom])
       .enter()
       .append('path')
       .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
@@ -195,47 +195,48 @@ class MapSelect {
       .attrs({ d: path });
 
     fitLayer();
-    prepareTooltip(svg_map);
-    // this.bindTooltip();
     app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
     this.target_layer.selectAll('path')
       .each(function () {
         this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
       });
-    tippy(this.target_layer.node().querySelectorAll('path'), {
+    this.tooltips = tippy(this.target_layer.node().querySelectorAll('path'), {
       animation: 'fade',
-      duration: 50,
+      duration: 0,
       followCursor: true,
-      performance: true,
+      // performance: true,
     });
   }
 
   updateLevelRegion(filter = 'NUTS1') {
+    this.tooltips.destroyAll();
     const new_selection = filterLevelGeom(this.nuts.features, filter);
     const selection = this.target_layer
       .selectAll('path')
-      .data(new_selection);
+      .data(new_selection, d => d.properties[app.current_config.id_field_geom]);
     selection.enter()
       .append('path')
-      .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
-      .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
+      .attrs(d => ({
+        title: `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`,
+        fill: d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight,
+        d: path,
+      }));
+    selection
       .attr('d', path);
     selection
-      .transition()
-      .duration(225)
-      .attr('d', path);
-    selection.exit().remove();
+      .exit()
+      .remove();
     this.resetColors(new_selection.map(d => d.properties[app.current_config.id_field_geom]));
     this.computeDistMat();
     this.target_layer.selectAll('path')
       .each(function () {
         this._pts = undefined;
       });
-    tippy(this.target_layer.node().querySelectorAll('path'), {
+    this.tooltips = tippy(this.target_layer.node().querySelectorAll('path'), {
       animation: 'fade',
-      duration: 20,
+      duration: 0,
       followCursor: true,
-      performance: true,
+      // performance: true,
     });
   }
 
