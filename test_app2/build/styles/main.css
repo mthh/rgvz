@@ -434,15 +434,8 @@ input.nb_select::-webkit-outer-spin-button {
 
 /* End of styles for menu / buttons under charts */
 
-/* Style for parallel coordinates */
-.foreground path {
-  fill: none;
-  stroke: #ddd;
-  shape-rendering: crispEdges;
+/* Style for map */
+#layers > g > path:focus {
+  outline: 0;
 }
-
-.background path {
-  fill: none;
-  stroke: #034d3c;
-}
-/* End of styles for parallel coordinates */
+/* End of styles for map */

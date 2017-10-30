@@ -372,12 +372,28 @@ export class RadarChart3 {
       .data(d3.range(1, (cfg.levels + 1)).reverse())
       .enter()
       .append('circle')
-      .attr('class', 'gridCircle')
-      .attr('r', d => radius / cfg.levels * d)
-      .style('fill', '#CDCDCD')
-      .style('stroke', '#CDCDCD')
-      .style('fill-opacity', d => d === 5 ? cfg.opacityCircles * 2 : cfg.opacityCircles)
-      .style('filter', 'url(#glow)');
+      .attrs(d => ({
+        class: 'gridCircle',
+        r: radius / cfg.levels * d,
+      }))
+      .styles((d) => {
+        if (d === 5) {
+          return {
+            fill: '#CDCDCD',
+            stroke: 'rgb(245, 138, 138)',
+            'stroke-dasharray': '5, 5',
+            'fill-opacity': cfg.opacityCircles,
+            filter: 'url(#glow)',
+          };
+        }
+        return {
+          fill: '#CDCDCD',
+          stroke: '#CDCDCD',
+          'fill-opacity': cfg.opacityCircles,
+          filter: 'url(#glow)',
+        };
+      });
+
 
     // // Text indicating at what % each level is
     // axisGrid.selectAll('.axisLabel')
@@ -656,8 +672,8 @@ export class RadarChart3 {
         cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
         cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
       }))
-      .styles(d => ({
-        fill: cfg.color(d.id),
+      .styles((d, i) => ({
+        fill: cfg.color(i),
         'fill-opacity': 0.8,
       }));
 

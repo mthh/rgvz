@@ -10,14 +10,18 @@ const svg_map = d3.select('svg#svg_map'),
   height_map = +svg_map.attr('height') - margin_map.top - margin_map.bottom;
 
 const styles = {
-  frame: { id: 'frame', fill: 'rgb(247, 252, 254)', 'fill-opacity': 1 },
-  countries: { id: 'countries', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
-  boxes: { id: 'boxes', fill: '#e0faff', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
-  countries_remote: { id: 'countries_remote', fill: 'rgb(214, 214, 214)', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
-  // boxes2: { id: 'boxes2', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
-  coasts: { id: 'coasts', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
-  coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: 'black', 'stroke-width': 0.8 },
-  nuts: { id: 'nuts', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  frame: { id: 'frame', fill: '#e9f4fe', 'fill-opacity': 1 },
+  countries: { id: 'countries', fill: '#bebecd', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#ffffff' },
+  boxes: { id: 'boxes', fill: '#e9f4fe', 'fill-opacity': 1, stroke: 'black', 'stroke-width': 0.2 },
+  nuts: { id: 'nuts', fill: '#9390fc', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#f7fcfe', 'stroke-opacity': 0.9 },
+  countries_remote: { id: 'countries_remote', fill: '#bebecd', 'fill-opacity': 1 },
+  cyprus_non_espon_space: { id: 'cyprus_non_espon_space', fill: '#ffffff', 'fill-opacity': 1 },
+  borders: { id: 'borders', fill: 'none', 'stroke-width': 0.5, stroke: '#ffffff' },
+  countries_remote_boundaries: { id: 'countries_remote_boundaries', fill: 'none', 'stroke-width': 0.5, stroke: '#ffffff' },
+  coasts: { id: 'coasts', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.8 },
+  coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.8 },
+  boxes2: { id: 'boxes2', stroke: '#7a7a7a', 'stroke-width': 1, fill: 'none' },
+  line: { id: 'line', stroke: '#bebecd', 'stroke-width': 1, fill: 'none' },
 };
 
 let projection;
@@ -74,7 +78,8 @@ function map_zoomed() {
 }
 
 class MapSelect {
-  constructor(nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, filter = 'NUTS1') {
+  constructor(nuts, other_layers, filter = 'NUTS1') {
+    const [borders, countries, countries_remote, coasts, coasts_remote, cyprus_non_espon_space, countries_remote_boundaries, frame, boxes, line] = other_layers;
     projection = d3.geoIdentity()
       .fitExtent([[0, 0], [width_map, height_map]], frame)
       .reflectY(true);
@@ -115,10 +120,44 @@ class MapSelect {
       .append('path')
       .attrs({ d: path });
 
+    this.target_layer = layers.append('g')
+      .attrs(styles.nuts);
+    this.target_layer.selectAll('path')
+      .data(filterLevelGeom(this.nuts.features, filter))
+      .enter()
+      .append('path')
+      .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
+      .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
+      .attr('d', path);
+
     layers.append('g')
       .attrs(styles.countries_remote)
       .selectAll('path')
       .data(countries_remote.features)
+      .enter()
+      .append('path')
+      .attrs({ d: path });
+
+    layers.append('g')
+      .attrs(styles.cyprus_non_espon_space)
+      .selectAll('path')
+      .data(cyprus_non_espon_space.features)
+      .enter()
+      .append('path')
+      .attrs({ d: path });
+
+    layers.append('g')
+      .attrs(styles.borders)
+      .selectAll('path')
+      .data(borders.features)
+      .enter()
+      .append('path')
+      .attrs({ d: path });
+
+    layers.append('g')
+      .attrs(styles.countries_remote_boundaries)
+      .selectAll('path')
+      .data(countries_remote_boundaries.features)
       .enter()
       .append('path')
       .attrs({ d: path });
@@ -139,23 +178,21 @@ class MapSelect {
       .append('path')
       .attrs({ d: path });
 
-    // layers.append('g')
-    //   .attrs(styles.boxes2)
-    //   .selectAll('path')
-    //   .data(boxes.features)
-    //   .enter()
-    //   .append('path')
-    //   .attrs({ d: path });
-
-    this.target_layer = layers.append('g')
-      .attrs(styles.nuts);
-    this.target_layer.selectAll('path')
-      .data(filterLevelGeom(this.nuts.features, filter))
+    layers.append('g')
+      .attrs(styles.boxes2)
+      .selectAll('path')
+      .data(boxes.features)
       .enter()
       .append('path')
-      .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.properties[app.current_config.id_field_geom]})`)
-      .attr('fill', d => (d.properties[app.current_config.id_field_geom] !== app.current_config.my_region ? color_countries : color_highlight))
-      .attr('d', path);
+      .attrs({ d: path });
+
+    layers.append('g')
+      .attrs(styles.line)
+      .selectAll('path')
+      .data(line.features)
+      .enter()
+      .append('path')
+      .attrs({ d: path });
 
     fitLayer();
     prepareTooltip(svg_map);
@@ -260,6 +297,12 @@ class MapSelect {
       document.getElementById('img_rect_selec').classList.add('disabled');
       document.getElementById('img_map_zoom').classList.remove('active');
       document.getElementById('img_map_select').classList.add('active');
+    }
+    if (chart.handleClickMap && !chart.handle_brush_map) {
+      this.target_layer.selectAll('path')
+        .on('click', function (d) {
+          chart.handleClickMap(d, this);
+        });
     }
   }
 

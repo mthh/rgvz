@@ -126,30 +126,33 @@ export class Similarity1plus {
       if (!g.node()) {
         g = this.draw_group
           .append('g')
-          .attr('id', ratio_name)
-          .attr('num', num_name)
-          .attr('class', 'grp_var');
+          .attrs({
+            id: ratio_name,
+            num: num_name,
+            class: 'grp_var',
+          });
         axis = g.append('g')
-          .attrs({ class: `axis axis--x ${ratio_name}`, transform: 'translate(0, 10)' });
+          .attrs({
+            class: `axis axis--x ${ratio_name}`,
+            transform: 'translate(0, 10)',
+          });
       }
       g.attr('transform', `translate(0, ${height_to_use})`);
       let _min;
       let _max;
       this.data.sort((a, b) => b[`dist_${ratio_name}`] - a[`dist_${ratio_name}`]);
       if (highlight_selection.length > 0) {
-        const dist_min = math_abs(
-          my_region_value - +d3.min(highlight_selection, d => d[ratio_name]));
-        const dist_max = math_abs(
-          +d3.max(highlight_selection, d => d[ratio_name]) - my_region_value);
-        const dist_axis = Math.max(dist_min, dist_max);
+        const dist_axis = Math.max(
+          math_abs(my_region_value - +d3.min(highlight_selection, d => d[ratio_name])),
+          math_abs(+d3.max(highlight_selection, d => d[ratio_name]) - my_region_value));
         const margin_min_max = math_round(dist_axis) / 8;
         _min = my_region_value - dist_axis - margin_min_max;
         _max = my_region_value + dist_axis + margin_min_max;
-        if (_min > _max) { [_min, _max] = [_max, _min]; }
+        // if (_min > _max) { [_min, _max] = [_max, _min]; }
       } else {
-        const dist_min = math_abs(my_region_value - d3.min(ratio_values));
-        const dist_max = math_abs(d3.max(ratio_values) - my_region_value);
-        const dist_axis = Math.max(dist_min, dist_max);
+        const dist_axis = Math.max(
+          math_abs(my_region_value - d3.min(ratio_values)),
+          math_abs(d3.max(ratio_values) - my_region_value));
         const margin_min_max = math_round(dist_axis) / 8;
         _min = my_region_value - dist_axis - margin_min_max;
         _max = my_region_value + dist_axis + margin_min_max;
@@ -180,7 +183,7 @@ export class Similarity1plus {
           if (x_value > width) x_value = width + 200;
           else if (x_value < 0) x_value = -200;
           return {
-            cx: x_value,
+            cx: xScale(d[ratio_name]),
             cy: 10,
             r: prop_sizer.scale(d[num_name]),
           };
@@ -212,48 +215,16 @@ export class Similarity1plus {
           return {
             id: d.id,
             class: 'bubble',
-            cx: x_value,
+            cx: xScale(d[ratio_name]),
             cy: 10,
             r: prop_sizer.scale(d[num_name]),
           };
-        })
-        .on('end', () => {
-          this.draw_group.selectAll('.bubble')
-            .on('mouseover', () => {
-              svg_bar.select('.tooltip').style('display', null);
-            })
-            .on('mouseout', () => {
-              svg_bar.select('.tooltip').style('display', 'none');
-            })
-            .on('mousemove', function (d) {
-              const tooltip = svg_bar.select('.tooltip');
-              const ratio_n = this.parentElement.id;
-              const num_n = this.parentElement.getAttribute('num');
-              const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].split(')')[0];
-              tooltip.select('rect').attrs({ width: 0, height: 0 });
-              tooltip
-                .select('text.id_feature')
-                .text(`${d.id}`);
-              tooltip.select('text.value_feature1')
-                .text(`Ratio: ${Math.round(d[ratio_n] * 10) / 10}`);
-              tooltip.select('text.value_feature2')
-                .text(`Stock: ${Math.round(d[num_n] * 10) / 10}`);
-              const b = tooltip.node().getBoundingClientRect();
-              tooltip.select('rect')
-                .attrs({
-                  width: b.width + 20,
-                  height: b.height + 7.5,
-                });
-              tooltip
-                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
-            })
-            .on('click', function (d) {
-              if (this.style.fill !== color_countries) self.displayLine(d.id);
-            });
         });
+
       bubbles.exit().transition().duration(125).remove();
       height_to_use += offset;
     }
+    setTimeout(() => { this.makeTooltips(); }, 125);
   }
 
   updateCompletude() {
@@ -311,6 +282,43 @@ export class Similarity1plus {
     if (to_display) setTimeout(() => { this.displayLine(id); }, 150);
   }
 
+  makeTooltips() {
+    const self = this;
+    this.draw_group.selectAll('g.grp_var')
+      .selectAll('circle')
+        .on('mouseover', () => {
+          svg_bar.select('.tooltip').style('display', null);
+        })
+        .on('mouseout', () => {
+          svg_bar.select('.tooltip').style('display', 'none');
+        })
+        .on('mousemove', function (d) {
+          const tooltip = svg_bar.select('.tooltip');
+          const ratio_n = this.parentElement.id;
+          const num_n = this.parentElement.getAttribute('num');
+          const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].split(')')[0];
+          tooltip.select('rect').attrs({ width: 0, height: 0 });
+          tooltip
+            .select('text.id_feature')
+            .text(`${d.id}`);
+          tooltip.select('text.value_feature1')
+            .text(`Ratio: ${Math.round(d[ratio_n] * 10) / 10}`);
+          tooltip.select('text.value_feature2')
+            .text(`Stock: ${Math.round(d[num_n] * 10) / 10}`);
+          const b = tooltip.node().getBoundingClientRect();
+          tooltip.select('rect')
+            .attrs({
+              width: b.width + 20,
+              height: b.height + 7.5,
+            });
+          tooltip
+            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
+        })
+        .on('click', function (d) {
+          if (this.style.fill !== color_countries) self.displayLine(d.id);
+        });
+  }
+
   displayLine(id_region) {
     if (this.ratios.length === 1) return;
     const coords = [];
@@ -323,15 +331,15 @@ export class Similarity1plus {
 
     const l = this.draw_group.append('path')
       .datum(coords)
-      .attr('class', 'regio_line')
-      .attr('fill', 'none')
-      .attr('stroke', 'steelblue')
-      .attr('stroke-linejoin', 'round')
-      .attr('stroke-linecap', 'round')
-      .attr('stroke-width', 1.5)
-      .attr('d', d3.line()
-        .x(_d => _d[0])
-        .y(_d => _d[1]));
+      .attrs({
+        class: 'regio_line',
+        fill: 'none',
+        stroke: 'steelblue',
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+        'stroke-width': 1.5,
+        d: d3.line().x(_d => _d[0]).y(_d => _d[1]),
+      });
     setTimeout(() => {
       l.remove();
     }, 5000);
@@ -378,6 +386,7 @@ export class Similarity1plus {
     this.updateTableStat();
     this.updateCompletude();
     this.applySelection(temp);
+    this.updateMapRegio();
   }
 
   addVariable(code_variable, name_variable) {
@@ -405,7 +414,7 @@ export class Similarity1plus {
       return obj;
     }).filter(d => !!d);
     // And use it immediatly:
-    this.updateTableStat
+    this.updateTableStat();
     this.update();
     this.updateMapRegio();
   }
@@ -422,6 +431,7 @@ export class Similarity1plus {
     // And use it immediatly:
     this.updateTableStat();
     this.update();
+    this.updateMapRegio();
   }
 
   bindMenu() {

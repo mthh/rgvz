@@ -17,6 +17,8 @@
   },
   "globals": {
     "d3": false,
-    "turf": false
+    "turf": false,
+    "alertify": false,
+    "tippy": false
   }
 }

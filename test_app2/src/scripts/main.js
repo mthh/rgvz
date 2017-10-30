@@ -297,9 +297,9 @@ function bindUI_chart(chart, map_elem) {
         filterLevelVar(app);
         resetColors();
         map_elem.updateLevelRegion(level_value);
-        chart.changeStudyZone();
         map_elem.unbindBrushClick();
         map_elem.bindBrushClick(chart);
+        chart.changeStudyZone();
       }
     });
 
@@ -453,10 +453,13 @@ function loadData() {
   d3.queue(4)
     .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
     .defer(d3.json, 'data/CGET_nuts_all3035.geojson')
+    .defer(d3.json, 'data/borders3035.geojson')
     .defer(d3.json, 'data/countries3035.geojson')
     .defer(d3.json, 'data/countries-remote3035.geojson')
     .defer(d3.json, 'data/coasts3035.geojson')
     .defer(d3.json, 'data/coasts-remote3035.geojson')
+    .defer(d3.json, 'data/cyprus_non_espon_space3035.geojson')
+    .defer(d3.json, 'data/countries-remote-boundaries3035.geojson')
     .defer(d3.json, 'data/frame3035.geojson')
     .defer(d3.json, 'data/boxes3035.geojson')
     .defer(d3.json, 'data/line3035.geojson')
@@ -466,7 +469,7 @@ function loadData() {
       document.body.classList.remove('loading');
       document.querySelector('.spinner').remove();
       const [
-        full_dataset, nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes, line, metadata_indicateurs,
+        full_dataset, nuts, borders, countries, countries_remote, coasts, coasts_remote, cyprus_non_espon_space, countries_remote_boundaries, frame, boxes, line, metadata_indicateurs,
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
       variables_info = prepareVariablesInfo(metadata_indicateurs);
@@ -480,7 +483,7 @@ function loadData() {
       makeHeaderChart();
       setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
       filterLevelVar(app);
-      const map_elem = new MapSelect(nuts, countries, countries_remote, coasts, coasts_remote, frame, boxes);
+      const map_elem = new MapSelect(nuts, [borders, countries, countries_remote, coasts, coasts_remote, cyprus_non_espon_space, countries_remote_boundaries, frame, boxes, line]);
       const chart = new BarChart1(app.current_data);
       // makeTable(app.current_data, app.current_config);
       makeHeaderMapSection();
