@@ -50,34 +50,9 @@ export function makeTopMenu() {
     .attr('class', 'title_type_comp')
     .html('RESSEMBLANCES');
 
-  // ressemblance.append('span')
-  //   .attrs({ class: 'type_chart chart_t1', value: 'BubbleChart1' })
-  //   .html('1 ind.');
-  //
-  // ressemblance.append('span')
-  //   .attrs({ class: 'type_chart chart_t2 disabled', value: 'SimilarityChart' })
-  //   .html('+2 ind.');
-
   ressemblance.append('span')
     .attrs({ class: 'type_chart chart_t1', value: 'Similarity1plus' })
     .html('+1 ind.');
-
-  // const inegalite = type_chart
-  //   .append('div')
-  //   .attr('class', 'type_comparaison')
-  //   .styles({ width: width_type_comp });
-  //
-  // inegalite.append('p')
-  //   .attr('class', 'title_type_comp')
-  //   .html('INÉGALITÉS');
-  //
-  // inegalite.append('span')
-  //   .attrs({ class: 'type_chart chart_t1', value: 'BoxPlot1' })
-  //   .html('1 ind.');
-  //
-  // inegalite.append('span')
-  //   .attrs({ class: 'type_chart chart_t2 disabled', value: 'ParallelCoords2' })
-  //   .html('+2 ind.');
 
   top_menu
     .append('div')
@@ -130,8 +105,8 @@ export function makeHeaderChart() {
 
   header_bar_section.insert('img')
     .attrs({
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       src: 'img/edit-table-insert-row-above.svg',
       id: 'img_table',
     })
@@ -168,8 +143,8 @@ export function makeHeaderChart() {
 
   header_bar_section.insert('img')
     .attrs({
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       src: 'img/printer.svg',
       id: 'img_printer',
     })
@@ -177,8 +152,8 @@ export function makeHeaderChart() {
 
   header_bar_section.insert('img')
     .attrs({
-      width: 24,
-      height: 24,
+      width: 20,
+      height: 20,
       src: 'img/gtk-info.svg',
       id: 'img_info',
     })

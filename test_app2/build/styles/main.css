@@ -287,7 +287,7 @@ span.label_chk.disabled {
 /* End of styles for completness section */
 
 /* Styles for buttons (used in various place) */
-.button_blue {
+/*.button_blue {
   border-top: 1px solid #96d1f8;
   background: #65a9d7;
   background: -webkit-gradient(linear, left top, left bottom, from(#3e779d), to(#65a9d7));
@@ -316,9 +316,45 @@ span.label_chk.disabled {
   background: #28597a;
   color: #ccc;
 }
+
 .button_blue:active {
   border-top-color: #1b435e;
   background: #1b435e;
+}*/
+.button_blue {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    padding: 4px 8px;
+    border: 1px solid #3f6797;
+    border-radius: 8px;
+    background: #67a8f6;
+    background: -webkit-gradient(linear, left top, left bottom, from(#67a8f6), to(#3f6797));
+    background: -moz-linear-gradient(top, #67a8f6, #3f6797);
+    background: linear-gradient(to bottom, #67a8f6, #3f6797);
+    font: normal normal normal 11px 'Signika', sans-serif;
+    color: #ffffff;
+    text-decoration: none;
+}
+.button_blue:hover,
+.button_blue:focus {
+    border: 1px solid #4f81bd;
+    background: #7ccaff;
+    background: -webkit-gradient(linear, left top, left bottom, from(#7ccaff), to(#4c7cb5));
+    background: -moz-linear-gradient(top, #7ccaff, #4c7cb5);
+    background: linear-gradient(to bottom, #7ccaff, #4c7cb5);
+    color: #ffffff;
+    text-decoration: none;
+}
+.button_blue:active, .button_blue.pressed {
+    background: #3f6797;
+    background: -webkit-gradient(linear, left top, left bottom, from(#3f6797), to(#3f6797));
+    background: -moz-linear-gradient(top, #3f6797, #3f6797);
+    background: linear-gradient(to bottom, #3f6797, #3f6797);
+}
+
+#menu_selection > .button_blue {
+  margin: 4px 22px;
 }
 /* End of styles for buttons */
 

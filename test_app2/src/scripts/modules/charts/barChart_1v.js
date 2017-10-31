@@ -328,25 +328,46 @@ export class BarChart1 {
       .attr('id', 'menu_selection')
       .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
 
-    menu_selection.append('button')
-      .attrs({ class: 'button_blue', id: 'btn_above_mean' })
-      .text('< à la moyenne')
-      .on('click', () => this.selectBelowMean());
+    menu_selection.append('p')
+      .attr('id', 'selection_subtitle')
+      .styles({ margin: '10px 0px 2px 0px', 'font-size': '10px' })
+      .html('Sélection des régions ayant des valeurs...');
 
     menu_selection.append('button')
-      .attrs({ class: 'button_blue', id: 'btn_below_mean' })
-      .text('> à la moyenne')
-      .on('click', () => this.selectAboveMean());
+      .attrs({ class: 'button_blue', id: 'btn_above_mean' })
+      .text('inférieures à la moyenne')
+      .on('click', function() {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
+        this.classList.add('pressed');
+        self.selectBelowMean();
+      });
 
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
-      .text('< à ma région')
-      .on('click', () => this.selectBelowMyRegion());
+      .text('inférieurs à ma région')
+      .on('click', function() {
+        menu_selection.selectAll('button').attr('class', 'button_blue')
+        this.classList.add('pressed');
+        self.selectBelowMyRegion();
+      });
+
+    menu_selection.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_below_mean' })
+      .text('supérieures à la moyenne')
+      .on('click', function() {
+        menu_selection.selectAll('button').attr('class', 'button_blue')
+        this.classList.add('pressed');
+        self.selectAboveMean();
+      });
 
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
-      .text('> à ma région')
-      .on('click', () => this.selectAboveMyRegion());
+      .text('supérieures à ma région')
+      .on('click', function() {
+        menu_selection.selectAll('button').attr('class', 'button_blue')
+        this.classList.add('pressed');
+        self.selectAboveMyRegion();
+      });
 
     this.makeTableStat();
   }
@@ -368,6 +389,10 @@ export class BarChart1 {
     const self = this;
     const bar = this.g_bar.selectAll('.bar')
       .data(this.data);
+
+    if (this.reset_state_button === true) {
+      d3.selectAll('#menu_selection > button').attr('class', 'button_blue');
+    }
 
     bar
       .attrs(d => ({
@@ -497,11 +522,13 @@ export class BarChart1 {
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_inf; });
     }
+    this.reset_state_button = false;
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
+    this.reset_state_button = true;
   }
 
   selectBelowMyRegion() {
@@ -523,11 +550,13 @@ export class BarChart1 {
         .map(d => d.id)
         .forEach((ft) => { app.colors[ft] = color_sup; });
     }
+    this.reset_state_button = false;
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
+    this.reset_state_button = true;
   }
 
   selectAboveMean() {
@@ -551,11 +580,13 @@ export class BarChart1 {
       });
     }
     app.colors[app.current_config.my_region] = color_highlight;
+    this.reset_state_button = false;
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
+    this.reset_state_button = true;
   }
 
   selectBelowMean() {
@@ -577,11 +608,13 @@ export class BarChart1 {
       });
     }
     app.colors[app.current_config.my_region] = color_highlight;
+    this.reset_state_button = false;
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
+    this.reset_state_button = true;
   }
 
   handle_brush_map(event) {

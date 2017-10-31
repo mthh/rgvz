@@ -20,7 +20,7 @@ export default class CompletudeSection {
   }
 
   update(value_features, value_pop) {
-    this.completude_features.innerHTML = `Données disponibles pour ${value_features[0]}/${value_features[1]} entités.`;
+    this.completude_features.innerHTML = `Données disponibles pour ${value_features[0]}/${value_features[1]} régions.`;
     this.completude_population.innerHTML = `Données disponibles pour ${value_pop}% de la population de l'espace d'étude.`;
   }
 
