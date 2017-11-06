@@ -38,6 +38,8 @@ export class BarChart1 {
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'zoom') return; // ignore brush-by-zoom
       if (!this.x) { console.log('a'); return; }
       const s = d3.event.selection || this.x2.range();
+      context_left_handle.attr('x', s[0] - 12);
+      context_right_handle.attr('x', s[1] - 7);
       current_range = [math_round(s[0] / (width / nbFt)), math_round(s[1] / (width / nbFt))];
       this.x.domain(this.data.slice(current_range[0], current_range[1]).map(ft => ft.id));
       svg_bar.select('.zoom').call(this.zoom.transform, d3.zoomIdentity
@@ -64,8 +66,8 @@ export class BarChart1 {
           current_range[0] + math_round(s[0] / (width / displayed)) - 1,
           current_range[0] + math_round(s[1] / (width / displayed)),
         ];
-        this.x.domain(this.data.slice(current_range_brush[0] + 1, current_range_brush[1])
-          .map(ft => ft.id));
+        // this.x.domain(this.data.slice(current_range_brush[0] + 1, current_range_brush[1])
+        //   .map(ft => ft.id));
         app.colors = {};
         this._focus.selectAll('.bar')
           .style('fill', (d, i) => {
@@ -79,6 +81,10 @@ export class BarChart1 {
             }
             return color_countries;
           });
+        // this.update();
+        if (this.reset_state_button === true) {
+          d3.selectAll('#menu_selection > button').attr('class', 'button_blue');
+        }
         this.updateMapRegio();
       } else {
         if (d3_event && !d3_event.selection
@@ -90,6 +96,9 @@ export class BarChart1 {
         }
         this._focus.selectAll('.bar')
           .style('fill', d => app.colors[d.id] || color_countries);
+        if (this.reset_state_button === true) {
+          d3.selectAll('#menu_selection > button').attr('class', 'button_blue');
+        }
       }
     };
 
@@ -223,15 +232,32 @@ export class BarChart1 {
 
     this.updateMiniBars();
 
-    context.append('g')
+    const g_brush_bottom = context.append('g')
       .attr('class', 'brush_bottom')
-      .call(brush_bottom)
-      .call(brush_bottom.move, x.range());
+      .call(brush_bottom);
+
+    const context_left_handle = g_brush_bottom.insert('image', '.handle')
+      .attrs({
+        width: 20,
+        height: height2,
+        x: x2(this.current_ids[0]) - 12,
+        'xlink:href': 'img/left-handle.png',
+      });
+
+    const context_right_handle = g_brush_bottom.insert('image', '.handle')
+      .attrs({
+        width: 20,
+        height: height2,
+        x: x2(this.current_ids[this.current_ids.length - 1]) - 7,
+        'xlink:href': 'img/right-handle.png',
+      });
 
     focus.append('g')
       .attr('class', 'brush_top')
       .call(brush_top)
       .call(brush_top.move, null);
+
+    g_brush_bottom.call(brush_bottom.move, x.range());
 
     this.completude = new CompletudeSection(svg_bar.node().parentElement);
     this.completude.update(
@@ -326,17 +352,17 @@ export class BarChart1 {
     const menu_selection = d3.select('#bar_section')
       .append('div')
       .attr('id', 'menu_selection')
-      .styles({ padding: '0 10px 10px 10px', 'text-align': 'center' });
+      .styles({ padding: '0 10px 10px 10px', 'text-align': 'center', color: '#4f81bd' });
 
     menu_selection.append('p')
       .attr('id', 'selection_subtitle')
-      .styles({ margin: '10px 0px 2px 0px', 'font-size': '10px' })
+      .styles({ margin: '10px 0px 2px 0px' })
       .html('Sélection des régions ayant des valeurs...');
 
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_mean' })
       .text('inférieures à la moyenne')
-      .on('click', function() {
+      .on('click', function () {
         menu_selection.selectAll('button').attr('class', 'button_blue');
         this.classList.add('pressed');
         self.selectBelowMean();
@@ -345,8 +371,8 @@ export class BarChart1 {
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
       .text('inférieurs à ma région')
-      .on('click', function() {
-        menu_selection.selectAll('button').attr('class', 'button_blue')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
         this.classList.add('pressed');
         self.selectBelowMyRegion();
       });
@@ -354,8 +380,8 @@ export class BarChart1 {
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_below_mean' })
       .text('supérieures à la moyenne')
-      .on('click', function() {
-        menu_selection.selectAll('button').attr('class', 'button_blue')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
         this.classList.add('pressed');
         self.selectAboveMean();
       });
@@ -363,8 +389,8 @@ export class BarChart1 {
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
       .text('supérieures à ma région')
-      .on('click', function() {
-        menu_selection.selectAll('button').attr('class', 'button_blue')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
         this.classList.add('pressed');
         self.selectAboveMyRegion();
       });
@@ -499,8 +525,8 @@ export class BarChart1 {
 
   updateMapRegio() {
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
+      .attr('fill', d => (this.current_ids.indexOf(d.id) > -1
+        ? (app.colors[d.id] || color_countries)
         : color_disabled));
   }
 
@@ -527,6 +553,7 @@ export class BarChart1 {
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    this.map_elem.removeRectBrush();
     this.updateMapRegio();
     this.reset_state_button = true;
   }
@@ -555,6 +582,7 @@ export class BarChart1 {
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    this.map_elem.removeRectBrush();
     this.updateMapRegio();
     this.reset_state_button = true;
   }
@@ -584,6 +612,7 @@ export class BarChart1 {
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
+    this.map_elem.removeRectBrush();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
     this.reset_state_button = true;
@@ -612,6 +641,7 @@ export class BarChart1 {
     svg_bar.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
+    this.map_elem.removeRectBrush();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.updateMapRegio();
     this.reset_state_button = true;
@@ -637,7 +667,7 @@ export class BarChart1 {
     app.colors = {};
     self.map_elem.target_layer.selectAll('path')
       .attr('fill', function (d) {
-        const id = d.properties[app.current_config.id_field_geom];
+        const id = d.id;
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
@@ -682,7 +712,7 @@ export class BarChart1 {
   }
 
   handleClickMap(d, parent) {
-    const id = d.properties[app.current_config.id_field_geom];
+    const id = d.id;
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       app.colors[id] = undefined;
@@ -807,6 +837,7 @@ export class BarChart1 {
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
+    this.map_elem.displayLegend(0);
   }
 
   updateTableStats() {

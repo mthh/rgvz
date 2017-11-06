@@ -3,14 +3,14 @@ import tingle from 'tingle.js';
 import alertify from 'alertifyjs';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
-import { MapSelect, makeSourceSection, makeMapLegend, svg_map } from './modules/map';
+import { MapSelect, makeSourceSection, makeMapLegend, svg_map, zoomClick } from './modules/map';
 // import { makeTable } from './modules/table';
 import { color_highlight, MAX_VARIABLES } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { Similarity1plus } from './modules/charts/similarity1v';
-import { unbindUI, selectFirstAvailableVar } from './modules/helpers';
+import { unbindUI, selectFirstAvailableVar, prepareGeomLayerId, getRandom } from './modules/helpers';
 import {
   prepare_dataset,
   filterLevelVar,
@@ -358,6 +358,12 @@ function bindUI_chart(chart, map_elem) {
       }
     });
 
+  header_map_section.select('#zoom_in')
+    .on('click', zoomClick);
+
+  header_map_section.select('#zoom_out')
+    .on('click', zoomClick);
+
   if (!map_elem.brush_map) {
     if (chart.handleClickMap) {
       map_elem.target_layer.selectAll('path')
@@ -448,53 +454,6 @@ export function bindTopButtons(chart, map_elem) {
     });
 }
 
-
-function loadData() {
-  d3.queue(4)
-    .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
-    .defer(d3.json, 'data/CGET_nuts_all3035.geojson')
-    .defer(d3.json, 'data/borders3035.geojson')
-    .defer(d3.json, 'data/countries3035.geojson')
-    .defer(d3.json, 'data/countries-remote3035.geojson')
-    .defer(d3.json, 'data/coasts3035.geojson')
-    .defer(d3.json, 'data/coasts-remote3035.geojson')
-    .defer(d3.json, 'data/cyprus_non_espon_space3035.geojson')
-    .defer(d3.json, 'data/countries-remote-boundaries3035.geojson')
-    .defer(d3.json, 'data/frame3035.geojson')
-    .defer(d3.json, 'data/boxes3035.geojson')
-    .defer(d3.json, 'data/line3035.geojson')
-    .defer(d3.csv, 'data/indicateurs_meta.csv')
-    .awaitAll((error, results) => {
-      if (error) throw error;
-      document.body.classList.remove('loading');
-      document.querySelector('.spinner').remove();
-      const [
-        full_dataset, nuts, borders, countries, countries_remote, coasts, coasts_remote, cyprus_non_espon_space, countries_remote_boundaries, frame, boxes, line, metadata_indicateurs,
-      ] = results;
-      alertify.set('notifier', 'position', 'bottom-left');
-      variables_info = prepareVariablesInfo(metadata_indicateurs);
-      prepare_dataset(full_dataset, app);
-      setDefaultConfig('FRB', 'RT_CHOM_1574', 'NUTS1');
-      const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
-        && +ft.level === 1);
-      createMenu(features_menu, variables_info, study_zones, territorial_mesh);
-      bindHelpMenu();
-      makeTopMenu();
-      makeHeaderChart();
-      setDefaultConfigMenu('FRB', 'RT_CHOM_1574', 'NUTS1');
-      filterLevelVar(app);
-      const map_elem = new MapSelect(nuts, [borders, countries, countries_remote, coasts, coasts_remote, cyprus_non_espon_space, countries_remote_boundaries, frame, boxes, line]);
-      const chart = new BarChart1(app.current_data);
-      // makeTable(app.current_data, app.current_config);
-      makeHeaderMapSection();
-      makeSourceSection();
-      makeMapLegend();
-      bindUI_chart(chart, map_elem);
-      map_elem.bindBrushClick(chart);
-      chart.bindMap(map_elem);
-    });
-}
-
 function bindHelpMenu() {
   const help_buttons_var = document.querySelector('#menu_variables').querySelectorAll('span.i_info');
   Array.prototype.slice.call(help_buttons_var).forEach((btn_i) => {
@@ -570,6 +529,66 @@ function bindHelpMenu() {
       modal.open();
     };
   });
+}
+
+function loadData() {
+  d3.queue(4)
+    .defer(d3.csv, 'data/REGIOVIZ_DATA.csv')
+    .defer(d3.json, 'data/CGET_nuts_all3035.geojson')
+    .defer(d3.json, 'data/borders3035.geojson')
+    .defer(d3.json, 'data/countries3035.geojson')
+    .defer(d3.json, 'data/countries-remote3035.geojson')
+    .defer(d3.json, 'data/coasts3035.geojson')
+    .defer(d3.json, 'data/coasts-remote3035.geojson')
+    .defer(d3.json, 'data/cyprus_non_espon_space3035.geojson')
+    .defer(d3.json, 'data/countries-remote-boundaries3035.geojson')
+    .defer(d3.json, 'data/frame3035.geojson')
+    .defer(d3.json, 'data/boxes3035.geojson')
+    .defer(d3.json, 'data/line3035.geojson')
+    .defer(d3.csv, 'data/indicateurs_meta.csv')
+    .awaitAll((error, results) => {
+      if (error) throw error;
+      document.body.classList.remove('loading');
+      document.querySelector('.spinner').remove();
+      const [
+        full_dataset, nuts, borders, countries, countries_remote,
+        coasts, coasts_remote, cyprus_non_espon_space,
+        countries_remote_boundaries, frame, boxes, line, metadata_indicateurs,
+      ] = results;
+      alertify.set('notifier', 'position', 'bottom-left');
+      const features_menu = full_dataset.filter(ft => ft.geo.indexOf('FR') > -1
+        && +ft.level === 1);
+      const start_region = getRandom(features_menu.map(d => d.geo), 13);
+      const start_variable = getRandom(
+        ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
+
+      variables_info = prepareVariablesInfo(metadata_indicateurs);
+      prepare_dataset(full_dataset, app);
+      setDefaultConfig(start_region, start_variable, 'NUTS1');
+      prepareGeomLayerId(nuts, app.current_config.id_field_geom);
+      createMenu(features_menu, variables_info, study_zones, territorial_mesh);
+      bindHelpMenu();
+      makeTopMenu();
+      makeHeaderChart();
+      setDefaultConfigMenu(start_region, start_variable, 'NUTS1');
+      filterLevelVar(app);
+      const other_layers = new Map([
+        ['borders', borders], ['boxes', boxes],
+        ['countries', countries], ['countries_remote', countries_remote],
+        ['coasts', coasts], ['coasts_remote', coasts_remote],
+        ['cyprus_non_espon_space', cyprus_non_espon_space],
+        ['countries_remote_boundaries', countries_remote_boundaries],
+        ['frame', frame], ['line', line], ['boxes2', boxes],
+      ]);
+      const map_elem = new MapSelect(nuts, other_layers);
+      const chart = new BarChart1(app.current_data);
+      // makeTable(app.current_data, app.current_config);
+      makeHeaderMapSection();
+      makeSourceSection();
+      bindUI_chart(chart, map_elem);
+      map_elem.bindBrushClick(chart);
+      chart.bindMap(map_elem);
+    });
 }
 
 loadData();

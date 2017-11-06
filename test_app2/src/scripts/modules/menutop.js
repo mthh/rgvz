@@ -7,7 +7,7 @@ export function makeTopMenu() {
   const width_left = `${document.querySelector('#menu').getBoundingClientRect().width + 25}px`;
   const t = document.querySelector('#bar_section').getBoundingClientRect().width;
   const width_central_chart = `${t}px`;
-  const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 35}px`;
+  const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 40}px`;
   const width_type_comp = `${(t - 80) / 2 - 2}px`;
   top_menu
     .append('div')
@@ -58,14 +58,14 @@ export function makeTopMenu() {
     .append('div')
     .attrs({ class: 'title_section' })
     .styles({ width: width_map, float: 'left', margin: '0 0 0 20px' })
-    .html('QUELLES REGIONS ?');
+    .html('QUELLES RÉGIONS ?');
 }
 
 export function makeHeaderMapSection() {
   const header_map_section = d3.select('#map_section')
     .insert('p', 'svg')
     .attr('id', 'header_map')
-    .style('margin', '0 0 0 10px');
+    .style('margin', '0 37.5px 0 10px');
 
   header_map_section.insert('img')
     .attrs({
@@ -93,6 +93,40 @@ export function makeHeaderMapSection() {
       src: 'img/gimp-cursor.png',
       id: 'img_map_select',
     });
+
+  header_map_section.insert('div')
+    .attrs({
+      id: 'zoom_in',
+      class: 'top_half_circle',
+    })
+    .styles({
+      'font-weight': 'bold',
+      float: 'right',
+      cursor: 'pointer',
+      'text-align': 'center',
+      top: '8px',
+      position: 'relative',
+      color: 'white',
+    })
+    .append('span')
+    .text('+');
+
+  header_map_section.insert('div')
+    .attrs({
+      id: 'zoom_out',
+      class: 'top_half_circle',
+    })
+    .styles({
+      'font-weight': 'bold',
+      float: 'right',
+      cursor: 'pointer',
+      'text-align': 'center',
+      top: '8px',
+      position: 'relative',
+      color: 'white',
+    })
+    .append('span')
+    .text('-');
 }
 
 

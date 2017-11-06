@@ -76,7 +76,7 @@ export class ScatterPlot2 {
     // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 2;
     const self = this;
-    this.type = 'rank';
+    this.type = 'value';
     this.variable1 = app.current_config.ratio[0];
     this.variable2 = app.current_config.ratio[1];
     this.rank_variable1 = `pr_${this.variable1}`;
@@ -257,30 +257,25 @@ export class ScatterPlot2 {
     const menu_selection = d3.select(svg_bar.node().parentElement)
       .append('div')
       .attr('id', 'menu_selection')
-      .styles({ top: '-20px', 'margin-left': '30px', position: 'relative' });
+      .styles({ position: 'relative', 'text-align': 'center' });
 
-    const chart_type = menu_selection.append('p')
-      .styles({
-        float: 'right',
-        display: 'inline-grid',
-      });
+    const chart_type = menu_selection.append('p');
 
     chart_type.append('span')
       .attrs({
         id: 'ind_raw_values',
-        class: 'choice_ind',
+        class: 'choice_ind active',
       })
       .text('Valeurs brutes');
 
     chart_type.append('span')
       .attrs({
         id: 'ind_ranks',
-        class: 'choice_ind active',
+        class: 'choice_ind',
       })
       .text('Valeurs de rang');
 
     this.bindMenu();
-
     // this.update();
     this.makeTableStat();
   }
@@ -560,14 +555,14 @@ export class ScatterPlot2 {
   updateCompletude() {
     this.completude.update(
       calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
-      calcPopCompletudeSubset(app, [this.ratio_to_use]));
+      calcPopCompletudeSubset(app, [this.variable1, this.variable2]));
   }
 
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (app.colors[d.properties[app.current_config.id_field_geom]] || color_countries)
+      .attr('fill', d => (this.current_ids.indexOf(d.id) > -1
+        ? (app.colors[d.id] || color_countries)
         : color_disabled));
   }
 
@@ -584,7 +579,7 @@ export class ScatterPlot2 {
     app.colors = {};
     self.map_elem.target_layer.selectAll('path')
       .attr('fill', function (d) {
-        const id = d.properties[app.current_config.id_field_geom];
+        const id = d.id;
         if (id === app.current_config.my_region) {
           app.colors[id] = color_highlight;
           return color_highlight;
@@ -613,7 +608,7 @@ export class ScatterPlot2 {
   }
 
   handleClickMap(d, parent) {
-    const id = d.properties[app.current_config.id_field_geom];
+    const id = d.id;
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       // Change its color in the global colors object:
@@ -826,6 +821,7 @@ export class ScatterPlot2 {
 
   bindMap(map_elem) {
     this.map_elem = map_elem;
+    this.map_elem.displayLegend(1);
     this.updateMapRegio();
     this.update();
   }

@@ -707,6 +707,7 @@ export class RadarChart3 {
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
+    this.map_elem.displayLegend(2);
     this.updateMapRegio();
   }
 
@@ -801,7 +802,7 @@ export class RadarChart3 {
   }
 
   handleClickMap(d, parent) {
-    const id = d.properties[app.current_config.id_field_geom];
+    const id = d.id;
     if (this.current_ids.indexOf(id) < 0 || id === this.id_my_region) return;
     if (this.displayed_ids.indexOf(id) < 0) {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
@@ -827,10 +828,10 @@ export class RadarChart3 {
   updateMapRegio() {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
-      .attr('fill', d => (d.properties[app.current_config.id_field_geom] === this.id_my_region
+      .attr('fill', d => (d.id === this.id_my_region
         ? color_highlight
-        : this.current_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
-        ? (this.displayed_ids.indexOf(d.properties[app.current_config.id_field_geom]) > -1
+        : this.current_ids.indexOf(d.id) > -1
+        ? (this.displayed_ids.indexOf(d.id) > -1
         ? color_default_dissim : color_countries) : color_disabled));
   }
 

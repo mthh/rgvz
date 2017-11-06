@@ -20,7 +20,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   // Second section, groups of variables:
   const title_section2 = document.createElement('p');
   title_section2.className = 'title_menu';
-  title_section2.innerHTML = 'Mon/mes indicateurs';
+  title_section2.innerHTML = 'Indicateurs';
   const section2 = document.createElement('div');
   section2.id = 'menu_variables';
   section2.className = 'box';
@@ -53,7 +53,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   // Third section, study zone:
   const title_section3 = document.createElement('p');
   title_section3.className = 'title_menu';
-  title_section3.innerHTML = 'Mon espace d\'étude';
+  title_section3.innerHTML = 'Espace d\'étude';
   const section3 = document.createElement('div');
   section3.id = 'menu_studyzone';
   section3.className = 'box';

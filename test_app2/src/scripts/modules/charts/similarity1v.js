@@ -66,20 +66,17 @@ export class Similarity1plus {
     const selection_close = d3.select(svg_bar.node().parentElement)
       .append('div')
       .attr('id', 'menu_selection')
-      .styles({ top: '-10px', 'margin-left': '30px', position: 'relative' })
+      .styles({ position: 'relative', color: '#4f81bd', 'text-align': 'center' })
       .append('p');
 
     selection_close.append('span')
-      .property('value', 'close')
-      .attrs({ value: 'close', class: 'type_selection square checked' });
-    selection_close.append('span')
-      .attrs({ class: 'label_chk' })
-      .html('Les');
+      .html('Sélection des');
     selection_close.append('input')
       .attrs({ class: 'nb_select', type: 'number' })
+      .style('margin-left', '1px')
+      .style('color', '#4f81bd')
       .property('value', 5);
     selection_close.append('span')
-      .attrs({ class: 'label_chk' })
       .html('régions les plus proches');
 
     this.bindMenu();
@@ -136,6 +133,16 @@ export class Similarity1plus {
             class: `axis axis--x ${ratio_name}`,
             transform: 'translate(0, 10)',
           });
+        g.append('text')
+          .attrs({
+            x: 15,
+            y: -7.5,
+            fill: '#4f81bd',
+            'font-size': '11px',
+            'font-weight': 'bold',
+            'font-family': '"Signika",sans-serif',
+          })
+          .text(ratio_name);
       }
       g.attr('transform', `translate(0, ${height_to_use})`);
       let _min;
@@ -185,7 +192,8 @@ export class Similarity1plus {
           return {
             cx: x_value,
             cy: 10,
-            r: prop_sizer.scale(d[num_name]),
+            r: 7.5,
+            // r: prop_sizer.scale(d[num_name]),
           };
         })
         .styles(d => ({
@@ -217,7 +225,8 @@ export class Similarity1plus {
             class: 'bubble',
             cx: x_value,
             cy: 10,
-            r: prop_sizer.scale(d[num_name]),
+            r: 7.5,
+            // r: prop_sizer.scale(d[num_name]),
           };
         });
 
@@ -237,7 +246,7 @@ export class Similarity1plus {
     if (!this.map_elem) return;
     this.map_elem.target_layer.selectAll('path')
       .attr('fill', (d) => {
-        const _id = d.properties[app.current_config.id_field_geom];
+        const _id = d.id;
         if (_id === app.current_config.my_region) {
           return color_highlight;
         } else if (this.current_ids.indexOf(_id) > -1) {
@@ -250,7 +259,7 @@ export class Similarity1plus {
 
   handleClickMap(d, parent) {
     let to_display = false;
-    const id = d.properties[app.current_config.id_field_geom];
+    const id = d.id;
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       // Remove the clicked feature from the colored selection on the chart:
@@ -471,6 +480,7 @@ export class Similarity1plus {
   bindMap(map_elem) {
     this.map_elem = map_elem;
     this.map_elem.resetColors(this.current_ids);
+    this.map_elem.displayLegend(2);
     this.applySelection(5);
   }
 

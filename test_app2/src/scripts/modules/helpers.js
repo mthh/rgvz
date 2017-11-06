@@ -282,6 +282,17 @@ function selectFirstAvailableVar() {
   }
 }
 
+function prepareGeomLayerId(layer, id_field) {
+  layer.features.forEach((ft) => {
+    // eslint-disable-next-line no-param-reassign
+    ft.id = ft.properties[id_field];
+  });
+}
+
+function getRandom(arr, false_length) {
+  return arr[Math.round(Math.random() * (false_length || arr.length))];
+}
+
 export {
   comp,
   comp2,
@@ -308,4 +319,6 @@ export {
   shuffle,
   euclidian_distance,
   selectFirstAvailableVar,
+  prepareGeomLayerId,
+  getRandom,
 };

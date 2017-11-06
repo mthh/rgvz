@@ -462,6 +462,7 @@ input.nb_select::-webkit-outer-spin-button {
   opacity: 0.5;
   font-weight: 800;
   cursor: pointer;
+  margin: 0 9px;
 }
 
 .choice_ind.active {
@@ -474,4 +475,24 @@ input.nb_select::-webkit-outer-spin-button {
 #layers > g > path:focus {
   outline: 0;
 }
+
+.rotate {
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+}
+
 /* End of styles for map */
+
+
+.top_half_circle {
+  background: #4f81bd;
+  display: inline-block;
+  margin: 0 0.5em 0 0;
+  height: 18px;
+  width: 24px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+}
