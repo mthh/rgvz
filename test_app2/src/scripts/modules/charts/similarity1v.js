@@ -8,9 +8,9 @@ import CompletudeSection from './../completude';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 30 };
-
-const width = +svg_bar.attr('width') - margin.left - margin.right;
-const height = +svg_bar.attr('height') - margin.top - margin.bottom;
+const bbox_svg = svg_bar.node().getBoundingClientRect();
+const width = +bbox_svg.width - margin.left - margin.right;
+const height = +bbox_svg.height - margin.top - margin.bottom;
 
 export class Similarity1plus {
   constructor(ref_data) {
@@ -30,6 +30,7 @@ export class Similarity1plus {
     resetColors();
     this.highlight_selection = [];
     this.serie_inversed = false;
+    this.proportionnal_symbols = false;
     this.draw_group = svg_bar
       .append('g')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -37,8 +38,9 @@ export class Similarity1plus {
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_bar);
 
-
-    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude = new CompletudeSection(
+      document.querySelector('#map_section'),
+      document.querySelector('#svg_map'));
     this.completude.update(
       calcCompletudeSubset(app, this.ratios, 'array'),
       calcPopCompletudeSubset(app, this.ratios));
@@ -60,24 +62,28 @@ export class Similarity1plus {
         this.applySelection(this.highlight_selection.length);
       });
 
-
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
-    const selection_close = d3.select(svg_bar.node().parentElement)
+    const menu_selection = d3.select(svg_bar.node().parentElement)
       .append('div')
       .attr('id', 'menu_selection')
-      .styles({ position: 'relative', color: '#4f81bd', 'text-align': 'center' })
-      .append('p');
-
+      .styles({ position: 'relative', color: '#4f81bd', 'text-align': 'center' });
+    const selection_close = menu_selection.append('p');
     selection_close.append('span')
       .html('Sélection des');
     selection_close.append('input')
       .attrs({ class: 'nb_select', type: 'number' })
-      .style('margin-left', '1px')
-      .style('color', '#4f81bd')
+      .styles({ color: '#4f81bd', 'margin-left': '1px' })
       .property('value', 5);
     selection_close.append('span')
       .html('régions les plus proches');
+    const section = menu_selection.append('section')
+      .attr('class', 'slider-checkbox');
+    section.append('input')
+      .attrs({ type: 'checkbox', id: 'check_prop' });
+    section.append('label')
+      .attrs({ class: 'label', for: 'check_prop' })
+      .text('Cercles proportionnels au numérateur');
 
     this.bindMenu();
     this.makeTableStat();
@@ -135,7 +141,7 @@ export class Similarity1plus {
           });
         g.append('text')
           .attrs({
-            x: 15,
+            x: 0,
             y: -7.5,
             fill: '#4f81bd',
             'font-size': '11px',
@@ -169,7 +175,8 @@ export class Similarity1plus {
       });
 
       app.colors[app.current_config.my_region] = color_highlight;
-      const prop_sizer = new PropSizer(d3.max(data, d => d[num_name]), 30);
+
+      const size_func = this.proportionnal_symbols ? new PropSizer(d3.max(data, d => d[num_name]), 33).scale : () => 7.5;
       const xScale = d3.scaleLinear()
         .domain([_min, _max])
         .range([0, width]);
@@ -192,8 +199,7 @@ export class Similarity1plus {
           return {
             cx: x_value,
             cy: 10,
-            r: 7.5,
-            // r: prop_sizer.scale(d[num_name]),
+            r: size_func(d[num_name]),
           };
         })
         .styles(d => ({
@@ -225,8 +231,7 @@ export class Similarity1plus {
             class: 'bubble',
             cx: x_value,
             cy: 10,
-            r: 7.5,
-            // r: prop_sizer.scale(d[num_name]),
+            r: size_func(d[num_name]),
           };
         });
 
@@ -461,6 +466,15 @@ export class Similarity1plus {
       .on('wheel', applychange);
     menu.select('.nb_select')
       .on('keyup', applychange);
+    menu.select('#check_prop')
+      .on('change', function () {
+        if (this.checked) {
+          self.proportionnal_symbols = true;
+        } else {
+          self.proportionnal_symbols = false;
+        }
+        self.update();
+      });
   }
 
   removeLines() {

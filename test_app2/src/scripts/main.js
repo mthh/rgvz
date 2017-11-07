@@ -85,6 +85,7 @@ function setDefaultConfigMenu(code = 'FRE', variable = 'RT_CHOM_1574', level = '
   document.querySelector(`.target_variable.small_square[value="${variable}"]`).classList.add('checked');
   document.querySelector('.filter_v.square[filter-value="no_filter"]').classList.add('checked');
   document.querySelector(`.territ_level.square[value="${level}"]`).classList.add('checked');
+  updateAvailableRatios(code);
 }
 
 
@@ -142,9 +143,11 @@ function updateAvailableRatios(my_region) {
 }
 
 /**
+* Update the menu located on the top of the window the display the available
+* charts, according to the current number of selected variables.
 *
-*
-*
+* @param {Number} nb_var - How many variables are currently selected.
+* @return {void}
 *
 */
 function updateAvailableCharts(nb_var) {

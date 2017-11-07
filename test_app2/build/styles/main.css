@@ -1,32 +1,48 @@
 @import url('https://fonts.googleapis.com/css?family=Signika|Courgette');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-/*@media only screen and (max-width: 400px) {
+@media only screen and (max-width: 959px) {
   body {
-    background-color: #F09A9D;
+    font-size: 10px;
+  }
+  #menutop {
+    width: 540px;
+  }
+  #mainframe {
+    width: 540px;
   }
 }
 
-@media only screen and (min-width: 401px) and (max-width: 960px) {
+@media only screen and (min-width: 960px) and (max-width: 1300px) {
   body {
-    background-color: #F5CF8E;
+    font-size: 14px;
+  }
+  #menutop {
+    width: 960px;
+  }
+  #mainframe {
+    width: 960px;
+    height: 600px;
   }
 }
 
-@media only screen and (min-width: 961px) {
+@media only screen and (min-width: 1301px) {
   body {
-    background-color: #B2D6FF;
+    font-size: 16px;
   }
-}*/
+  #menutop {
+    width: 1350px;
+  }
+  #mainframe {
+    width: 1350px;
+    height: 960px;
+  }
+}
 
 body.loading {
   background-color: #e5edf8;
 }
+
 body {
   -webkit-transition: background-color 100ms linear;
   -ms-transition: background-color 100ms linear;
@@ -90,7 +106,7 @@ body {
 }
 
 .alertify-notifier .ajs-message {
-    font-size: 13px !important;
+    font-size: 0.8em !important;
     padding: 12px !important;
 }
 /* End of style for the notification zone */
@@ -120,7 +136,6 @@ span.i_info {
   padding-left: 5px;
   padding-right: 4px;
   font-weight: bold;
-  font-size: 11px;
   cursor: help;
 }
 
@@ -189,7 +204,6 @@ span.small {
 #menu {
   font-family: 'Signika', sans-serif;
   color: #4f81bd;
-  margin-left: 5px;
 }
 
 #menu > div.box > p, #menu > div.box > div > p {
@@ -199,7 +213,7 @@ span.small {
 }
 
 #menu > div.box > p.small, #menu > div.box > div > p.small {
-  font-size: 10px;
+  font-size: 0.7em;
   margin-left: 12px;
   color: black;
 }
@@ -258,7 +272,7 @@ span.label_chk.disabled {
 /* Styles for top menu */
 .title_section {
   color: #4f81bd;
-  font-size: 18px;
+  font-size: 1.3em;
   text-align: center;
 }
 
@@ -266,13 +280,14 @@ span.label_chk.disabled {
   border: solid 1px #4f81bd;
   margin-bottom: 15px;
   float: left;
-  margin: 0 10px;
+  margin: auto;
   cursor: pointer;
+  width: 41%;
 }
 
 .title_type_comp {
   color: #4f81bd;
-  font-size: 18px;
+  font-size: 1.3em;
   margin: 0;
 }
 
@@ -409,7 +424,7 @@ span.label_chk.disabled {
 	padding-top: 5px;
 	padding-bottom: 5px;
 	min-width: 200px;
-	font-size: 12pt;
+	font-size: 0.8em;
 }
 
 .context-menu ul {
@@ -510,13 +525,119 @@ input.nb_select::-webkit-outer-spin-button {
 
 /* End of styles for map */
 
-
+/* Style for half circle buttons on the top of the map */
 .top_half_circle {
   background: #4f81bd;
   display: inline-block;
-  margin: 0 0.5em 0 0;
+  margin: 0 0.3em 0 0;
   height: 18px;
   width: 24px;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
+  font-weight: bold;
+  float: right;
+  cursor: pointer;
+  text-align: center;
+  top: 8px;
+  position: relative;
+  color: white;
+}
+/* End of styles for half circle buttons */
+
+/* Styles for slider checkbox */
+.slider-checkbox {
+  position: relative;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+.slider-checkbox input {
+  margin: 0px;
+  margin-top: 1px;
+  cursor: pointer;
+  opacity: 0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  filter: alpha(opacity=0);
+  -moz-opacity: 0;
+  -khtml-opacity: 0;
+  opacity: 0;
+  position: absolute;
+  z-index: 1;
+  top: 0px;
+  left: 0px;
+  background: red;
+  width: 40px;
+  height: 20px;
+}
+.slider-checkbox input:checked + .label:before {
+  background-color: #1877c1;
+  content: "\f00c";
+  padding-left: 6px;
+}
+.slider-checkbox input:checked + .label:after {
+  left: 21px;
+}
+.slider-checkbox .label {
+  position: relative;
+  padding-left: 46px;
+  text-align: justify;
+}
+.slider-checkbox .label:before, .slider-checkbox .label:after {
+  position: absolute;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  transition: background-color 0.3s, left 0.3s;
+}
+.slider-checkbox .label:before {
+  content: "\f00d";
+  color: #fff;
+  box-sizing: border-box;
+  font-family: 'FontAwesome', sans-serif;
+  padding-left: 23px;
+  font-size: 0.9em;
+  line-height: 20px;
+  background-color: #888;
+  left: 0px;
+  top: 0px;
+  height: 20px;
+  width: 40px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+}
+.slider-checkbox .label:after {
+  content: "";
+  letter-spacing: 20px;
+  background: #fff;
+  left: 1px;
+  top: 1px;
+  height: 18px;
+  width: 18px;
+}
+
+.slider-checkbox input:not(:checked) + .label:before {
+  background-color: #0a4776;
+}
+/* End of styles for slider checkbox */
+
+.t1 {
+  width:25%;
+  float: left;
+  padding-left:0.6em;
+  padding-right:0.6em;
+}
+.t2 {
+  width:40%;
+  float:left;
+  padding-left:0.6em;
+  padding-right:0.6em;
+  height:100%;
+ }
+
+.t3 {
+  width:31%;
+  float:right;
+  height:100%;
+  padding-left:0.6em;
+  padding-right:0.6em;
 }

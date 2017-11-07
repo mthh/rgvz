@@ -3,27 +3,24 @@ import { app } from './../main';
 
 export function makeTopMenu() {
   const top_menu = d3.select('#menutop')
-    .styles({ 'font-family': "'Signika', sans-serif", 'font-size': '0.80em', padding: '0.3px' });
+    .styles({ 'font-family': "'Signika', sans-serif", 'font-size': '0.80em', 'text-align': 'center' });
   const width_left = `${document.querySelector('#menu').getBoundingClientRect().width + 25}px`;
-  const t = document.querySelector('#bar_section').getBoundingClientRect().width;
-  const width_central_chart = `${t}px`;
+  const width_central_chart = `${document.querySelector('#bar_section').getBoundingClientRect().width}px`;
   const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 40}px`;
-  const width_type_comp = `${(t - 80) / 2 - 2}px`;
+
   top_menu
     .append('div')
-    .attrs({ class: 'title_section' })
-    .styles({ width: width_left, float: 'left', margin: '0 3px' })
+    .attrs({ class: 'title_section t1' })
     .html('SÉLECTION');
 
   const type_chart = top_menu
     .append('div')
-    .attr('class', 'top_section')
-    .styles({ width: width_central_chart, float: 'left', margin: '0 3px', 'text-align': 'center' });
+    .attr('class', 'top_section t2')
+    .style('display', 'flex');
 
   const position = type_chart
     .append('div')
-    .attr('class', 'type_comparaison')
-    .styles({ width: width_type_comp });
+    .attr('class', 'type_comparaison');
 
   position.append('p')
     .attr('class', 'title_type_comp')
@@ -43,8 +40,7 @@ export function makeTopMenu() {
 
   const ressemblance = type_chart
     .append('div')
-    .attr('class', 'type_comparaison')
-    .styles({ width: width_type_comp });
+    .attr('class', 'type_comparaison');
 
   ressemblance.append('p')
     .attr('class', 'title_type_comp')
@@ -56,16 +52,14 @@ export function makeTopMenu() {
 
   top_menu
     .append('div')
-    .attrs({ class: 'title_section' })
-    .styles({ width: width_map, float: 'left', margin: '0 0 0 20px' })
+    .attrs({ class: 'title_section t3' })
     .html('QUELLES RÉGIONS ?');
 }
 
 export function makeHeaderMapSection() {
   const header_map_section = d3.select('#map_section')
-    .insert('p', 'svg')
-    .attr('id', 'header_map')
-    .style('margin', '0 37.5px 0 10px');
+    .insert('p', '.completude_section')
+    .attr('id', 'header_map');
 
   header_map_section.insert('img')
     .attrs({
@@ -99,15 +93,6 @@ export function makeHeaderMapSection() {
       id: 'zoom_in',
       class: 'top_half_circle',
     })
-    .styles({
-      'font-weight': 'bold',
-      float: 'right',
-      cursor: 'pointer',
-      'text-align': 'center',
-      top: '8px',
-      position: 'relative',
-      color: 'white',
-    })
     .append('span')
     .text('+');
 
@@ -115,15 +100,6 @@ export function makeHeaderMapSection() {
     .attrs({
       id: 'zoom_out',
       class: 'top_half_circle',
-    })
-    .styles({
-      'font-weight': 'bold',
-      float: 'right',
-      cursor: 'pointer',
-      'text-align': 'center',
-      top: '8px',
-      position: 'relative',
-      color: 'white',
     })
     .append('span')
     .text('-');

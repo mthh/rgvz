@@ -85,7 +85,6 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   // The actual menu containing these 4 sections:
   const menu = document.getElementById('menu');
   menu.id = 'menu';
-  menu.style.width = '340px';
   menu.style.float = 'left';
   menu.appendChild(title_section1);
   menu.appendChild(section1);

@@ -6,22 +6,23 @@ import { filterLevelGeom } from './prepare_data';
 
 const svg_map = d3.select('svg#svg_map'),
   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
-  width_map = +svg_map.attr('width') - margin_map.left - margin_map.right,
-  height_map = +svg_map.attr('height') - margin_map.top - margin_map.bottom;
+  bbox_svg = svg_map.node().getBoundingClientRect(),
+  width_map = +bbox_svg.width - margin_map.left - margin_map.right,
+  height_map = +bbox_svg.height - margin_map.top - margin_map.bottom;
 
 const styles = {
   frame: { id: 'frame', fill: '#e9f4fe', 'fill-opacity': 1 },
-  countries: { id: 'countries', fill: '#bebecd', 'fill-opacity': 1 },
+  countries: { id: 'countries', fill: '#d6d6d6', 'fill-opacity': 1 },
   boxes: { id: 'boxes', fill: '#e9f4fe', 'fill-opacity': 1 },
   nuts: { id: 'nuts', fill: '#9390fc', 'fill-opacity': 1, 'stroke-width': 0.5, stroke: '#f7fcfe', 'stroke-opacity': 0.9, target: true },
-  countries_remote: { id: 'countries_remote', fill: '#bebecd', 'fill-opacity': 1 },
+  countries_remote: { id: 'countries_remote', fill: '#d6d6d6', 'fill-opacity': 1 },
   cyprus_non_espon_space: { id: 'cyprus_non_espon_space', fill: '#ffffff', 'fill-opacity': 1 },
   borders: { id: 'borders', fill: 'none', 'stroke-width': 1, stroke: '#ffffff' },
   countries_remote_boundaries: { id: 'countries_remote_boundaries', fill: 'none', 'stroke-width': 1, stroke: '#ffffff' },
   coasts: { id: 'coasts', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.5 },
   coasts_remote: { id: 'coasts_remote', fill: 'none', stroke: '#d2dbef', 'stroke-width': 0.5 },
   boxes2: { id: 'boxes2', stroke: '#7a7a7a', 'stroke-width': 1, fill: 'none' },
-  line: { id: 'line', stroke: '#bebecd', 'stroke-width': 1.5, fill: 'none' },
+  line: { id: 'line', stroke: '#d6d6d6', 'stroke-width': 1.5, fill: 'none' },
 };
 
 let projection;
@@ -378,11 +379,11 @@ function makeSourceSection() {
   const elem = document.createElement('p');
   elem.style.fontSize = '9px';
   elem.style.position = 'absolute';
-  elem.innerHTML = 'Données : Eurostat, 2016 - Limite administrative: UMS RIATE, CC-BY-SA';
+  elem.innerHTML = 'Données : Eurostat (téléchargement : Oct. 2017)- Limite administrative: UMS RIATE, CC-BY-SA';
   parent.insertBefore(elem, next_elem);
   const bbox_elem = elem.getBoundingClientRect();
   elem.style.left = `${map_bbox.right - bbox_elem.width / 2 + 4}px`;
-  elem.style.top = `${map_bbox.bottom - map_bbox.height / 2 }px`;
+  elem.style.top = `${map_bbox.bottom - map_bbox.height / 2 - 15}px`;
   elem.className = 'rotate';
 }
 

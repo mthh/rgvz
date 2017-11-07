@@ -9,9 +9,9 @@ import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 20, right: 20, bottom: 40, left: 40 };
-
-const width = +svg_bar.attr('width') - margin.left - margin.right,
-  height = +svg_bar.attr('height') - margin.top - margin.bottom;
+const bbox_svg = svg_bar.node().getBoundingClientRect();
+const width = +bbox_svg.width - margin.left - margin.right,
+  height = +bbox_svg.height - margin.top - margin.bottom;
 
 /** Class representing a scatterplot */
 export class ScatterPlot2 {
@@ -230,7 +230,9 @@ export class ScatterPlot2 {
         }
       });
 
-    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude = new CompletudeSection(
+      document.querySelector('#map_section'),
+      document.querySelector('#svg_map'));
     this.completude.update(
       calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
       calcPopCompletudeSubset(app, [this.variable1, this.variable2]));

@@ -8,9 +8,9 @@ import TableResumeStat from './../tableResumeStat';
 
 const svg_bar = d3.select('#svg_bar');
 const margin = { top: 70, right: 70, bottom: 80, left: 70 };
-
-const width = +svg_bar.attr('width') - margin.left - margin.right,
-  height = +svg_bar.attr('height') - margin.top - margin.bottom;
+const bbox_svg = svg_bar.node().getBoundingClientRect();
+const width = +bbox_svg.width - margin.left - margin.right,
+  height = +bbox_svg.height - margin.top - margin.bottom;
 
 const wrap = (_text, _width) => {
   _text.each(function () {
@@ -110,7 +110,7 @@ export class RadarChart3 {
       opacityCircles: 0.1, // The opacity of the circles of each blob
       strokeWidth: 2, // The width of the stroke around each blob
       roundStrokes: true, // If true the area and stroke will follow a round path (cardinal-closed)
-      color: d3.scaleOrdinal([color_highlight].concat(d3.schemeCategory10)), // Color function,
+      color: d3.scaleOrdinal(d3.schemeCategory10), // Color function,
       format: '.2', // The format string to be used by d3.format
       unit: '%', // The unit to display after the number on the axis and point tooltips (like $, €, %, etc)
       legend: false,
@@ -137,12 +137,14 @@ export class RadarChart3 {
     this.drawArea();
     this.handleLegend();
 
-    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude = new CompletudeSection(
+      document.querySelector('#map_section'),
+      document.querySelector('#svg_map'));
     // Compute the "complétude" value for these ratios:
     this.completude.update(
       calcCompletudeSubset(app, this.variables, 'array'),
       calcPopCompletudeSubset(app, this.variables));
-
+    app.colors[app.current_config.my_region] = color_highlight;
     if (cfg.allowInverseData) {
       this.inverse_data = (field) => {
         const data_length = this.data.length;
@@ -176,17 +178,19 @@ export class RadarChart3 {
     }
     this.data.push(elem);
     this.displayed_ids.push(elem.name);
+    app.colors = {}
     for (let j = 0; j < this.data.length; j++) {
       const on_axes = [];
+      if (this.id_my_region === this.data[j].name) app.colors[this.data[j].name] = color_highlight;
+      else app.colors[this.data[j].name] = this.cfg.color(j + 1);
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
         on_axes.push(this.data[j].name);
       }
     }
-
     const self = this;
     const cfg = this.cfg;
-    const n = this.data.length - 1;
+
     const blobWrapper = this.g
       .insert('g', '.radarCircleWrapper')
       .attr('id', elem.name.indexOf(' ') > -1 ? 'ctx' : elem.name)
@@ -197,7 +201,7 @@ export class RadarChart3 {
       .append('path')
       .attr('class', 'radarArea')
       .attr('d', this.radarLine(elem.axes))
-      .style('fill', cfg.color(n))
+      .style('fill', app.colors[elem.name])
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
@@ -232,7 +236,7 @@ export class RadarChart3 {
       .attr('class', 'radarStroke')
       .attr('d', this.radarLine(elem.axes))
       .style('stroke-width', `${cfg.strokeWidth}px`)
-      .style('stroke', cfg.color(n))
+      .style('stroke', app.colors[elem.name])
       .style('fill', 'none')
       .style('filter', 'url(#glow)');
 
@@ -245,7 +249,7 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => this.rScale(d.value) * math_cos(this.angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => this.rScale(d.value) * math_sin(this.angleSlice * i - HALF_PI))
-      .style('fill', cfg.color(n))
+      .style('fill', app.colors[elem.name])
       .style('fill-opacity', 0.8);
 
     blobWrapper.node().__data__ = elem;
@@ -310,6 +314,8 @@ export class RadarChart3 {
     // If the supplied maxValue is smaller than the actual one, replace by the max in the data
     let maxValue = 0;
     for (let j = 0; j < this.data.length; j++) {
+      if (this.id_my_region === this.data[j].name) app.colors[this.data[j].name] = color_highlight;
+      else app.colors[this.data[j].name] = this.cfg.color(j + 1);
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
         if (this.data[j].axes[i].value > maxValue) {
@@ -481,7 +487,7 @@ export class RadarChart3 {
           width: 10,
           height: 10,
         }))
-        .style('fill', d => cfg.color(d));
+        .style('fill', d => app.colors[d.name]);
 
       // Create labels
       legendEnter
@@ -496,7 +502,7 @@ export class RadarChart3 {
 
       legend.merge(legendEnter).selectAll('rect')
         .attr('y', (d, i) => i * 20)
-        .style('fill', d => cfg.color(d));
+        .style('fill', d => app.colors[d.name]);
 
       legend.merge(legendEnter).selectAll('text')
         .attrs((d, i) => ({
@@ -529,7 +535,7 @@ export class RadarChart3 {
       .append('path')
       .attr('class', 'radarArea')
       .attr('d', d => this.radarLine(d.axes))
-      .style('fill', (d, i) => cfg.color(i))
+      .style('fill', d => app.colors[d.name])
       .style('fill-opacity', cfg.opacityArea)
       .on('mouseover', function () {
         // Dim all blobs
@@ -552,7 +558,7 @@ export class RadarChart3 {
       .attr('class', 'radarStroke')
       .attr('d', d => this.radarLine(d.axes))
       .style('stroke-width', `${cfg.strokeWidth}px`)
-      .style('stroke', (d, i) => cfg.color(i))
+      .style('stroke', (d, i) => app.colors[d.name])
       .style('fill', 'none')
       .style('filter', 'url(#glow)');
 
@@ -565,7 +571,7 @@ export class RadarChart3 {
       .attr('r', cfg.dotRadius)
       .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
-      .style('fill', cfg.color(0))
+      .style('fill', d => app.colors[d.id])
       .style('fill-opacity', 0.8);
 
     // ///////////////////////////////////////////////////////
@@ -672,8 +678,8 @@ export class RadarChart3 {
         cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
         cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
       }))
-      .styles((d, i) => ({
-        fill: cfg.color(i),
+      .styles((d) => ({
+        fill: app.colors[d.id],
         'fill-opacity': 0.8,
       }));
 
@@ -832,7 +838,7 @@ export class RadarChart3 {
         ? color_highlight
         : this.current_ids.indexOf(d.id) > -1
         ? (this.displayed_ids.indexOf(d.id) > -1
-        ? color_default_dissim : color_countries) : color_disabled));
+        ? app.colors[d.id] : color_countries) : color_disabled));
   }
 
   updateTableStat() {

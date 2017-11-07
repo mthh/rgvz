@@ -9,9 +9,10 @@ import CompletudeSection from './../completude';
 export const svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 45 },
   margin2 = { top: 430, right: 20, bottom: 15, left: 45 },
-  width = +svg_bar.attr('width') - margin.left - margin.right,
-  height = +svg_bar.attr('height') - margin.top - margin.bottom,
-  height2 = +svg_bar.attr('height') - margin2.top - margin2.bottom;
+  bbox_svg = svg_bar.node().getBoundingClientRect(),
+  width = +bbox_svg.width - margin.left - margin.right,
+  height = +bbox_svg.height - margin.top - margin.bottom,
+  height2 = +bbox_svg.height - margin2.top - margin2.bottom;
 
 let nbFt;
 let current_range_brush = [0, 0];
@@ -259,7 +260,9 @@ export class BarChart1 {
 
     g_brush_bottom.call(brush_bottom.move, x.range());
 
-    this.completude = new CompletudeSection(svg_bar.node().parentElement);
+    this.completude = new CompletudeSection(
+      document.querySelector('#map_section'),
+      document.querySelector('#svg_map'));
     this.completude.update(
       calcCompletudeSubset(app, [this.ratio_to_use], 'array'),
       calcPopCompletudeSubset(app, [this.ratio_to_use]));
@@ -328,7 +331,7 @@ export class BarChart1 {
       .styles({
         'font-family': '\'Signika\', sans-serif',
         'font-weight': '800',
-        'font-size': '14px',
+        'font-size': '0.8em',
         'margin-top': '12px',
         'margin-left': '40px',
         float: 'left',

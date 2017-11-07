@@ -1,5 +1,5 @@
 export default class CompletudeSection {
-  constructor(parent) {
+  constructor(parent, before) {
     this.section = document.createElement('div');
     this.section.className = 'completude_section';
     this.completude_population = document.createElement('p');
@@ -8,7 +8,7 @@ export default class CompletudeSection {
     this.section.appendChild(this.completude_features);
     this.section.appendChild(this.completude_population);
     const self = this;
-    parent.appendChild(this.section);
+    parent.insertBefore(this.section, before);
     this.completude_features.onclick = function () {
       this.classList.remove('active');
       self.completude_population.classList.add('active');
