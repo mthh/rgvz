@@ -83,19 +83,21 @@ export function filterLevelGeom(nuts_features, filter = 'NUTS1') {
 *
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
-  return metadata_indicateurs
+  metadata_indicateurs
     .filter(ft => ft['Type statistique'] === 'Ratio')
-    .map(ft => ({
-      ratio: ft.id,
-      num: `${ft.id1}_${parseInt(ft.Année, 10)}`,
-      denum: `${ft.id2}_${parseInt(ft.Année, 10)}`,
-      name: `${ft.Nom} (${parseInt(ft.Année, 10)})`,
-      unit: `${ft['Unité']}`,
-      group: ft['Thème'],
-      methodo: ft['Méthodologie'],
-      source: ft.Source,
-      last_update: ft['Dernière mise à jour'],
-    }));
+    .forEach((ft) => {
+      variables_info.push({
+        ratio: ft.id,
+        num: `${ft.id1}_${parseInt(ft.Année, 10)}`,
+        denum: `${ft.id2}_${parseInt(ft.Année, 10)}`,
+        name: `${ft.Nom} (${parseInt(ft.Année, 10)})`,
+        unit: `${ft['Unité']}`,
+        group: ft['Thème'],
+        methodo: ft['Méthodologie'],
+        source: ft.Source,
+        last_update: ft['Dernière mise à jour'],
+      });
+    });
 }
 
 /**

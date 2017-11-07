@@ -3,7 +3,7 @@ import tingle from 'tingle.js';
 import alertify from 'alertifyjs';
 import { createMenu } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
-import { MapSelect, makeSourceSection, makeMapLegend, svg_map, zoomClick } from './modules/map';
+import { MapSelect, makeSourceSection, svg_map, zoomClick } from './modules/map';
 // import { makeTable } from './modules/table';
 import { color_highlight, MAX_VARIABLES } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
@@ -22,7 +22,7 @@ import {
   prepareVariablesInfo,
 } from './modules/prepare_data';
 
-export let variables_info;
+export const variables_info = [];
 
 const study_zones = [
   { id: 'no_filter', name: 'UE28' },
@@ -562,7 +562,7 @@ function loadData() {
       const start_variable = getRandom(
         ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
 
-      variables_info = prepareVariablesInfo(metadata_indicateurs);
+      prepareVariablesInfo(metadata_indicateurs, variables_info);
       prepare_dataset(full_dataset, app);
       setDefaultConfig(start_region, start_variable, 'NUTS1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
