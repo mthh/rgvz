@@ -12,3 +12,4 @@ export const color_default_dissim = 'darkred';  // Neutral color for selected fe
 *  Misc. options:
 */
 export const MAX_VARIABLES = 7; // The maximum number of variables that can be selected simultaneously.
+export const RATIO_WH_MAP = 0.879;

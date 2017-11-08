@@ -10,10 +10,11 @@
   }
   #mainframe {
     width: 540px;
+    height: 500px;
   }
 }
 
-@media only screen and (min-width: 960px) and (max-width: 1300px) {
+@media only screen and (min-width: 960px) and (max-width: 1160px) {
   body {
     font-size: 14px;
   }
@@ -26,7 +27,20 @@
   }
 }
 
-@media only screen and (min-width: 1301px) {
+@media only screen and (min-width: 1161px) and (max-width: 1360px) {
+  body {
+    font-size: 14px;
+  }
+  #menutop {
+    width: 1160px;
+  }
+  #mainframe {
+    width: 1160px;
+    height: 800px;
+  }
+}
+
+@media only screen and (min-width: 1361px) and (max-width: 1560px) {
   body {
     font-size: 16px;
   }
@@ -35,6 +49,19 @@
   }
   #mainframe {
     width: 1350px;
+    height: 960px;
+  }
+}
+
+@media only screen and (min-width: 1561px) {
+  body {
+    font-size: 18px;
+  }
+  #menutop {
+    width: 1550px;
+  }
+  #mainframe {
+    width: 1550px;
     height: 960px;
   }
 }
@@ -204,6 +231,7 @@ span.small {
 #menu {
   font-family: 'Signika', sans-serif;
   color: #4f81bd;
+  height: 100%;
 }
 
 #menu > div.box > p, #menu > div.box > div > p {
@@ -214,13 +242,13 @@ span.small {
 
 #menu > div.box > p.small, #menu > div.box > div > p.small {
   font-size: 0.7em;
-  margin-left: 12px;
+  margin-left: 0.7em;
   color: black;
 }
 
 .box {
   border: solid 1px #4f81bd;
-  margin-bottom: 15px;
+  margin-bottom: 0.8em;
 }
 
 span.square {
@@ -310,7 +338,7 @@ span.label_chk.disabled {
 /* Styles for the completness section */
 .completude_section {
   font-family: "Signika", sans-serif;
-  font-size: 11px;
+  font-size: 0.7em;
   text-align: center;
 }
 
@@ -371,7 +399,7 @@ span.label_chk.disabled {
     background: -webkit-gradient(linear, left top, left bottom, from(#67a8f6), to(#3f6797));
     background: -moz-linear-gradient(top, #67a8f6, #3f6797);
     background: linear-gradient(to bottom, #67a8f6, #3f6797);
-    font: normal normal normal 11px 'Signika', sans-serif;
+    font: normal normal normal 0.7em 'Signika', sans-serif;
     color: #ffffff;
     text-decoration: none;
 }
@@ -393,7 +421,7 @@ span.label_chk.disabled {
 }
 
 #menu_selection > .button_blue {
-  margin: 4px 22px;
+  margin: 0.25em 2em;
 }
 /* End of styles for buttons */
 
@@ -530,10 +558,10 @@ input.nb_select::-webkit-outer-spin-button {
   background: #4f81bd;
   display: inline-block;
   margin: 0 0.3em 0 0;
-  height: 18px;
-  width: 24px;
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
+  height: 1.2em;
+  width: 1.6em;
+  border-top-left-radius: 1.6em;
+  border-top-right-radius: 1.6em;
   font-weight: bold;
   float: right;
   cursor: pointer;
@@ -623,14 +651,10 @@ input.nb_select::-webkit-outer-spin-button {
 .t1 {
   width:25%;
   float: left;
-  padding-left:0.6em;
-  padding-right:0.6em;
 }
 .t2 {
-  width:40%;
+  width:39%;
   float:left;
-  padding-left:0.6em;
-  padding-right:0.6em;
   height:100%;
  }
 
@@ -638,6 +662,9 @@ input.nb_select::-webkit-outer-spin-button {
   width:31%;
   float:right;
   height:100%;
-  padding-left:0.6em;
-  padding-right:0.6em;
+}
+
+.t1, .t2, .t3 {
+  padding-left: 0.5%;
+  padding-right: 0.5%;
 }

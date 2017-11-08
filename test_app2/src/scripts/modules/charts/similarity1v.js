@@ -6,14 +6,27 @@ import { app, resetColors } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
 
-const svg_bar = d3.select('#svg_bar');
-const margin = { top: 20, right: 20, bottom: 40, left: 30 };
-const bbox_svg = svg_bar.node().getBoundingClientRect();
-const width = +bbox_svg.width - margin.left - margin.right;
-const height = +bbox_svg.height - margin.top - margin.bottom;
+let svg_bar;
+let margin;
+let bbox_svg;
+let width;
+let height;
+
+const updateDimensions = () => {
+  svg_bar = d3.select('#svg_bar');
+  margin = { top: 20, right: 20, bottom: 40, left: 30 };
+  bbox_svg = svg_bar.node().getBoundingClientRect();
+  width = +bbox_svg.width - margin.left - margin.right;
+  height = 500 * app.ratioToWide - margin.top - margin.bottom;
+  svg_bar.attr('height', `${500 * app.ratioToWide}px`);
+  svg_bar = svg_bar.append('g').attr('class', 'container');
+};
+
 
 export class Similarity1plus {
   constructor(ref_data) {
+    updateDimensions();
+    app.chartDrawRatio = app.ratioToWide;
     // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 1;
     this.ratios = app.current_config.ratio;
@@ -488,7 +501,7 @@ export class Similarity1plus {
     this.table_stats = null;
     this.completude.remove();
     this.completude = null;
-    svg_bar.html('');
+    d3.select('#svg_bar').html('');
   }
 
   bindMap(map_elem) {

@@ -78,7 +78,7 @@ export function filterLevelGeom(nuts_features, filter = 'NUTS1') {
 * Function to prepare the global "variables_info" Array of objects from the array
 * containing the readed 'metadata.csv' file.
 *
-* @param {Array} metadata_indicateurs - The array return by d3.csv.
+* @param {Array} metadata_indicateurs - The array returned by d3.csv.
 * @return {void}
 *
 */

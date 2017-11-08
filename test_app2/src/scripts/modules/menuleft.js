@@ -8,7 +8,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   const section1 = document.createElement('div');
   section1.className = 'box';
   section1.style.overflow = 'auto';
-  section1.style.height = '180px';
+  section1.style.height = '15%';
   for (let i = 0, len_i = names.length; i < len_i; i++) {
     const id = names[i].geo;
     const name = names[i].Nom;
@@ -25,7 +25,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   section2.id = 'menu_variables';
   section2.className = 'box';
   section2.style.overflow = 'auto';
-  section2.style.height = '170px';
+  section2.style.height = '25%';
 
   // Filter the "variables" variable to fetch the group names :
   const groups_var = removeDuplicates(variables.map(d => d.group).filter(d => d !== 'Num/dénom'));
@@ -57,6 +57,8 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   const section3 = document.createElement('div');
   section3.id = 'menu_studyzone';
   section3.className = 'box';
+  section3.style.overflow = 'auto';
+  section3.style.maxHeight = '25%';
   for (let i = 0, len_i = study_zones.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const zone = study_zones[i];
@@ -75,6 +77,8 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   const section4 = document.createElement('div');
   section4.id = 'menu_territ_level';
   section4.className = 'box';
+  section4.style.overflow = 'auto';
+  section4.style.maxHeight = '20%';
   for (let i = 0, len_i = territorial_mesh.length; i < len_i; i++) {
     const entry = document.createElement('p');
     const territ_level = territorial_mesh[i];

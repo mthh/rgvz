@@ -6,7 +6,7 @@ import { app, resetColors, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
 
-export const svg_bar = d3.select('svg#svg_bar'),
+let svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 45 },
   margin2 = { top: 430, right: 20, bottom: 15, left: 45 },
   bbox_svg = svg_bar.node().getBoundingClientRect(),
@@ -18,6 +18,18 @@ let nbFt;
 let current_range_brush = [0, 0];
 let current_range = [0, 0];
 let displayed;
+
+function updateDimensions() {
+  svg_bar = d3.select('svg#svg_bar');
+  bbox_svg = svg_bar.node().getBoundingClientRect();
+  margin = { top: 10, right: 20, bottom: (500 * app.ratioToWide) / 5, left: 45 };
+  margin2 = { top: (500 * app.ratioToWide) * 0.86, right: 20, bottom: (500 * app.ratioToWide) / 40, left: 45 };
+  width = +bbox_svg.width - margin.left - margin.right;
+  height = 500 * app.ratioToWide - margin.top - margin.bottom;
+  svg_bar.attr('height', `${500 * app.ratioToWide}px`);
+  height2 = 500 * app.ratioToWide - margin2.top - margin2.bottom;
+  svg_bar = svg_bar.append('g').attr('class', 'container');
+}
 
 function getMeanRank(mean_value, ratio_to_use) {
   let mean_rank = app.current_data.map(
@@ -102,7 +114,8 @@ export class BarChart1 {
         }
       }
     };
-
+    updateDimensions();
+    app.chartDrawRatio = app.ratioToWide;
     // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 1;
     const x = d3.scaleBand().range([0, width]).padding(0.1),
@@ -834,7 +847,7 @@ export class BarChart1 {
     this.map_elem = null;
     this.completude.remove();
     this.completude = null;
-    svg_bar.html('');
+    d3.select('#svg_bar').html('');
   }
 
   bindMap(map_elem) {

@@ -6,11 +6,18 @@ import { app, variables_info } from './../../main';
 import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
-const svg_bar = d3.select('#svg_bar');
-const margin = { top: 70, right: 70, bottom: 80, left: 70 };
-const bbox_svg = svg_bar.node().getBoundingClientRect();
-const width = +bbox_svg.width - margin.left - margin.right,
-  height = +bbox_svg.height - margin.top - margin.bottom;
+
+let svg_bar, margin, bbox_svg, width, height;
+
+const updateDimensions = () => {
+  svg_bar = d3.select('#svg_bar');
+  margin = { top: 70, right: 70, bottom: 80, left: 70 };
+  bbox_svg = svg_bar.node().getBoundingClientRect();
+  width = +bbox_svg.width - margin.left - margin.right;
+  height = 500 * app.ratioToWide - margin.top - margin.bottom;
+  svg_bar.attr('height', `${500 * app.ratioToWide}px`);
+  svg_bar = svg_bar.append('g').attr('class', 'container');
+};
 
 const wrap = (_text, _width) => {
   _text.each(function () {
@@ -97,6 +104,7 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
 
 export class RadarChart3 {
   constructor(data, options) {
+    updateDimensions();
     const cfg = {
       w: width - 20, // Width of the circle
       h: height - 20, // Height of the circle
@@ -724,7 +732,7 @@ export class RadarChart3 {
     this.map_elem = null;
     this.completude.remove();
     this.completude = null;
-    svg_bar.html('');
+    d3.select('#svg_bar').html('');
   }
 
   updateChangeRegion() {

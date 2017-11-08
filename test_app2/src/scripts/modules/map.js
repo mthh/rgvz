@@ -1,14 +1,20 @@
 import tippy from 'tippy.js';
 import { app } from './../main';
-import { color_disabled, color_countries, color_sup, color_inf, color_highlight, color_default_dissim } from './options';
+import { color_disabled, color_countries, color_sup, color_inf, color_highlight, color_default_dissim, RATIO_WH_MAP } from './options';
 import { getSvgPathType, svgPathToCoords, euclidian_distance } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
-const svg_map = d3.select('svg#svg_map'),
-  margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
-  bbox_svg = svg_map.node().getBoundingClientRect(),
-  width_map = +bbox_svg.width - margin_map.left - margin_map.right,
-  height_map = +bbox_svg.height - margin_map.top - margin_map.bottom;
+// const svg_map = d3.select('svg#svg_map'),
+//   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
+//   bbox_svg = svg_map.node().getBoundingClientRect(),
+//   width_map = +bbox_svg.width - margin_map.left - margin_map.right,
+//   height_map = +bbox_svg.height - margin_map.top - margin_map.bottom;
+
+const svg_map = d3.select('svg#svg_map');
+const bbox_svg = svg_map.node().getBoundingClientRect();
+const width_map = +bbox_svg.width;
+const height_map = width_map * (1 / RATIO_WH_MAP);
+svg_map.attr('height', `${height_map}px`);
 
 const styles = {
   frame: { id: 'frame', fill: '#e9f4fe', 'fill-opacity': 1 },
@@ -184,6 +190,7 @@ function getLegendElems(type) {
 
 class MapSelect {
   constructor(nuts, other_layers, filter = 'NUTS1') {
+    app.mapDrawRatio = app.ratioToWide;
     projection = d3.geoIdentity()
       .fitExtent([[0, 0], [width_map, height_map]], other_layers.get('frame'))
       .reflectY(true);
@@ -191,7 +198,8 @@ class MapSelect {
     path = d3.geoPath().projection(projection);
 
     const layers = svg_map.append('g')
-      .attr('id', 'layers');
+      .attr('id', 'layers')
+      .attr('transform', 'scale(1)');
     this.nuts = nuts;
     this.zoom_map = d3.zoom()
       .scaleExtent([1, 5])
@@ -374,16 +382,13 @@ class MapSelect {
 
 function makeSourceSection() {
   const parent = svg_map.node().parentElement;
-  const next_elem = svg_map.node().nextSibling;
-  const map_bbox = svg_map.node().getBoundingClientRect();
   const elem = document.createElement('p');
-  elem.style.fontSize = '9px';
-  elem.style.position = 'absolute';
+  elem.style.fontSize = '0.45em';
+  elem.style.position = 'relative';
   elem.innerHTML = 'Données : Eurostat (téléchargement : Oct. 2017)- Limite administrative: UMS RIATE, CC-BY-SA';
-  parent.insertBefore(elem, next_elem);
-  const bbox_elem = elem.getBoundingClientRect();
-  elem.style.left = `${map_bbox.right - bbox_elem.width / 2 + 4}px`;
-  elem.style.top = `${map_bbox.bottom - map_bbox.height / 2 - 15}px`;
+  parent.insertBefore(elem, parent.querySelector('#header_map'));
+  elem.style.left = '50%'
+  elem.style.top = '35%';
   elem.className = 'rotate';
 }
 

@@ -7,12 +7,17 @@ import ContextMenu from './../contextMenu';
 import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
-const svg_bar = d3.select('#svg_bar');
-const margin = { top: 20, right: 20, bottom: 40, left: 40 };
-const bbox_svg = svg_bar.node().getBoundingClientRect();
-const width = +bbox_svg.width - margin.left - margin.right,
-  height = +bbox_svg.height - margin.top - margin.bottom;
+let svg_bar, margin, bbox_svg, width, height;
 
+const updateDimensions = () => {
+  svg_bar = d3.select('#svg_bar');
+  margin = { top: 20, right: 20, bottom: 40, left: 40 };
+  bbox_svg = svg_bar.node().getBoundingClientRect();
+  width = +bbox_svg.width - margin.left - margin.right;
+  height = 500 * app.ratioToWide - margin.top - margin.bottom;
+  svg_bar.attr('height', `${500 * app.ratioToWide}px`);
+  svg_bar = svg_bar.append('g').attr('class', 'container');
+};
 /** Class representing a scatterplot */
 export class ScatterPlot2 {
   /**
@@ -72,7 +77,8 @@ export class ScatterPlot2 {
       this.updateMapRegio();
       this.map_elem.removeRectBrush();
     };
-
+    updateDimensions();
+    app.chartDrawRatio = app.ratioToWide;
     // Set the minimum number of variables to keep selected for this kind of chart:
     app.current_config.nb_var = 2;
     const self = this;
@@ -818,7 +824,7 @@ export class ScatterPlot2 {
     this.map_elem = null;
     this.completude.remove();
     this.completude = null;
-    svg_bar.html('');
+    d3.select('#svg_bar').html('');
   }
 
   bindMap(map_elem) {
