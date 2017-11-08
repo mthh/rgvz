@@ -387,8 +387,11 @@ function makeSourceSection() {
   elem.style.position = 'relative';
   elem.innerHTML = 'Données : Eurostat (téléchargement : Oct. 2017)- Limite administrative: UMS RIATE, CC-BY-SA';
   parent.insertBefore(elem, parent.querySelector('#header_map'));
-  elem.style.left = '50%'
-  elem.style.top = '35%';
+  elem.style.left = '49%';
+  elem.style.paddingLeft = '2em';
+  elem.style.top = '32%';
+  elem.style.margin = 'auto';
+  elem.style.width = '100%';
   elem.className = 'rotate';
 }
 

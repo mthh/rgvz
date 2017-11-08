@@ -12,7 +12,8 @@ let svg_bar = d3.select('svg#svg_bar'),
   bbox_svg = svg_bar.node().getBoundingClientRect(),
   width = +bbox_svg.width - margin.left - margin.right,
   height = +bbox_svg.height - margin.top - margin.bottom,
-  height2 = +bbox_svg.height - margin2.top - margin2.bottom;
+  height2 = +bbox_svg.height - margin2.top - margin2.bottom,
+  svg_container;
 
 let nbFt;
 let current_range_brush = [0, 0];
@@ -28,7 +29,7 @@ function updateDimensions() {
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
   svg_bar.attr('height', `${500 * app.ratioToWide}px`);
   height2 = 500 * app.ratioToWide - margin2.top - margin2.bottom;
-  svg_bar = svg_bar.append('g').attr('class', 'container');
+  svg_container = svg_bar.append('g').attr('class', 'container');
 }
 
 function getMeanRank(mean_value, ratio_to_use) {
@@ -55,12 +56,12 @@ export class BarChart1 {
       context_right_handle.attr('x', s[1] - 7);
       current_range = [math_round(s[0] / (width / nbFt)), math_round(s[1] / (width / nbFt))];
       this.x.domain(this.data.slice(current_range[0], current_range[1]).map(ft => ft.id));
-      svg_bar.select('.zoom').call(this.zoom.transform, d3.zoomIdentity
+      svg_container.select('.zoom').call(this.zoom.transform, d3.zoomIdentity
         .scale(width / (current_range[1] - current_range[0]))
         .translate(-current_range[0], 0));
       this.update();
       this.updateContext(current_range[0], current_range[1]);
-      svg_bar.select('.brush_top').call(this.brush_top.move, null);
+      svg_container.select('.brush_top').call(this.brush_top.move, null);
       // this.brushed_top();
     };
 
@@ -148,19 +149,19 @@ export class BarChart1 {
     this.mean_value = getMean(this.data.map(d => d[ratio_to_use]));
     this.ref_value = this.data.filter(
       ft => ft.id === app.current_config.my_region)[0][ratio_to_use];
-    svg_bar.append('defs')
+    svg_container.append('defs')
       .append('clipPath')
       .attr('id', 'clip')
       .append('rect')
       .attrs({ width, height });
 
-    const focus = svg_bar.append('g')
+    const focus = svg_container.append('g')
       .attrs({
         class: 'focus',
         transform: `translate(${margin.left}, ${margin.top})`,
       });
 
-    const context = svg_bar.append('g')
+    const context = svg_container.append('g')
       .attrs({
         class: 'context',
         transform: `translate(${margin2.left}, ${margin2.top})`,
@@ -280,7 +281,7 @@ export class BarChart1 {
       calcCompletudeSubset(app, [this.ratio_to_use], 'array'),
       calcPopCompletudeSubset(app, [this.ratio_to_use]));
 
-    svg_bar.append('image')
+    svg_container.append('image')
       .attrs({
         x: width + margin.left + 5,
         y: 385,
@@ -296,28 +297,29 @@ export class BarChart1 {
         } else {
           this.data.sort((a, b) => a[this.ratio_to_use] - b[this.ratio_to_use]);
         }
+        this.current_ids = this.data.map(d => d.id);
         this.serie_inversed = !this.serie_inversed;
         x.domain(this.data.slice(current_range[0], current_range[1]).map(ft => ft.id));
         x2.domain(this.data.map(ft => ft.id));
-        // svg_bar.select(".zoom").call(zoom.transform, d3.zoomIdentity
+        // svg_container.select(".zoom").call(zoom.transform, d3.zoomIdentity
         //     .scale(width / (current_range[1] - current_range[0]))
         //     .translate(-current_range[0], 0));
         this.update();
         // this.updateMiniBars();
         this.updateContext(current_range[0], current_range[1]);
-        svg_bar.select('.brush_top').call(brush_top.move, null);
+        svg_container.select('.brush_top').call(brush_top.move, null);
         this.map_elem.removeRectBrush();
-        svg_bar.select('.brush_bottom').call(brush_bottom.move, x.range());
+        svg_container.select('.brush_bottom').call(brush_bottom.move, x.range());
       });
 
     // Prepare the tooltip displayed on mouseover:
-    const tooltip = prepareTooltip(svg_bar);
+    const tooltip = prepareTooltip(svg_container);
 
     // Deactivate the brush rect selection on the map + on the chart
     // when he user press the Ctrl key:
     document.onkeydown = (event) => {
       if (event && event.key === 'Control') {
-        svg_bar.select('.brush_top')
+        svg_container.select('.brush_top')
           .selectAll('.selection, .overlay')
           .style('display', 'none');
         svg_map.select('.brush_map')
@@ -327,7 +329,7 @@ export class BarChart1 {
     };
     document.onkeyup = (event) => {
       if (event && event.key === 'Control') {
-        svg_bar.select('.brush_top')
+        svg_container.select('.brush_top')
           .selectAll('.selection, .overlay')
           .style('display', null);
         svg_map.select('.brush_map')
@@ -351,9 +353,15 @@ export class BarChart1 {
       });
 
     for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
+      const code_variable = available_ratios[i];
+      const name_variable = app.current_config.ratio_pretty_name[i];
+      const unit = variables_info.find(ft => ft.ratio === code_variable).unit;
+      const year = name_variable.match(/\([^)]*\)$/)[0];
+      const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
+
       this.selec_var.append('option')
-        .attr('value', available_ratios[i])
-        .text(app.current_config.ratio_pretty_name[i]);
+        .attr('value', code_variable)
+        .text(name_variable.replace(year, unit_year));
     }
 
     this.selec_var.on('change', function () {
@@ -453,19 +461,21 @@ export class BarChart1 {
         return 'none';
       })
       .on('mouseover', () => {
-        svg_bar.select('.tooltip').style('display', null);
+        svg_container.select('.tooltip').style('display', null);
       })
       .on('mouseout', () => {
-        svg_bar.select('.tooltip').style('display', 'none');
+        svg_container.select('.tooltip').style('display', 'none');
       })
       .on('mousemove', function (d) {
-        const tooltip = svg_bar.select('.tooltip');
+        const tooltip = svg_container.select('.tooltip');
         tooltip.select('rect').attrs({ width: 0, height: 0 });
         tooltip
           .select('text.id_feature')
           .text(`${d.id}`);
         tooltip.select('text.value_feature1')
           .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
+        tooltip.select('text.value_feature2')
+          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
         const b = tooltip.node().getBoundingClientRect();
         tooltip.select('rect')
           .attrs({
@@ -473,7 +483,7 @@ export class BarChart1 {
             height: b.height + 7.5,
           });
         tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45]})`);
+          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
       });
 
     bar.enter()
@@ -565,10 +575,10 @@ export class BarChart1 {
         .forEach((ft) => { app.colors[ft] = color_inf; });
     }
     this.reset_state_button = false;
-    svg_bar.select('.brush_bottom').call(
+    svg_container.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
-    // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
+    // svg_container.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
     this.map_elem.removeRectBrush();
     this.updateMapRegio();
     this.reset_state_button = true;
@@ -594,7 +604,7 @@ export class BarChart1 {
         .forEach((ft) => { app.colors[ft] = color_sup; });
     }
     this.reset_state_button = false;
-    svg_bar.select('.brush_bottom').call(
+    svg_container.select('.brush_bottom').call(
       this.brush_bottom.move, this.x2.range());
     this.update();
     // svg_bar.select('.brush_top').call(this.brush_top.move, current_range_brush.map(d => d * (width / nbFt)));
@@ -813,10 +823,14 @@ export class BarChart1 {
   }
 
   addVariable(code_variable, name_variable) {
+    // Fetch the unit for this indicator:
+    const unit = variables_info.find(ft => ft.ratio === code_variable).unit;
+    const year = name_variable.match(/\([^)]*\)$/)[0];
+    const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
     // Add the variable to the input element allowing to choose variables:
     this.selec_var.append('option')
       .attr('value', code_variable)
-      .text(name_variable);
+      .text(name_variable.replace(year, unit_year));
 
     // And use it immediatly:
     this.selec_var.node().value = code_variable;

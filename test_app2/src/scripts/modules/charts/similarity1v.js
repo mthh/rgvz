@@ -11,6 +11,7 @@ let margin;
 let bbox_svg;
 let width;
 let height;
+let svg_container;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
@@ -19,7 +20,7 @@ const updateDimensions = () => {
   width = +bbox_svg.width - margin.left - margin.right;
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
   svg_bar.attr('height', `${500 * app.ratioToWide}px`);
-  svg_bar = svg_bar.append('g').attr('class', 'container');
+  svg_container = svg_bar.append('g').attr('class', 'container');
 };
 
 
@@ -44,12 +45,12 @@ export class Similarity1plus {
     this.highlight_selection = [];
     this.serie_inversed = false;
     this.proportionnal_symbols = false;
-    this.draw_group = svg_bar
+    this.draw_group = svg_container
       .append('g')
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Prepare the tooltip displayed on mouseover:
-    prepareTooltip(svg_bar);
+    prepareTooltip(svg_container);
 
     this.completude = new CompletudeSection(
       document.querySelector('#map_section'),
@@ -61,7 +62,7 @@ export class Similarity1plus {
     // Create the button allowing to choose
     // if the colors are inversed
     // (like green/red for superior/inferior regions)
-    svg_bar.append('image')
+    svg_container.append('image')
       .attrs({
         x: width + margin.left + 5,
         y: 232.5,
@@ -314,13 +315,13 @@ export class Similarity1plus {
     this.draw_group.selectAll('g.grp_var')
       .selectAll('circle')
         .on('mouseover', () => {
-          svg_bar.select('.tooltip').style('display', null);
+          svg_container.select('.tooltip').style('display', null);
         })
         .on('mouseout', () => {
-          svg_bar.select('.tooltip').style('display', 'none');
+          svg_container.select('.tooltip').style('display', 'none');
         })
         .on('mousemove', function (d) {
-          const tooltip = svg_bar.select('.tooltip');
+          const tooltip = svg_container.select('.tooltip');
           const ratio_n = this.parentElement.id;
           const num_n = this.parentElement.getAttribute('num');
           const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].split(')')[0];
@@ -349,7 +350,7 @@ export class Similarity1plus {
   displayLine(id_region) {
     if (this.ratios.length === 1) return;
     const coords = [];
-    svg_bar.selectAll('.grp_var')
+    svg_container.selectAll('.grp_var')
       .selectAll(`#${id_region}.bubble`)
       .each(function () {
         const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].replace(')', '');
@@ -501,7 +502,7 @@ export class Similarity1plus {
     this.table_stats = null;
     this.completude.remove();
     this.completude = null;
-    d3.select('#svg_bar').html('');
+    svg_bar.html('');
   }
 
   bindMap(map_elem) {

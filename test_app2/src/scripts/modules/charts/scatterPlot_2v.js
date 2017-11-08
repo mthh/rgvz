@@ -7,7 +7,7 @@ import ContextMenu from './../contextMenu';
 import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
-let svg_bar, margin, bbox_svg, width, height;
+let svg_bar, margin, bbox_svg, width, height, svg_container;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
@@ -16,7 +16,7 @@ const updateDimensions = () => {
   width = +bbox_svg.width - margin.left - margin.right;
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
   svg_bar.attr('height', `${500 * app.ratioToWide}px`);
-  svg_bar = svg_bar.append('g').attr('class', 'container');
+  svg_container = svg_bar.append('g').attr('class', 'container');
 };
 /** Class representing a scatterplot */
 export class ScatterPlot2 {
@@ -126,7 +126,7 @@ export class ScatterPlot2 {
     this.ref_value2 = this.data.find(
       d => d.id === app.current_config.my_region)[this.variable2];
 
-    this.plot = svg_bar.append('g')
+    this.plot = svg_container.append('g')
       .attr('transform', `translate(${[margin.left, margin.top]})`);
 
     this.plot.append('defs')
@@ -193,9 +193,9 @@ export class ScatterPlot2 {
 
     this.prepareTitleAxis();
 
-    svg_bar.append('image')
+    svg_container.append('image')
       .attrs({
-        x: margin.left + width / 2 - 20 - svg_bar.select('#title-axis-x').node().getBoundingClientRect().width / 2,
+        x: margin.left + width / 2 - 20 - svg_container.select('#title-axis-x').node().getBoundingClientRect().width / 2,
         y: margin.top + height + margin.bottom / 2 - 2.5,
         width: 15,
         height: 15,
@@ -215,10 +215,10 @@ export class ScatterPlot2 {
         }
       });
 
-    svg_bar.append('image')
+    svg_container.append('image')
       .attrs({
         x: margin.left / 2 - 20,
-        y: margin.top + (height / 2) + svg_bar.select('#title-axis-y').node().getBoundingClientRect().height / 2 + 5,
+        y: margin.top + (height / 2) + svg_container.select('#title-axis-y').node().getBoundingClientRect().height / 2 + 5,
         width: 15,
         height: 15,
         'xlink:href': 'img/reverse_plus.png',
@@ -349,7 +349,7 @@ export class ScatterPlot2 {
         action: () => this.changeVariableY(elem),
       }));
 
-    svg_bar.append('text')
+    svg_container.append('text')
       .attrs({
         id: 'title-axis-x',
         x: margin.left + width / 2,
@@ -365,7 +365,7 @@ export class ScatterPlot2 {
         self.menuX.showMenu(d3.event, document.body, self.itemsX, [bbox.left - 20, bbox.top + 20]);
       });
 
-    svg_bar.append('text')
+    svg_container.append('text')
       .attrs({
         id: 'title-axis-y',
         x: margin.left / 2,
@@ -450,10 +450,10 @@ export class ScatterPlot2 {
         .on('end', () => {
           this.scatter.selectAll('.dot')
             .on('mouseover.tooltip', () => {
-              svg_bar.select('.tooltip').style('display', null);
+              svg_container.select('.tooltip').style('display', null);
             })
             .on('mousemove.tooltip', function (d) {
-              const tooltip = svg_bar.select('.tooltip')
+              const tooltip = svg_container.select('.tooltip')
                 .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
               tooltip.select('rect').attrs({ width: 0, height: 0 });
               tooltip.select('text.id_feature')
@@ -471,7 +471,7 @@ export class ScatterPlot2 {
                 .attrs({ width: b.width + 20, height: b.height + 7.5 });
             })
             .on('mouseout.tooltip', () => {
-              svg_bar.select('.tooltip').style('display', 'none');
+              svg_container.select('.tooltip').style('display', 'none');
             });
         });
       dots.exit().transition().duration(125).remove();
@@ -529,10 +529,10 @@ export class ScatterPlot2 {
         .on('end', () => {
           this.scatter.selectAll('.dot')
             .on('mouseover.tooltip', () => {
-              svg_bar.select('.tooltip').style('display', null);
+              svg_container.select('.tooltip').style('display', null);
             })
             .on('mousemove.tooltip', function (d) {
-              const tooltip = svg_bar.select('.tooltip')
+              const tooltip = svg_container.select('.tooltip')
                 .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
               tooltip.select('rect').attrs({ width: 0, height: 0 });
               tooltip.select('text.id_feature')
@@ -550,7 +550,7 @@ export class ScatterPlot2 {
                 .attrs({ width: b.width + 20, height: b.height + 7.5 });
             })
             .on('mouseout.tooltip', () => {
-              svg_bar.select('.tooltip').style('display', 'none');
+              svg_container.select('.tooltip').style('display', 'none');
             });
         });
 
@@ -579,7 +579,7 @@ export class ScatterPlot2 {
       this.last_map_selection = undefined;
       return;
     }
-    svg_bar.select('.brush').call(this.brush.move, null);
+    svg_container.select('.brush').call(this.brush.move, null);
     const self = this;
     const [topleft, bottomright] = event.selection;
     this.last_map_selection = [topleft, bottomright];
@@ -714,7 +714,7 @@ export class ScatterPlot2 {
     const var_info = variables_info.find(ft => ft.ratio === code_variable);
     this.pretty_name1 = var_info.name;
     this.unit1 = var_info.unit;
-    svg_bar.select('#title-axis-x')
+    svg_container.select('#title-axis-x')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
@@ -744,7 +744,7 @@ export class ScatterPlot2 {
     const var_info = variables_info.find(ft => ft.ratio === code_variable);
     this.pretty_name2 = var_info.name;
     this.unit2 = var_info.unit;
-    svg_bar.select('#title-axis-y')
+    svg_container.select('#title-axis-y')
       .text(code_variable);
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
@@ -824,7 +824,7 @@ export class ScatterPlot2 {
     this.map_elem = null;
     this.completude.remove();
     this.completude = null;
-    d3.select('#svg_bar').html('');
+    svg_bar.html('');
   }
 
   bindMap(map_elem) {
