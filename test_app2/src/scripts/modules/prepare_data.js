@@ -18,7 +18,7 @@ export function prepare_dataset(full_dataset, app) {
   // Create an Object feature_id ->  feature_name for easier lookup:
   app.feature_names = {};
   full_dataset.forEach((elem) => {
-    app.feature_names[elem.geo] = elem.Nom;
+    app.feature_names[elem.id] = elem.name;
   });
 }
 
@@ -84,18 +84,18 @@ export function filterLevelGeom(nuts_features, filter = 'NUTS1') {
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
   metadata_indicateurs
-    .filter(ft => ft['Type statistique'] === 'Ratio')
+    .filter(ft => ft.Regioviz_item === 'Indicateur')
     .forEach((ft) => {
       variables_info.push({
         ratio: ft.id,
-        num: `${ft.id1}_${parseInt(ft.Année, 10)}`,
-        denum: `${ft.id2}_${parseInt(ft.Année, 10)}`,
-        name: `${ft.Nom} (${parseInt(ft.Année, 10)})`,
-        unit: `${ft['Unité']}`,
-        group: ft['Thème'],
-        methodo: ft['Méthodologie'],
-        source: ft.Source,
-        last_update: ft['Dernière mise à jour'],
+        num: `${ft.id1}_${parseInt(ft.Year, 10)}`,
+        denum: `${ft.id2}_${parseInt(ft.Year, 10)}`,
+        name: `${ft.Name} (${parseInt(ft.Year, 10)})`,
+        unit: `${ft.Unit}`,
+        group: ft.Theme,
+        methodo: ft.Methodology,
+        source: ft.Data_source,
+        last_update: ft.Last_update,
       });
     });
 }
@@ -115,7 +115,7 @@ export function applyFilter(app, filter_type) {
   } else if (filter_type instanceof Array) {
     app.current_config.filter_key = filter_type;
   } else {
-    app.current_config.filter_key = 'type_test';
+    app.current_config.filter_key = filter_type;
   }
   filterLevelVar(app);
   app.colors = {};

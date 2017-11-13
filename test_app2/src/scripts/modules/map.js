@@ -189,7 +189,7 @@ function getLegendElems(type) {
 
 
 class MapSelect {
-  constructor(nuts, other_layers, filter = 'NUTS1') {
+  constructor(nuts, other_layers, filter = 'N1') {
     app.mapDrawRatio = app.ratioToWide;
     projection = d3.geoIdentity()
       .fitExtent([[0, 0], [width_map, height_map]], other_layers.get('frame'))
