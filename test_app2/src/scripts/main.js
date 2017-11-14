@@ -305,10 +305,10 @@ function bindUI_chart(chart, map_elem) {
         // Reset the study zone :
         d3.select('span.filter_v[filter-value="no_filter"]').dispatch('click');
         d3.selectAll('span.territ_level').attr('class', 'territ_level square');
-        updateMenuStudyZones();
         this.classList.add('checked');
         const level_value = this.getAttribute('value');
         app.current_config.current_level = level_value;
+        updateMenuStudyZones();
         filterLevelVar(app);
         resetColors();
         map_elem.updateLevelRegion(level_value);
