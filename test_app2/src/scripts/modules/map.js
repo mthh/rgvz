@@ -247,7 +247,7 @@ class MapSelect {
     });
   }
 
-  updateLevelRegion(filter = 'NUTS1') {
+  updateLevelRegion(filter = 'N1') {
     this.tooltips.destroyAll();
     const new_selection = filterLevelGeom(this.nuts.features, filter);
     const selection = this.target_layer

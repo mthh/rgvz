@@ -1,5 +1,5 @@
 import { color_highlight } from './options';
-import { variables_info } from './../main';
+import { variables_info, study_zones, territorial_mesh } from './../main';
 
 /* eslint-disable no-param-reassign */
 
@@ -70,8 +70,8 @@ export function filterLevelVar(app) {
 /**
 * TODO
 */
-export function filterLevelGeom(nuts_features, filter = 'NUTS1') {
-  return nuts_features.filter(d => !!d.properties[filter]);
+export function filterLevelGeom(nuts_features, filter = 'N1') {
+  return nuts_features.filter(d => d.properties[filter] === 1);
 }
 
 /**
@@ -98,6 +98,16 @@ export function prepareVariablesInfo(metadata_indicateurs) {
         last_update: ft.Last_update,
       });
     });
+  metadata_indicateurs
+    .filter(ft => ft.Regioviz_item === 'Study Area')
+    .forEach((ft) => {
+      study_zones.push({
+        name: ft.Name, id: ft.id, display_level: ft.Theme,
+      });
+    });
+  metadata_indicateurs
+    .filter(ft => ft.Regioviz_item === 'Territorial division')
+    .forEach((ft) => { territorial_mesh.push({ name: ft.Name, id: ft.id }); });
 }
 
 /**

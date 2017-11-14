@@ -22,28 +22,15 @@ import {
   prepareVariablesInfo,
 } from './modules/prepare_data';
 
+
 export const variables_info = [];
 
-const study_zones = [
+export const study_zones = [
   { id: 'no_filter', name: 'UE28' },
-  { id: 'filter_country', name: 'Filtre national (France)' },
-  // { id: 'filter_param2', name: 'Espace de comparaison n°2' },
+  { id: 'UNIT_SUP', name: 'Filtre national' },
   { id: 'filter_dist', name: 'Région dans un rayon de ' },
-  { id: 'TypoGDPN1', name: 'TypoGDPN1' },
-  { id: 'TypoGDPN12', name: 'TypoGDPN12' },
-  { id: 'TypoPopN1', name: 'TypoPopN1' },
-  { id: 'TypoPopN12', name: 'TypoPopN12' },
-  { id: 'TypoUrbN1', name: 'TypoUrbN1' },
-  { id: 'TypoUrbN12', name: 'TypoUrbN12' },
-  { id: 'TypoDemoN1', name: 'TypoDemoN1' },
-  { id: 'TypoDemoN12', name: 'TypoDemoN12' },
-  { id: 'TypoEcoSpeN1', name: 'TypoEcoSpeN1' },
-  { id: 'TypoEcoSpeN12', name: 'TypoEcoSpeN12' },
 ];
-
-const territorial_mesh = [
-  { id: 'N1', name: 'NUTS1' },
-  { id: 'N12_POL', name: 'NUTS1/2 (niveau de décision)' }];
+export const territorial_mesh = [];
 
 export const app = {
   // A mapping id -> color, containing the color to use for each
@@ -62,6 +49,7 @@ export const app = {
 };
 
 function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level = 'NUTS1') {
+  const var_info = variables_info.find(ft => ft.ratio === variable);
   app.current_config = {
     // The name of the field of the dataset containing the ID of each feature:
     id_field: 'id',
@@ -73,11 +61,11 @@ function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
     id_field_geom: 'id',
-    num: ['CHOM_1574_2016'],
-    denum: ['ACT_1574_2016'],
+    num: [var_info.num],
+    denum: [var_info.denum],
     ratio: [variable],
-    ratio_pretty_name: ['Taux de chômage (15-74 ans) (2016)'],
-    ratio_unit: ['%'],
+    ratio_pretty_name: [var_info.name],
+    ratio_unit: [var_info.unit],
     // The level currently in use:
     current_level: 'N1',
     // The ID of the region currently in use:
@@ -96,6 +84,19 @@ function setDefaultConfigMenu(code = 'FRE', variable = 'RT_CHOM_1574', level = '
   document.querySelector('.filter_v.square[filter-value="no_filter"]').classList.add('checked');
   document.querySelector(`.territ_level.square[value="${level}"]`).classList.add('checked');
   updateAvailableRatios(code);
+}
+
+function updateMenuStudyZones() {
+  Array.prototype.forEach.call(
+    document.querySelectorAll('#menu_studyzone > p'),
+    (elem) => {
+      const val = elem.querySelector('.filter_v.square').getAttribute('display_level');
+      if (val === 'undefined' || val === app.current_config.current_level) {
+        elem.style.display = null;
+      } else {
+        elem.style.display = 'none';
+      }
+    });
 }
 
 
@@ -304,6 +305,7 @@ function bindUI_chart(chart, map_elem) {
         // Reset the study zone :
         d3.select('span.filter_v[filter-value="no_filter"]').dispatch('click');
         d3.selectAll('span.territ_level').attr('class', 'territ_level square');
+        updateMenuStudyZones();
         this.classList.add('checked');
         const level_value = this.getAttribute('value');
         app.current_config.current_level = level_value;
@@ -570,17 +572,18 @@ function loadData() {
         countries_remote_boundaries, frame, boxes, line, metadata_indicateurs,
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
-      const features_menu = full_dataset.filter(ft => ft.id.indexOf('FR') > -1
-        && +ft.level === 1);
+      prepareVariablesInfo(metadata_indicateurs);
+      console.log(territorial_mesh);
+      const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       const start_region = getRandom(features_menu.map(d => d.id), 13);
       const start_variable = getRandom(
         ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
 
-      prepareVariablesInfo(metadata_indicateurs, variables_info);
       prepare_dataset(full_dataset, app);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
+      updateMenuStudyZones();
       bindHelpMenu();
       makeTopMenu();
       makeHeaderChart();
