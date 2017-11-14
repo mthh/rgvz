@@ -391,28 +391,6 @@ function bindUI_chart(chart, map_elem) {
     }
   }
 
-  // const header_table_section = d3.select('#map_section')
-  //     .insert('p', 'svg')
-  //     .attr('id', 'header_table')
-  //     .styles({ display: 'none', margin: 'auto', 'text-align': 'right' });
-
-  // header_table_section.append('span')
-  //   .attr('class', 'button_blue')
-  //   .html('CSV')
-  //   .on('click', () => {
-  //     const columns = Object.keys(app.current_data[0]);
-  //     const content = [
-  //       'id,Numérateur,Dénominateur,Ratio,Rang\r\n',
-  //       app.current_data.map(d => columns.map(c => d[c]).join(',')).join('\r\n'),
-  //     ].join('');
-  //     const elem = document.createElement('a');
-  //     elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
-  //     elem.setAttribute('download', 'Regioviz_export.csv');
-  //     elem.style.display = 'none';
-  //     document.body.appendChild(elem);
-  //     elem.click();
-  //     document.body.removeChild(elem);
-  //   });
   bindTopButtons(chart, map_elem);
 }
 
@@ -573,13 +551,13 @@ function loadData() {
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
       prepareVariablesInfo(metadata_indicateurs);
-      console.log(territorial_mesh);
+
       const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       const start_region = getRandom(features_menu.map(d => d.id), 13);
       const start_variable = getRandom(
         ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
-
       prepare_dataset(full_dataset, app);
+      console.log(territorial_mesh);console.log(variables_info);console.log(app);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
