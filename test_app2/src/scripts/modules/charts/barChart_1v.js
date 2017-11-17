@@ -274,9 +274,7 @@ export class BarChart1 {
 
     g_brush_bottom.call(brush_bottom.move, x.range());
 
-    this.completude = new CompletudeSection(
-      document.querySelector('#map_section'),
-      document.querySelector('#svg_map'));
+    this.completude = new CompletudeSection();
     this.completude.update(
       calcCompletudeSubset(app, [this.ratio_to_use], 'array'),
       calcPopCompletudeSubset(app, [this.ratio_to_use]));
@@ -859,8 +857,6 @@ export class BarChart1 {
     this.table_stats = null;
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
-    this.completude.remove();
-    this.completude = null;
     d3.select('#svg_bar').html('');
   }
 

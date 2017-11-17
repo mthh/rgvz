@@ -58,8 +58,20 @@ export function makeTopMenu() {
 
 export function makeHeaderMapSection() {
   const header_map_section = d3.select('#map_section')
-    .insert('p', '.completude_section')
+    .insert('div', '#svg_map')
     .attr('id', 'header_map');
+
+  header_map_section.append('div')
+    .attrs({ class: 'filter_info', title: 'Espace d\'étude' });
+
+  const completude_section = header_map_section.append('div')
+    .attrs({ class: 'completude_section', title: 'Complétude de l\'information' });
+
+  completude_section.append('p')
+    .attr('id', 'completude_features');
+
+  completude_section.append('p')
+    .attr('id', 'completude_population');
 
   header_map_section.insert('img')
     .attrs({

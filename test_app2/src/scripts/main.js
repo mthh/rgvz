@@ -26,9 +26,8 @@ import {
 export const variables_info = [];
 
 export const study_zones = [
-  { id: 'no_filter', name: 'UE28' },
-  { id: 'UNIT_SUP', name: 'Filtre national' },
-  { id: 'filter_dist', name: 'Région dans un rayon de ' },
+  { id: 'no_filter', name: 'UE28', display_level: '' },
+  { id: 'filter_dist', name: 'Région dans un rayon de ', display_level: '' },
 ];
 export const territorial_mesh = [];
 
@@ -91,7 +90,7 @@ function updateMenuStudyZones() {
     document.querySelectorAll('#menu_studyzone > p'),
     (elem) => {
       const val = elem.querySelector('.filter_v.square').getAttribute('display_level');
-      if (val === 'undefined' || val === app.current_config.current_level) {
+      if (val === '' || val === app.current_config.current_level) {
         elem.style.display = null;
       } else {
         elem.style.display = 'none';
@@ -173,6 +172,10 @@ function updateAvailableCharts(nb_var) {
   }
 }
 
+function updateMyCategorySection() {
+  document.querySelector('.filter_info').innerHTML = app.current_config.my_category;
+}
+
 /**
 * Create handlers for user event on the left menu and on the map for charts only
 * allowing to use 1 variable.
@@ -200,7 +203,7 @@ function bindUI_chart(chart, map_elem) {
           document.getElementById('dist_filter').setAttribute('disabled', 'disabled');
           applyFilter(app, filter_type);
         }
-        // makeTable(app.current_data, app.current_config);
+        updateMyCategorySection();
         chart.changeStudyZone();
         chart.updateCompletude();
       }
@@ -210,7 +213,6 @@ function bindUI_chart(chart, map_elem) {
     .on('change, keyup', function () {
       const ids = map_elem.getUnitsWithin(+this.value);
       applyFilter(app, ids);
-      // makeTable(app.current_data, app.current_config);
       chart.changeStudyZone();
       chart.updateCompletude();
     });
@@ -417,28 +419,24 @@ export function bindTopButtons(chart, map_elem) {
       const value = this.getAttribute('value');
       if (value === 'BarChart1') {
         console.log('BarChart1');
-        // makeTable(app.current_data, app.current_config);
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         console.log('ScatterPlot2');
-        // makeTable(app.current_data, app.current_config);
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'RadarChart3') {
         console.log('RadarChart3');
-        // makeTable(app.current_data, app.current_config);
         chart = new RadarChart3(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'Similarity1plus') {
         console.log('Similarity1plus');
-        // makeTable(app.current_data, app.current_config);
         chart = new Similarity1plus(app.current_data);
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
@@ -479,7 +477,12 @@ function bindHelpMenu() {
   Array.prototype.slice.call(helps_buttons_study_zone).forEach((btn_i) => {
     // eslint-disable-next-line no-param-reassign
     btn_i.onclick = function () {
-      const filter_name = this.previousSibling.previousSibling.getAttribute('filter-value');
+      const filter_name = [
+        this.previousSibling.previousSibling.getAttribute('filter-value'),
+        app.current_config.current_level,
+      ].join('_')
+      const o = study_zones.find(d => d.id === filter_name);
+
       // eslint-disable-next-line new-cap
       const modal = new tingle.modal({
         stickyFooter: false,
@@ -494,7 +497,9 @@ function bindHelpMenu() {
       });
       modal.setContent(
         `<p style="font-family: 'Signika',sans-serif;color: #4f81bd;font-size: 1.3rem;">Méthodologie</p>
-        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${filter_name}</p>`);
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${filter_name}</p>
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${o.methodology.split('\n').join('<br>')}</p>
+        `);
       modal.open();
     };
   });
@@ -504,6 +509,8 @@ function bindHelpMenu() {
     // eslint-disable-next-line no-param-reassign
     btn_i.onclick = function () {
       const territ_level_name = this.previousSibling.previousSibling.getAttribute('value');
+      const o = territorial_mesh.find(d => d.id === territ_level_name);
+
       // eslint-disable-next-line new-cap
       const modal = new tingle.modal({
         stickyFooter: false,
@@ -518,7 +525,9 @@ function bindHelpMenu() {
       });
       modal.setContent(`
         <p style="font-family: 'Signika',sans-serif; color: #4f81bd;font-size: 1.3rem;">Titre</p>
-        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${territ_level_name}</p>`);
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${territ_level_name}</p>
+        <p style="font-family: 'Signika',sans-serif;text-align: justify;">${o.methodology.split('\n').join('<br>')}</p>
+        `);
       modal.open();
     };
   });
@@ -551,13 +560,13 @@ function loadData() {
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
       prepareVariablesInfo(metadata_indicateurs);
-
+      console.log(metadata_indicateurs);
       const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       const start_region = getRandom(features_menu.map(d => d.id), 13);
       const start_variable = getRandom(
         ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
       prepare_dataset(full_dataset, app);
-      console.log(territorial_mesh);console.log(variables_info);console.log(app);
+      console.log(territorial_mesh);console.log(variables_info);console.log(app);console.log(study_zones);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
@@ -565,6 +574,7 @@ function loadData() {
       bindHelpMenu();
       makeTopMenu();
       makeHeaderChart();
+      makeHeaderMapSection();
       setDefaultConfigMenu(start_region, start_variable, 'N1');
       filterLevelVar(app);
       const other_layers = new Map([
@@ -577,8 +587,6 @@ function loadData() {
       ]);
       const map_elem = new MapSelect(nuts, other_layers);
       const chart = new BarChart1(app.current_data);
-      // makeTable(app.current_data, app.current_config);
-      makeHeaderMapSection();
       makeSourceSection();
       bindUI_chart(chart, map_elem);
       map_elem.bindBrushClick(chart);

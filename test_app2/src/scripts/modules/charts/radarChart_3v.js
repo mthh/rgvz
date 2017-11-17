@@ -145,9 +145,7 @@ export class RadarChart3 {
     this.drawArea();
     this.handleLegend();
 
-    this.completude = new CompletudeSection(
-      document.querySelector('#map_section'),
-      document.querySelector('#svg_map'));
+    this.completude = new CompletudeSection();
     // Compute the "complétude" value for these ratios:
     this.completude.update(
       calcCompletudeSubset(app, this.variables, 'array'),
@@ -730,8 +728,6 @@ export class RadarChart3 {
     this.table_stats = null;
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
-    this.completude.remove();
-    this.completude = null;
     d3.select('#svg_bar').html('');
   }
 

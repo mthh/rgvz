@@ -202,7 +202,8 @@ function computePercentileRank(obj, field_name, result_field_name) {
         count += 1;
       }
     }
-    return 100 * count / len_values;
+    // return 100 * count / len_values;
+    return 100 * (count - 1) / (len_values - 1);
   };
   for (let ix = 0; ix < len_values; ix++) {
     // eslint-disable-next-line no-param-reassign
@@ -217,7 +218,8 @@ const _getPR = (v, serie) => {
       count += 1;
     }
   }
-  return 100 * count / serie.length;
+  // return 100 * count / serie.length;
+  return 100 * (count - 1) / (serie.length - 1);
 };
 
 const getMean = (serie) => {

@@ -236,9 +236,7 @@ export class ScatterPlot2 {
         }
       });
 
-    this.completude = new CompletudeSection(
-      document.querySelector('#map_section'),
-      document.querySelector('#svg_map'));
+    this.completude = new CompletudeSection();
     this.completude.update(
       calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
       calcPopCompletudeSubset(app, [this.variable1, this.variable2]));
@@ -822,8 +820,6 @@ export class ScatterPlot2 {
     this.table_stats.remove();
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
-    this.completude.remove();
-    this.completude = null;
     svg_bar.html('');
   }
 
@@ -897,5 +893,4 @@ export class ScatterPlot2 {
     const features = this.prepareTableStat();
     this.table_stats = new TableResumeStat(features);
   }
-
 }

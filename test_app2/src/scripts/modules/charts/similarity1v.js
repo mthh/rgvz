@@ -52,9 +52,7 @@ export class Similarity1plus {
     // Prepare the tooltip displayed on mouseover:
     prepareTooltip(svg_container);
 
-    this.completude = new CompletudeSection(
-      document.querySelector('#map_section'),
-      document.querySelector('#svg_map'));
+    this.completude = new CompletudeSection();
     this.completude.update(
       calcCompletudeSubset(app, this.ratios, 'array'),
       calcPopCompletudeSubset(app, this.ratios));
@@ -98,6 +96,24 @@ export class Similarity1plus {
     section.append('label')
       .attrs({ class: 'label', for: 'check_prop' })
       .text('Cercles proportionnels au numérateur');
+
+    // const switch_button = menu_selection.append('p')
+    //   .attr('class', 'btn-switch');
+    // switch_button.append('input')
+    //   .attrs({ type: 'radio', id: 'yes', name: 'switch', class: 'btn-switch__radio btn-switch__radio_yes' })
+    // switch_button.append('input')
+    //   .attrs({ type: 'radio', id: 'no', name: 'switch', class: 'btn-switch__radio btn-switch__radio_no' })
+    //   .property('checked', 'checked');
+    // const yes_label = switch_button.append('label')
+    //   .attrs({ for: 'yes', class: 'btn-switch__label btn-switch__label_yes'});
+    // yes_label.append('span')
+    //   .attr('class', 'btn-switch__txt')
+    //   .html('&#xf00c;');
+    // const no_label = switch_button.append('label')
+    //   .attrs({ for: 'no', class: 'btn-switch__label btn-switch__label_no' });
+    // no_label.append('span')
+    //   .attr('class', 'btn-switch__txt')
+    //   .html('&#xf00d;');
 
     this.bindMenu();
     this.makeTableStat();
@@ -500,8 +516,6 @@ export class Similarity1plus {
     this.map_elem = null;
     this.table_stats.remove();
     this.table_stats = null;
-    this.completude.remove();
-    this.completude = null;
     svg_bar.html('');
   }
 

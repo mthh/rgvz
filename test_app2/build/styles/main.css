@@ -336,10 +336,13 @@ span.label_chk.disabled {
 /* End of styles for top menu */
 
 /* Styles for the completness section */
-.completude_section {
+.completude_section, .filter_info {
   font-family: "Signika", sans-serif;
   font-size: 0.7em;
   text-align: center;
+  width: 100%;
+  margin: auto;
+  height: 1.2em;
 }
 
 .completude_section > p {
@@ -425,9 +428,14 @@ span.label_chk.disabled {
 }
 /* End of styles for buttons */
 
+#menu_selection {
+  font-size: 0.75em;
+  font-family: "Signika",sans-serif;
+}
+
 /* Styles for buttons on the top of the map */
 .map_button {
-  margin: 3px;
+  margin: 5px 7px 0px 7px;
   float: left;
   filter: opacity(25%);
 }
@@ -496,7 +504,7 @@ input.nb_select {
   border-bottom-width: 0.5px;
   margin-left: 3px;
   margin-right: 4px;
-  font-size: 1.1em;
+  font-size: 1em;
 }
 
 input.nb_select::-webkit-inner-spin-button,
@@ -517,8 +525,8 @@ input.nb_select::-webkit-outer-spin-button {
   margin: auto;
 }
 
-.minitable > tbody > tr > td {
-  padding: 4px;
+.minitable > tbody > tr > td, .minitable > thead > tr > th  {
+  padding: 0.4em 1em;
 }
 
 /* End of style for minitable */
@@ -553,20 +561,25 @@ input.nb_select::-webkit-outer-spin-button {
 
 /* End of styles for map */
 
+/* Styles for map header */
+#header_map {
+  width: 99%;
+}
+/* End of styles for map header */
+
 /* Style for half circle buttons on the top of the map */
 .top_half_circle {
   background: #4f81bd;
   display: inline-block;
   margin: 0 0.3em 0 0;
-  height: 1.2em;
-  width: 1.6em;
+  height: 1.4em;
+  width: 1.8em;
   border-top-left-radius: 1.6em;
   border-top-right-radius: 1.6em;
   font-weight: bold;
   float: right;
   cursor: pointer;
   text-align: center;
-  top: 8px;
   position: relative;
   color: white;
 }
@@ -599,7 +612,7 @@ input.nb_select::-webkit-outer-spin-button {
 .slider-checkbox input:checked + .label:before {
   background-color: #1877c1;
   content: "\f00c";
-  padding-left: 6px;
+  padding-left: 0.2em;
 }
 .slider-checkbox input:checked + .label:after {
   left: 21px;
@@ -620,10 +633,10 @@ input.nb_select::-webkit-outer-spin-button {
   content: "\f00d";
   color: #fff;
   box-sizing: border-box;
-  font-family: 'FontAwesome', sans-serif;
-  padding-left: 23px;
+  font-family: FontAwesome;
+  padding-left: 1.3em;
   font-size: 0.9em;
-  line-height: 20px;
+  line-height: 1em;
   background-color: #888;
   left: 0px;
   top: 0px;
@@ -648,6 +661,90 @@ input.nb_select::-webkit-outer-spin-button {
 }
 /* End of styles for slider checkbox */
 
+/* Styles for 2nd slider checkbox */
+.btn-switch {
+  font-size: 1em;
+	position: relative;
+	display: inline-block;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+  font-family: FontAwesome;
+}
+.btn-switch__radio {
+	display: none;
+}
+.btn-switch__label {
+	display: inline-block;
+	padding: .5em .4em .5em .5em;
+	vertical-align: top;
+	font-size: 0.8em;
+	font-weight: 800;
+	line-height: 1.1em;
+	color: #666;
+  cursor: pointer;
+	transition: color .2s ease-in-out;
+}
+.btn-switch__label + .btn-switch__label {
+  padding-right: .5em;
+	padding-left: 0;
+}
+.btn-switch__txt {
+	position: relative;
+	z-index: 2;
+  display: inline-block;
+  min-width: 1.5em;
+	opacity: 1;
+	pointer-events: none;
+	transition: opacity .2s ease-in-out;
+}
+.btn-switch__radio_no:checked ~ .btn-switch__label_yes .btn-switch__txt,
+.btn-switch__radio_yes:checked ~ .btn-switch__label_no .btn-switch__txt {
+	opacity: 0;
+}
+.btn-switch__label:before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: #f0f0f0;
+	border-radius: 1.5em;
+	box-shadow: inset 0 .0715em .3572em rgba(43,43,43,.05);
+	transition: background .2s ease-in-out;
+}
+.btn-switch__radio_yes:checked ~ .btn-switch__label:before {
+	background: #1877c1;
+}
+.btn-switch__label_no:after {
+	content: "";
+	position: absolute;
+	z-index: 2;
+	top: .5em;
+	bottom: .5em;
+	left: .5em;
+	width: 2em;
+	background: #fff;
+	border-radius: 1em;
+	pointer-events: none;
+	box-shadow: 0 .1429em .2143em rgba(43,43,43,.2), 0 .3572em .3572em rgba(43,43,43,.1);
+	transition: left .2s ease-in-out, background .2s ease-in-out;
+}
+.btn-switch__radio_yes:checked ~ .btn-switch__label_no:after {
+	left: calc(100% - 2.5em);
+	background: #fff;
+}
+.btn-switch__radio_no:checked ~ .btn-switch__label_yes:before,
+.btn-switch__radio_yes:checked ~ .btn-switch__label_no:before {
+	z-index: 1;
+}
+.btn-switch__radio_yes:checked ~ .btn-switch__label_yes {
+	color: #fff;
+}
+/* End of styles for 2nd slider checkbox */
 .t1 {
   width:25%;
   float: left;

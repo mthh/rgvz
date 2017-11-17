@@ -45,13 +45,16 @@ export function filterLevelVar(app) {
   if (filter_key instanceof Array) {
     temp = app.full_dataset
       .filter(ft => +ft[current_level] && filter_key.indexOf(ft[id_field]) > -1);
+    app.current_config.my_category = null;
   } else if (filter_key) {
     const my_category = app.full_dataset.filter(ft => ft[id_field] === my_region)[0][filter_key];
     temp = app.full_dataset
       .filter(ft => +ft[current_level] && ft[filter_key] === my_category);
+    app.current_config.my_category = my_category;
   } else {
     temp = app.full_dataset
       .filter(ft => +ft[current_level]);
+    app.current_config.my_category = null;
   }
   temp = temp.map((ft) => {
     const props_feature = {
@@ -102,12 +105,14 @@ export function prepareVariablesInfo(metadata_indicateurs) {
     .filter(ft => ft.Regioviz_item === 'Study Area')
     .forEach((ft) => {
       study_zones.push({
-        name: ft.Name, id: ft.id, display_level: ft.Theme,
+        name: ft.Name, id: ft.id, display_level: ft.Theme, methodology: ft.Methodology,
       });
     });
   metadata_indicateurs
     .filter(ft => ft.Regioviz_item === 'Territorial division')
-    .forEach((ft) => { territorial_mesh.push({ name: ft.Name, id: ft.id }); });
+    .forEach((ft) => {
+      territorial_mesh.push({ name: ft.Name, id: ft.id, methodology: ft.Methodology });
+    });
 }
 
 /**
