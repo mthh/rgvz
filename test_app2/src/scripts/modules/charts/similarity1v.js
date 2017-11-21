@@ -533,7 +533,8 @@ export class Similarity1plus {
     const features = all_values.map((values, i) => ({
       Min: d3.min(values),
       Max: d3.max(values),
-      Moyenne: getMean(values),
+      Moy: getMean(values),
+      Med: d3.median(values),
       id: this.ratios[i],
       Variable: this.ratios[i],
       'Ma région': my_region[this.ratios[i]],

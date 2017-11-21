@@ -253,9 +253,14 @@ function bindUI_chart(chart, map_elem) {
   d3.selectAll('.name_group_var')
     .on('click', function () {
       const group_var = this.nextSibling;
+      const title_arrow = this.querySelector('span.arrow');
       if (group_var.style.display === 'none') {
+        title_arrow.classList.remove('arrow_down');
+        title_arrow.classList.add('arrow_right');
         group_var.style.display = null;
       } else {
+        title_arrow.classList.remove('arrow_right');
+        title_arrow.classList.add('arrow_down');
         group_var.style.display = 'none';
       }
     });

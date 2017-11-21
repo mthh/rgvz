@@ -243,7 +243,7 @@ span.small {
 #menu > div.box > p.small, #menu > div.box > div > p.small {
   font-size: 0.7em;
   margin-left: 0.7em;
-  color: black;
+  color: rgba(0, 0, 0, 0.8);
 }
 
 .box {
@@ -764,4 +764,72 @@ input.nb_select::-webkit-outer-spin-button {
 .t1, .t2, .t3 {
   padding-left: 0.5%;
   padding-right: 0.5%;
+}
+
+/* Styles for tooltips */
+.tooltip {
+  pointer-events: none;
+  position: absolute;
+  background-color: rgba(245, 245, 220, 0.85);
+  padding: 0px 0px 5px 0px;
+  margin: auto;
+  min-width: 260px;
+  font-family: "Signika", sans-serif;
+  font-size: 0.9em;
+  border-radius: 4px;
+  color: #353d44;
+}
+
+.tooltip > .title {
+  margin: auto;
+  background-color: #4f81bd;
+  padding: 2px 8px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  color: white;
+  font-weight: bold;
+}
+
+.tooltip > .content {
+  margin: auto;
+  padding: 1px 8px;
+}
+/* End of styles for tooltips */
+
+span.arrow_down:before {
+  content: '\025BA';
+  margin-right: 4px;
+}
+
+span.arrow_right:before {
+  content: '\025BE';
+  margin-right: 5px;
+  margin-left: 2px;
+  font-weight: 800;
+}
+
+.title-axis {
+  font-family: sans-serif;
+  font-size: 0.9em;
+  text-anchor: middle;
+  fill: black;
+  cursor: pointer;
+}
+
+.axis {
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.axis > text.legend {
+  cursor: initial;
+  -webkit-user-select: initial;
+  -moz-user-select: initial;
+  -ms-user-select: initial;
+  user-select: initial;
+  pointer-events: initial;
 }

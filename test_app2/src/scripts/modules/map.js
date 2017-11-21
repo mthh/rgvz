@@ -180,10 +180,9 @@ function getLegendElems(type) {
   return [
     [
       { color: color_highlight, text: `Ma région : ${app.current_config.my_region_pretty_name}` },
-      { color: color_countries, text: 'Autres régions de l\'espace d\'étude' },
-      { color: color_default_dissim, text: 'Régions sélectionnées pour la comparaison' },
+      { color: color_countries, text: 'Autres régions de l\'espace d\'étude, sélectionnables pour la comparaison' },
     ],
-    '60', '32',
+    '60', '22.5',
   ];
 }
 

@@ -65,6 +65,22 @@ function prepareTooltip(parent_svg_elem) {
   return tooltip;
 }
 
+function prepareTooltip2(parent, before) {
+  const t = parent.select('.tooltip');
+  if (t.node()) {
+    return t;
+  }
+  const tooltip = parent.insert('div', before)
+    .attr('class', 'tooltip')
+    .style('display', 'none');
+
+  tooltip.append('p').attr('class', 'title');
+  tooltip.append('p').attr('class', 'content');
+
+  return tooltip;
+}
+
+
 function unbindUI() {
   // Removes the current behavior corresponding to clicking on the left menu:
   d3.selectAll('span.filter_v')
@@ -310,6 +326,7 @@ export {
   PropSizer,
   unbindUI,
   prepareTooltip,
+  prepareTooltip2,
   removeDuplicates,
   getSvgPathType,
   svgPathToCoords,

@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip, getMean, svgPathToCoords, selectFirstAvailableVar } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip2, getMean, svgPathToCoords, selectFirstAvailableVar } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset, addVariable } from './../prepare_data';
 import { svg_map } from './../map';
@@ -45,6 +45,7 @@ function getMeanRank(mean_value, ratio_to_use) {
   return mean_rank;
 }
 
+let t;
 
 export class BarChart1 {
   constructor(ref_data) {
@@ -69,25 +70,28 @@ export class BarChart1 {
       if (!this._focus) { console.log('b'); return; }
       if (!this.map_elem) { console.log('c'); return; }
 
-      const elems = document.elementsFromPoint(d3.event.sourceEvent.pageX,d3.event.sourceEvent.pageY);
-      const elem = elems.find(e => e.className.baseVal === 'bar');
-      console.log(elem);
-      if (elem) {
-        const new_click_event = new MouseEvent('mousedown', {
-          pageX: d3.event.sourceEvent.pageX,
-          pageY: d3.event.sourceEvent.pageY,
-          clientX: d3.event.sourceEvent.clientX,
-          clientY: d3.event.sourceEvent.clientY,
-          bubbles: true,
-          cancelable: true,
-          view: window });
-        console.log(new_click_event);console.log(d3.event);
-        elem.dispatchEvent(new_click_event);
-      }
-
       const d3_event = d3.event;
       const ratio_to_use = this.ratio_to_use;
       const ref_value = this.ref_value;
+
+      // const elems = document.elementsFromPoint(d3_event.sourceEvent.pageX, d3_event.sourceEvent.pageY);
+      // const elem = elems.find(e => e.className.baseVal === 'bar');
+      // if (elem) {
+      //   const new_click_event = new MouseEvent('mousedown', {
+      //     pageX: d3_event.sourceEvent.pageX,
+      //     pageY: d3_event.sourceEvent.pageY,
+      //     clientX: d3_event.sourceEvent.clientX,
+      //     clientY: d3_event.sourceEvent.clientY,
+      //     bubbles: true,
+      //     cancelable: true,
+      //     view: window
+      //   });
+      //   elem.dispatchEvent(new_click_event);
+      // } else {
+      clearTimeout(t);
+      t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 5);
+      // }
+
       // if (d3_event && d3_event.selection
       //       && d3_event.sourceEvent && d3_event.sourceEvent.target === document.querySelector('.brush_top > rect.overlay')) {
       if (d3_event && d3_event.selection && d3_event.sourceEvent && d3_event.sourceEvent.target) {
@@ -328,7 +332,7 @@ export class BarChart1 {
       });
 
     // Prepare the tooltip displayed on mouseover:
-    const tooltip = prepareTooltip(svg_container);
+    this.tooltip = prepareTooltip2(d3.select(svg_bar.node().parentElement), null);
 
     // Deactivate the brush rect selection on the map + on the chart
     // when he user press the Ctrl key:
@@ -509,72 +513,54 @@ export class BarChart1 {
 
     this.g_bar.selectAll('.bar')
       .on('mouseover', () => {
-        svg_container.select('.tooltip').style('display', null);
+        clearTimeout(t);
+        this.tooltip.style('display', null);
       })
       .on('mouseout', () => {
-        setTimeout(() => { svg_container.select('.tooltip').style('display', 'none'); }, 1250);
+        clearTimeout(t);
+        t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
       })
-      .on('mousemove', function (d) {
-        const tooltip = svg_container.select('.tooltip').style('display', null);
-        tooltip.select('rect').attrs({ width: 0, height: 0 });
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.id}`);
-        tooltip.select('text.value_feature1')
-          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
-        tooltip.select('text.value_feature2')
-          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
-        const b = tooltip.node().getBoundingClientRect();
-        tooltip.select('rect')
-          .attrs({
-            width: b.width + 20,
-            height: b.height + 7.5,
-          });
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
-      })
-      .on('mousedown', function (d) {
-        const tooltip = svg_container.select('.tooltip').style('display', null);
-        tooltip.select('rect').attrs({ width: 0, height: 0 });
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.id}`);
-        tooltip.select('text.value_feature1')
-          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
-        tooltip.select('text.value_feature2')
-          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
-        const b = tooltip.node().getBoundingClientRect();
-        tooltip.select('rect')
-          .attrs({
-            width: b.width + 20,
-            height: b.height + 7.5,
-          });
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
+      .on('mousemove mousedown', function (d) {
+        clearTimeout(t);
+        self.tooltip.select('.title')
+          .html([
+            '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+        self.tooltip.select('.content')
+          .html([
+            self.ratio_to_use, ' : ', math_round(d[self.ratio_to_use] * 10) / 10, ' ', self.unit, '<br>',
+            'Rang : ', self.current_ids.indexOf(d.id) + 1, '/', self.current_ids.length,
+          ].join(''));
+        const b = self.tooltip.node().getBoundingClientRect();
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - 85}px` });
       });
 
-      d3.select('.brush_top').on('mousemove', function() {
-        const elems = document.elementsFromPoint(d3.event.pageX,d3.event.pageY);
-        console.log(elems);
-        const elem = elems.find(e => e.className.baseVal === 'bar');
-        if (elem) {
-          const new_click_event = new MouseEvent('mousemove', {
-            pageX: d3.event.pageX,
-            pageY: d3.event.pageY,
-            clientX: d3.event.clientX,
-            clientY: d3.event.clientY,
-            bubbles: true,
-            cancelable: true,
-            view: window });
-          console.log(new_click_event);console.log(d3.event);
-          elem.dispatchEvent(new_click_event);
-        } else {
-          svg_container.select('.tooltip').style('display', 'none');
-        }
-      })
-      .on('mouseout', function () {
-        svg_container.select('.tooltip').style('display', 'none');
-      })
+      svg_container.select('.brush_top')
+        .on('mousemove mousedown', function () {
+          const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
+          const elem = elems.find(e => e.className.baseVal === 'bar');
+          if (elem) {
+            const new_click_event = new MouseEvent('mousemove', {
+              pageX: d3.event.pageX,
+              pageY: d3.event.pageY,
+              clientX: d3.event.clientX,
+              clientY: d3.event.clientY,
+              bubbles: true,
+              cancelable: true,
+              view: window });
+            elem.dispatchEvent(new_click_event);
+          } else {
+            clearTimeout(t);
+            t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
+          }
+        })
+        .on('mouseout', function () {
+          clearTimeout(t);
+          t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
+        })
 
       // this.g_bar.selectAll('.bar')
       //   .on('mousedown', function(e){
@@ -948,12 +934,13 @@ export class BarChart1 {
     this.ref_value = this.data.find(
       ft => ft.id === app.current_config.my_region)[ratio_to_use];
     this.x.domain(this.current_ids);
-    // const min_serie = d3.min(this.data, d => d[ratio_to_use]);
+    let min_serie = d3.min(this.data, d => d[ratio_to_use]);
+    min_serie = min_serie >= 0 ? 0 : min_serie + min_serie / 10;
     const max_serie = d3.max(this.data, d => d[ratio_to_use]);
     // const offset_y = (max_serie - min_serie) / 20;
     this.y.domain([
       // min_serie - offset_y, max_serie,
-      0, max_serie,
+      min_serie, max_serie,
     ]);
     this.x2.domain(this.x.domain());
     this.y2.domain(this.y.domain());
@@ -1024,9 +1011,10 @@ export class BarChart1 {
   prepareTableStat() {
     const values = this.data.map(d => d[this.ratio_to_use]);
     return {
-      Min: d3.min(values),
-      Max: d3.max(values),
-      Moyenne: getMean(values),
+      'Min': d3.min(values),
+      'Max': d3.max(values),
+      'Moy': getMean(values),
+      'Med': d3.median(values),
       id: this.ratio_to_use,
       Variable: this.ratio_to_use,
       'Ma région': this.ref_value,

@@ -2,7 +2,7 @@ export default class TableResumeStat {
   constructor(summary_features, options = {}) {
     const doc = document;
     const nb_features = summary_features.length;
-    const column_names = ['Variable', 'Min', 'Moyenne', 'Max', 'Ma région'];
+    const column_names = ['Variable', 'Min', 'Moy', 'Med', 'Max', 'Ma région'];
     const nb_columns = column_names.length;
     const container_div = doc.createElement('div');
     const myTable = doc.createElement('table');
@@ -13,7 +13,9 @@ export default class TableResumeStat {
     container_div.className = 'minitable_container';
     for (let i = 0; i < nb_columns; i++) {
       const cell = doc.createElement('th');
-      cell.innerHTML = column_names[i];
+      cell.innerHTML = ['Variable', 'Ma région'].indexOf(column_names[i]) > -1
+        ? column_names[i]
+        : column_names[i] + '.';
       headers_row.appendChild(cell);
     }
     headers.appendChild(headers_row);

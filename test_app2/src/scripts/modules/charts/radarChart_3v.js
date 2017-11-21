@@ -1,3 +1,4 @@
+import alertify from 'alertifyjs';
 import {
   math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
@@ -135,7 +136,7 @@ export class RadarChart3 {
         }
       }
     }
-
+    this.inversedAxis = new Set();
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
       .attr('transform', `translate(${cfg.w / 2 + cfg.margin.left},${cfg.h / 2 + cfg.margin.top})`);
@@ -179,21 +180,35 @@ export class RadarChart3 {
 
   add_element(elem) {
     const n_axis = elem.axes.map(i => i.axis);
-    if (!(JSON.stringify(n_axis) === JSON.stringify(this.allAxis))) {
+    if (!(JSON.stringify(n_axis.sort()) === JSON.stringify(this.allAxis.sort()))) {
       throw new Error('Expected element with same axes name than existing data.');
     }
+    elem.axes.forEach((ft) => {
+      console.log(this.inversedAxis);
+      if (this.inversedAxis.has(ft.axis)) {
+        ft.value = 100 - ft.value;
+      }
+    });
     this.data.push(elem);
-    this.displayed_ids.push(elem.name);
-    app.colors = {}
+    const colors_in_use = Object.keys(app.colors).map(k => app.colors[k]);
     for (let j = 0; j < this.data.length; j++) {
       const on_axes = [];
       if (this.id_my_region === this.data[j].name) app.colors[this.data[j].name] = color_highlight;
-      else app.colors[this.data[j].name] = this.cfg.color(j + 1);
+      else if (!app.colors[this.data[j].name]) {
+        let ii = 0;
+        while (ii++ < 21) {
+          const c = this.cfg.color(ii);
+          if (!(colors_in_use.indexOf(c) > -1)) {
+            app.colors[this.data[j].name] = c;
+          }
+        }
+      }
       for (let i = 0; i < this.data[j].axes.length; i++) {
         this.data[j].axes[i].id = this.data[j].name;
         on_axes.push(this.data[j].name);
       }
     }
+    this.displayed_ids.push(elem.name);
     const self = this;
     const cfg = this.cfg;
 
@@ -372,6 +387,13 @@ export class RadarChart3 {
     };
 
     const labelCtxMenu = function labelCtxMenu(label) {
+      if (self.inversedAxis.has(label)) {
+        self.inversedAxis.delete(label);
+        this.style.fill = 'black';
+      } else {
+        self.inversedAxis.add(label);
+        this.style.fill = 'red';
+      }
       d3.event.stopPropagation();
       d3.event.preventDefault();
       self.inverse_data(label);
@@ -803,7 +825,8 @@ export class RadarChart3 {
     const features = all_values.map((values, i) => ({
       Min: d3.min(values),
       Max: d3.max(values),
-      Moyenne: getMean(values),
+      Moy: getMean(values),
+      Med: d3.median(values),
       id: this.variables[i],
       Variable: this.variables[i],
       'Ma région': my_region[this.variables[i]],
@@ -815,10 +838,15 @@ export class RadarChart3 {
     const id = d.id;
     if (this.current_ids.indexOf(id) < 0 || id === this.id_my_region) return;
     if (this.displayed_ids.indexOf(id) < 0) {
+      if (this.data.length > 6) {
+        alertify.warning('Le nombre maximal de régions sélectionnées est atteint.');
+        return;
+      }
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
       this.update();
     } else {
+      app.colors[id] = null;
       this.g.selectAll(`#${id}.radarWrapper`).remove();
       this.g.selectAll(`#${id}.radarCircleWrapper`).remove();
       const ix = this.data.map((_d, i) => [i, _d.name === id]).find(_d => _d[1] === true)[0];

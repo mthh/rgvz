@@ -1,4 +1,4 @@
-import { Rect, comp2, prepareTooltip, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
+import { Rect, comp2, prepareTooltip2, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { svg_map } from './../map';
@@ -7,11 +7,11 @@ import ContextMenu from './../contextMenu';
 import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
-let svg_bar, margin, bbox_svg, width, height, svg_container;
+let svg_bar, margin, bbox_svg, width, height, svg_container, t;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
-  margin = { top: 20, right: 20, bottom: 40, left: 40 };
+  margin = { top: 20, right: 20, bottom: 40, left: 50 };
   bbox_svg = svg_bar.node().getBoundingClientRect();
   width = +bbox_svg.width - margin.left - margin.right;
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
@@ -52,6 +52,10 @@ export class ScatterPlot2 {
       ];
       if (this.xInversed) range_x.reverse();
       if (this.yInversed) range_y.reverse();
+      range_x[0] -= 0.5;
+      range_x[1] += 0.5;
+      range_y[0] -= 0.5;
+      range_y[1] += 0.5;
       let t1;
       let t2;
       if (this.type === 'value') {
@@ -64,8 +68,8 @@ export class ScatterPlot2 {
 
       for (let i = 0, len_i = this.data.length; i < len_i; i++) {
         const ft = this.data[i];
-        if (ft[t1] > range_x[0] && ft[t1] < range_x[1]
-            && ft[t2] > range_y[0] && ft[t2] < range_y[1]) {
+        if (ft[t1] >= range_x[0] && ft[t1] <= range_x[1]
+            && ft[t2] >= range_y[0] && ft[t2] <= range_y[1]) {
           app.colors[ft.id] = comp2(
             ft[this.variable1], ft[this.variable2],
             this.ref_value1, this.ref_value2,
@@ -93,7 +97,7 @@ export class ScatterPlot2 {
     this.pretty_name2 = app.current_config.ratio_pretty_name[1];
     this.data = ref_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
-        const res = { id: d.id };
+        const res = { id: d.id, name: d.name };
         res[this.variable1] = d[this.variable1];
         res[this.variable2] = d[this.variable2];
         return res;
@@ -189,14 +193,14 @@ export class ScatterPlot2 {
       .call(this.yAxis);
 
     // Prepare the tooltip displayed on mouseover:
-    prepareTooltip(this.plot);
+    this.tooltip = prepareTooltip2(d3.select(svg_bar.node().parentElement), null);
 
     this.prepareTitleAxis();
 
     svg_container.append('image')
       .attrs({
         x: margin.left + width / 2 - 20 - svg_container.select('#title-axis-x').node().getBoundingClientRect().width / 2,
-        y: margin.top + height + margin.bottom / 2 - 2.5,
+        y: margin.top + height + margin.bottom / 2 + 5,
         width: 15,
         height: 15,
         'xlink:href': 'img/reverse_plus.png',
@@ -207,7 +211,7 @@ export class ScatterPlot2 {
         // for (let i = 0; i < this.nbFt; i++) {
         //   self.data[i][self.rank_variable1] = 100 - self.data[i][self.rank_variable1];
         // }
-
+        svg_container.select('#title-axis-x').style('fill', this.xInversed ? 'red' : 'black');
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
         } else {
@@ -229,6 +233,7 @@ export class ScatterPlot2 {
         // for (let i = 0; i < this.nbFt; i++) {
         //   this.data[i][this.rank_variable2] = 100 - this.data[i][this.rank_variable2];
         // }
+        svg_container.select('#title-axis-y').style('fill', this.yInversed ? 'red' : 'black');
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
         } else {
@@ -350,11 +355,11 @@ export class ScatterPlot2 {
     svg_container.append('text')
       .attrs({
         id: 'title-axis-x',
+        class: 'title-axis',
         x: margin.left + width / 2,
-        y: margin.top + height + margin.bottom / 2 + 10,
+        y: margin.top + height + margin.bottom / 2 + 15,
       })
-      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
-      .text(this.variable1)
+      .html(this.variable1 + ' &#x25BE;')
       .on('click', function () {
         const bbox = this.getBoundingClientRect();
         if (self.menuY.displayed) {
@@ -366,12 +371,12 @@ export class ScatterPlot2 {
     svg_container.append('text')
       .attrs({
         id: 'title-axis-y',
+        class: 'title-axis',
         x: margin.left / 2,
         y: margin.top + (height / 2) - 10,
         transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
       })
-      .styles({ 'font-family': 'sans-serif', 'font-size': '12px', 'text-anchor': 'middle' })
-      .text(this.variable2)
+      .html(this.variable2 + ' &#x25BE;')
       .on('click', function () {
         const bbox = this.getBoundingClientRect();
         if (self.menuX.displayed) {
@@ -432,7 +437,10 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
-        }));
+        }))
+        .on('end', () => {
+          self.bindTooltips(true);
+        });
 
       dots.enter()
         .insert('circle')
@@ -448,31 +456,7 @@ export class ScatterPlot2 {
           class: 'dot',
         }))
         .on('end', () => {
-          this.scatter.selectAll('.dot')
-            .on('mouseover.tooltip', () => {
-              svg_container.select('.tooltip').style('display', null);
-            })
-            .on('mousemove.tooltip', function (d) {
-              const tooltip = svg_container.select('.tooltip')
-                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
-              tooltip.select('rect').attrs({ width: 0, height: 0 });
-              tooltip.select('text.id_feature')
-                .text(`${d.id}`);
-              tooltip.select('text.value_feature1')
-                .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
-              tooltip.select('text.value_feature2')
-                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`);
-              tooltip.select('text.value_feature3')
-                .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
-              tooltip.select('text.value_feature4')
-              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`);
-              const b = tooltip.node().getBoundingClientRect();
-              tooltip.select('rect')
-                .attrs({ width: b.width + 20, height: b.height + 7.5 });
-            })
-            .on('mouseout.tooltip', () => {
-              svg_container.select('.tooltip').style('display', 'none');
-            });
+          self.bindTooltips(true);
         });
       dots.exit().transition().duration(125).remove();
     } else if (this.type === 'value') {
@@ -511,7 +495,10 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
-        }));
+        }))
+        .on('end', () => {
+          self.bindTooltips(false);
+        })
 
       dots.enter()
         .insert('circle')
@@ -527,31 +514,7 @@ export class ScatterPlot2 {
           class: 'dot',
         }))
         .on('end', () => {
-          this.scatter.selectAll('.dot')
-            .on('mouseover.tooltip', () => {
-              svg_container.select('.tooltip').style('display', null);
-            })
-            .on('mousemove.tooltip', function (d) {
-              const tooltip = svg_container.select('.tooltip')
-                .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 35]})`);
-              tooltip.select('rect').attrs({ width: 0, height: 0 });
-              tooltip.select('text.id_feature')
-                .text(`${d.id}`);
-              tooltip.select('text.value_feature1')
-                .text(`${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`);
-              tooltip.select('text.value_feature2')
-                .text(`${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`);
-              tooltip.select('text.value_feature3')
-                .text(`${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`);
-              tooltip.select('text.value_feature4')
-              .text(`${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`);
-              const b = tooltip.node().getBoundingClientRect();
-              tooltip.select('rect')
-                .attrs({ width: b.width + 20, height: b.height + 7.5 });
-            })
-            .on('mouseout.tooltip', () => {
-              svg_container.select('.tooltip').style('display', 'none');
-            });
+          self.bindTooltips(false);
         });
 
       dots.exit().transition().duration(125).remove();
@@ -613,6 +576,49 @@ export class ScatterPlot2 {
         return color_countries;
       });
     self.updateLight();
+  }
+
+  bindTooltips(with_rank) {
+    const self = this;
+    this.scatter.selectAll('.dot')
+      .on('mouseover.tooltip', () => {
+        clearTimeout(t);
+        self.tooltip.style('display', null);
+      })
+      .on('mousemove.tooltip', function (d) {
+        clearTimeout(t);
+        self.tooltip.select('.title')
+          .html([
+            '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+        let yoffset;
+        if (with_rank) {
+          self.tooltip.select('.content')
+            .html([
+              `${self.variable1} (rang) : ${Math.round(d[self.rank_variable1] * 10) / 10}/100`,
+              `${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`,
+              `${self.variable2} (rang) : ${Math.round(d[self.rank_variable2] * 10) / 10}/100`,
+              `${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`,
+            ].join('<br>'));
+          yoffset = 120;
+        } else {
+          self.tooltip.select('.content')
+            .html([
+              `${self.variable1} (valeur) : ${Math.round(d[self.variable1] * 10) / 10} ${self.unit1}`,
+              `${self.variable2} (valeur) : ${Math.round(d[self.variable2] * 10) / 10} ${self.unit2}`,
+            ].join('<br>'));
+          yoffset = 85;
+        }
+        const b = self.tooltip.node().getBoundingClientRect();
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - yoffset}px` });
+      })
+      .on('mouseout.tooltip', () => {
+        clearTimeout(t);
+        t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
+      });
   }
 
   handleClickMap(d, parent) {
@@ -683,7 +689,7 @@ export class ScatterPlot2 {
   changeStudyZone() {
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
-        const res = { id: d.id };
+        const res = { id: d.id, name: d.name };
         res[this.variable1] = d[this.variable1];
         res[this.variable2] = d[this.variable2];
         return res;
@@ -715,12 +721,12 @@ export class ScatterPlot2 {
     this.pretty_name1 = var_info.name;
     this.unit1 = var_info.unit;
     svg_container.select('#title-axis-x')
-      .text(code_variable);
+      .html(code_variable + ' &#x25BE;');
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
-        const res = { id: d.id };
+        const res = { id: d.id, name: d.name };
         res[this.variable1] = d[this.variable1];
         res[this.variable2] = d[this.variable2];
         return res;
@@ -745,12 +751,12 @@ export class ScatterPlot2 {
     this.pretty_name2 = var_info.name;
     this.unit2 = var_info.unit;
     svg_container.select('#title-axis-y')
-      .text(code_variable);
+      .html(code_variable + ' &#x25BE;');
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
     this.data = app.current_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
       .map((d) => {
-        const res = { id: d.id };
+        const res = { id: d.id, name: d.name };
         res[this.variable1] = d[this.variable1];
         res[this.variable2] = d[this.variable2];
         return res;
@@ -870,7 +876,8 @@ export class ScatterPlot2 {
       {
         Min: d3.min(values1),
         Max: d3.max(values1),
-        Moyenne: getMean(values1),
+        Moy: getMean(values1),
+        Med: d3.median(values1),
         id: this.variable1,
         Variable: this.variable1,
         'Ma région': this.ref_value1,
@@ -878,7 +885,8 @@ export class ScatterPlot2 {
       {
         Min: d3.min(values2),
         Max: d3.max(values2),
-        Moyenne: getMean(values2),
+        Moy: getMean(values2),
+        Med: d3.median(values2),
         id: this.variable2,
         Variable: this.variable2,
         'Ma région': this.ref_value2,
