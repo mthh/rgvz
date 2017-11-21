@@ -394,6 +394,8 @@ export class ScatterPlot2 {
   update() {
     const self = this;
     const data = self.data;
+    const dots = this.scatter.selectAll('.dot')
+      .data(data, d => d.id);
 
     if (this.type === 'rank') {
       const rank_variable1 = this.rank_variable1;
@@ -417,8 +419,8 @@ export class ScatterPlot2 {
       const y = this.y;
       const default_color = 'gray';
 
-      const dots = this.scatter.selectAll('.dot')
-        .data(data, d => d.id);
+      // const dots = this.scatter.selectAll('.dot')
+      //   .data(data, d => d.id);
 
       dots
         .transition()
@@ -496,8 +498,8 @@ export class ScatterPlot2 {
       this.plot.select('#axis--x').transition().duration(125).call(this.xAxis);
       this.plot.select('#axis--y').transition().duration(125).call(this.yAxis);
 
-      const dots = this.scatter.selectAll('.dot')
-        .data(data, d => d.id);
+      // const dots = this.scatter.selectAll('.dot')
+      //   .data(data, d => d.id);
 
       dots
         .transition()

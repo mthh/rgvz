@@ -468,7 +468,7 @@ function bindHelpMenu() {
         `<p style="font-family: 'Signika',sans-serif;color: #4f81bd;font-size: 1.3rem;">Description de l'indicateur</p>
         <p style="font-family: 'Signika',sans-serif;text-align: justify;">${o.methodo.split('\n').join('<br>')}</p>
         <p style="font-family: 'Signika',sans-serif;font-size: 0.8em">${o.source}</p>
-        <p style="font-family: 'Signika',sans-serif;font-size: 0.8em">Date de téléchargement de la données : ${o.last_update}</p>`);
+        <p style="font-family: 'Signika',sans-serif;font-size: 0.8em">Date de téléchargement de la donnée : ${o.last_update}</p>`);
       modal.open();
     };
   });

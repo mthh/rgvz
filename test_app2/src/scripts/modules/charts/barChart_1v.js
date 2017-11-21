@@ -68,6 +68,23 @@ export class BarChart1 {
     this.brushed_top = () => {
       if (!this._focus) { console.log('b'); return; }
       if (!this.map_elem) { console.log('c'); return; }
+
+      const elems = document.elementsFromPoint(d3.event.sourceEvent.pageX,d3.event.sourceEvent.pageY);
+      const elem = elems.find(e => e.className.baseVal === 'bar');
+      console.log(elem);
+      if (elem) {
+        const new_click_event = new MouseEvent('mousedown', {
+          pageX: d3.event.sourceEvent.pageX,
+          pageY: d3.event.sourceEvent.pageY,
+          clientX: d3.event.sourceEvent.clientX,
+          clientY: d3.event.sourceEvent.clientY,
+          bubbles: true,
+          cancelable: true,
+          view: window });
+        console.log(new_click_event);console.log(d3.event);
+        elem.dispatchEvent(new_click_event);
+      }
+
       const d3_event = d3.event;
       const ratio_to_use = this.ratio_to_use;
       const ref_value = this.ref_value;
@@ -210,6 +227,14 @@ export class BarChart1 {
 
     this.g_bar = focus.append('g');
 
+    const g_brush_top = focus.append('g')
+      .attr('class', 'brush_top')
+      .call(brush_top);
+
+    const g_brush_bottom = context.append('g')
+      .attr('class', 'brush_bottom')
+      .call(brush_bottom);
+
     const groupe_line_mean = focus.append('g').attr('class', 'mean');
     groupe_line_mean.append('text')
       .attrs({ x: 60, y: y(this.mean_value) + 20 })
@@ -247,10 +272,6 @@ export class BarChart1 {
 
     this.updateMiniBars();
 
-    const g_brush_bottom = context.append('g')
-      .attr('class', 'brush_bottom')
-      .call(brush_bottom);
-
     const context_left_handle = g_brush_bottom.insert('image', '.handle')
       .attrs({
         width: 20,
@@ -267,11 +288,7 @@ export class BarChart1 {
         'xlink:href': 'img/right-handle.png',
       });
 
-    focus.append('g')
-      .attr('class', 'brush_top')
-      .call(brush_top)
-      .call(brush_top.move, null);
-
+    g_brush_top.call(brush_top.move, null);
     g_brush_bottom.call(brush_bottom.move, x.range());
 
     this.completude = new CompletudeSection();
@@ -458,31 +475,6 @@ export class BarChart1 {
         }
         return 'none';
       })
-      .on('mouseover', () => {
-        svg_container.select('.tooltip').style('display', null);
-      })
-      .on('mouseout', () => {
-        svg_container.select('.tooltip').style('display', 'none');
-      })
-      .on('mousemove', function (d) {
-        const tooltip = svg_container.select('.tooltip');
-        tooltip.select('rect').attrs({ width: 0, height: 0 });
-        tooltip
-          .select('text.id_feature')
-          .text(`${d.id}`);
-        tooltip.select('text.value_feature1')
-          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
-        tooltip.select('text.value_feature2')
-          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
-        const b = tooltip.node().getBoundingClientRect();
-        tooltip.select('rect')
-          .attrs({
-            width: b.width + 20,
-            height: b.height + 7.5,
-          });
-        tooltip
-          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
-      });
 
     bar.enter()
       .insert('rect', '.mean')
@@ -514,6 +506,164 @@ export class BarChart1 {
         }
       })
       .style('text-anchor', () => (displayed > 20 ? 'end' : 'middle'));
+
+    this.g_bar.selectAll('.bar')
+      .on('mouseover', () => {
+        svg_container.select('.tooltip').style('display', null);
+      })
+      .on('mouseout', () => {
+        setTimeout(() => { svg_container.select('.tooltip').style('display', 'none'); }, 1250);
+      })
+      .on('mousemove', function (d) {
+        const tooltip = svg_container.select('.tooltip').style('display', null);
+        tooltip.select('rect').attrs({ width: 0, height: 0 });
+        tooltip
+          .select('text.id_feature')
+          .text(`${d.id}`);
+        tooltip.select('text.value_feature1')
+          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
+        tooltip.select('text.value_feature2')
+          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
+        const b = tooltip.node().getBoundingClientRect();
+        tooltip.select('rect')
+          .attrs({
+            width: b.width + 20,
+            height: b.height + 7.5,
+          });
+        tooltip
+          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
+      })
+      .on('mousedown', function (d) {
+        const tooltip = svg_container.select('.tooltip').style('display', null);
+        tooltip.select('rect').attrs({ width: 0, height: 0 });
+        tooltip
+          .select('text.id_feature')
+          .text(`${d.id}`);
+        tooltip.select('text.value_feature1')
+          .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
+        tooltip.select('text.value_feature2')
+          .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
+        const b = tooltip.node().getBoundingClientRect();
+        tooltip.select('rect')
+          .attrs({
+            width: b.width + 20,
+            height: b.height + 7.5,
+          });
+        tooltip
+          .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
+      });
+
+      d3.select('.brush_top').on('mousemove', function() {
+        const elems = document.elementsFromPoint(d3.event.pageX,d3.event.pageY);
+        console.log(elems);
+        const elem = elems.find(e => e.className.baseVal === 'bar');
+        if (elem) {
+          const new_click_event = new MouseEvent('mousemove', {
+            pageX: d3.event.pageX,
+            pageY: d3.event.pageY,
+            clientX: d3.event.clientX,
+            clientY: d3.event.clientY,
+            bubbles: true,
+            cancelable: true,
+            view: window });
+          console.log(new_click_event);console.log(d3.event);
+          elem.dispatchEvent(new_click_event);
+        } else {
+          svg_container.select('.tooltip').style('display', 'none');
+        }
+      })
+      .on('mouseout', function () {
+        svg_container.select('.tooltip').style('display', 'none');
+      })
+
+      // this.g_bar.selectAll('.bar')
+      //   .on('mousedown', function(e){
+      //     const brush_elm = svg_container.select('.brush_top > .overlay').node();
+      //     const bbox = brush_elm.getBoundingClientRect();
+      //     if (brush_elm.display !== 'none' && d3.event.pageX > bbox.left && d3.event.pageX < (bbox.left + bbox.width)) {
+      //       console.log('inside')
+      //       const new_click_event = new MouseEvent('mousedown', {
+      //         pageX: d3.event.pageX,
+      //         pageY: d3.event.pageY,
+      //         clientX: d3.event.clientX,
+      //         clientY: d3.event.clientY,
+      //         bubbles: true,
+      //         cancelable: true,
+      //         view: window });
+      //       console.log(new_click_event);console.log(d3.event);
+      //       brush_elm.parentElement.querySelector('.selection').dispatchEvent(new_click_event);
+      //     } else {
+      //       const new_click_event = new MouseEvent('mousedown', {
+      //         pageX: d3.event.pageX,
+      //         pageY: d3.event.pageY,
+      //         clientX: d3.event.clientX,
+      //         clientY: d3.event.clientY,
+      //         bubbles: true,
+      //         cancelable: true,
+      //         view: window });
+      //       console.log(new_click_event);console.log(d3.event);
+      //       brush_elm.dispatchEvent(new_click_event);
+      //     }
+      // });
+
+
+    // With brush under bars :
+    // this.g_bar.selectAll('.bar')
+    //   .on('mouseover.tooltip', () => {
+    //     svg_container.select('.tooltip').style('display', null);
+    //   })
+    //   .on('mouseout.tooltip', () => {
+    //     svg_container.select('.tooltip').style('display', 'none');
+    //   })
+    //   .on('mousemove.tooltip', function (d) {
+    //     const tooltip = svg_container.select('.tooltip');
+    //     tooltip.select('rect').attrs({ width: 0, height: 0 });
+    //     tooltip
+    //       .select('text.id_feature')
+    //       .text(`${d.id}`);
+    //     tooltip.select('text.value_feature1')
+    //       .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
+    //     tooltip.select('text.value_feature2')
+    //       .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
+    //     const b = tooltip.node().getBoundingClientRect();
+    //     tooltip.select('rect')
+    //       .attrs({
+    //         width: b.width + 20,
+    //         height: b.height + 7.5,
+    //       });
+    //     tooltip
+    //       .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
+    //   });
+    //
+    // this.g_bar.selectAll('.bar')
+    //   .on('mousedown', function(e){
+    //     const brush_elm = svg_container.select('.brush_top > .overlay').node();
+    //     const bbox = brush_elm.getBoundingClientRect();
+    //     if (brush_elm.display !== 'none' && d3.event.pageX > bbox.left && d3.event.pageX < (bbox.left + bbox.width)) {
+    //       console.log('inside')
+    //       const new_click_event = new MouseEvent('mousedown', {
+    //         pageX: d3.event.pageX,
+    //         pageY: d3.event.pageY,
+    //         clientX: d3.event.clientX,
+    //         clientY: d3.event.clientY,
+    //         bubbles: true,
+    //         cancelable: true,
+    //         view: window });
+    //       console.log(new_click_event);console.log(d3.event);
+    //       brush_elm.parentElement.querySelector('.selection').dispatchEvent(new_click_event);
+    //     } else {
+    //       const new_click_event = new MouseEvent('mousedown', {
+    //         pageX: d3.event.pageX,
+    //         pageY: d3.event.pageY,
+    //         clientX: d3.event.clientX,
+    //         clientY: d3.event.clientY,
+    //         bubbles: true,
+    //         cancelable: true,
+    //         view: window });
+    //       console.log(new_click_event);console.log(d3.event);
+    //       brush_elm.dispatchEvent(new_click_event);
+    //     }
+    // });
 
     this.updateMiniBars();
   }
