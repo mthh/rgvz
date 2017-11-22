@@ -478,7 +478,7 @@ export class BarChart1 {
           return 'initial';
         }
         return 'none';
-      })
+      });
 
     bar.enter()
       .insert('rect', '.mean')
@@ -520,7 +520,7 @@ export class BarChart1 {
         clearTimeout(t);
         t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
       })
-      .on('mousemove mousedown', function (d) {
+      .on('mousemove mousedown', (d) => {
         clearTimeout(t);
         self.tooltip.select('.title')
           .html([
@@ -530,7 +530,6 @@ export class BarChart1 {
             self.ratio_to_use, ' : ', math_round(d[self.ratio_to_use] * 10) / 10, ' ', self.unit, '<br>',
             'Rang : ', self.current_ids.indexOf(d.id) + 1, '/', self.current_ids.length,
           ].join(''));
-        const b = self.tooltip.node().getBoundingClientRect();
         self.tooltip
           .styles({
             display: null,
@@ -538,118 +537,29 @@ export class BarChart1 {
             top: `${d3.event.pageY - 85}px` });
       });
 
-      svg_container.select('.brush_top')
-        .on('mousemove mousedown', function () {
-          const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
-          const elem = elems.find(e => e.className.baseVal === 'bar');
-          if (elem) {
-            const new_click_event = new MouseEvent('mousemove', {
-              pageX: d3.event.pageX,
-              pageY: d3.event.pageY,
-              clientX: d3.event.clientX,
-              clientY: d3.event.clientY,
-              bubbles: true,
-              cancelable: true,
-              view: window });
-            elem.dispatchEvent(new_click_event);
-          } else {
-            clearTimeout(t);
-            t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
-          }
-        })
-        .on('mouseout', function () {
+    svg_container.select('.brush_top')
+      .on('mousemove mousedown', function () {
+        const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
+        const elem = elems.find(e => e.className.baseVal === 'bar');
+        if (elem) {
+          const new_click_event = new MouseEvent('mousemove', {
+            pageX: d3.event.pageX,
+            pageY: d3.event.pageY,
+            clientX: d3.event.clientX,
+            clientY: d3.event.clientY,
+            bubbles: true,
+            cancelable: true,
+            view: window });
+          elem.dispatchEvent(new_click_event);
+        } else {
           clearTimeout(t);
           t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
-        })
-
-      // this.g_bar.selectAll('.bar')
-      //   .on('mousedown', function(e){
-      //     const brush_elm = svg_container.select('.brush_top > .overlay').node();
-      //     const bbox = brush_elm.getBoundingClientRect();
-      //     if (brush_elm.display !== 'none' && d3.event.pageX > bbox.left && d3.event.pageX < (bbox.left + bbox.width)) {
-      //       console.log('inside')
-      //       const new_click_event = new MouseEvent('mousedown', {
-      //         pageX: d3.event.pageX,
-      //         pageY: d3.event.pageY,
-      //         clientX: d3.event.clientX,
-      //         clientY: d3.event.clientY,
-      //         bubbles: true,
-      //         cancelable: true,
-      //         view: window });
-      //       console.log(new_click_event);console.log(d3.event);
-      //       brush_elm.parentElement.querySelector('.selection').dispatchEvent(new_click_event);
-      //     } else {
-      //       const new_click_event = new MouseEvent('mousedown', {
-      //         pageX: d3.event.pageX,
-      //         pageY: d3.event.pageY,
-      //         clientX: d3.event.clientX,
-      //         clientY: d3.event.clientY,
-      //         bubbles: true,
-      //         cancelable: true,
-      //         view: window });
-      //       console.log(new_click_event);console.log(d3.event);
-      //       brush_elm.dispatchEvent(new_click_event);
-      //     }
-      // });
-
-
-    // With brush under bars :
-    // this.g_bar.selectAll('.bar')
-    //   .on('mouseover.tooltip', () => {
-    //     svg_container.select('.tooltip').style('display', null);
-    //   })
-    //   .on('mouseout.tooltip', () => {
-    //     svg_container.select('.tooltip').style('display', 'none');
-    //   })
-    //   .on('mousemove.tooltip', function (d) {
-    //     const tooltip = svg_container.select('.tooltip');
-    //     tooltip.select('rect').attrs({ width: 0, height: 0 });
-    //     tooltip
-    //       .select('text.id_feature')
-    //       .text(`${d.id}`);
-    //     tooltip.select('text.value_feature1')
-    //       .text(`${math_round(d[self.ratio_to_use] * 10) / 10} ${self.unit}`);
-    //     tooltip.select('text.value_feature2')
-    //       .text(`Rang : ${self.current_ids.indexOf(d.id) + 1}/${self.current_ids.length}`);
-    //     const b = tooltip.node().getBoundingClientRect();
-    //     tooltip.select('rect')
-    //       .attrs({
-    //         width: b.width + 20,
-    //         height: b.height + 7.5,
-    //       });
-    //     tooltip
-    //       .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - (b.height + 5)]})`);
-    //   });
-    //
-    // this.g_bar.selectAll('.bar')
-    //   .on('mousedown', function(e){
-    //     const brush_elm = svg_container.select('.brush_top > .overlay').node();
-    //     const bbox = brush_elm.getBoundingClientRect();
-    //     if (brush_elm.display !== 'none' && d3.event.pageX > bbox.left && d3.event.pageX < (bbox.left + bbox.width)) {
-    //       console.log('inside')
-    //       const new_click_event = new MouseEvent('mousedown', {
-    //         pageX: d3.event.pageX,
-    //         pageY: d3.event.pageY,
-    //         clientX: d3.event.clientX,
-    //         clientY: d3.event.clientY,
-    //         bubbles: true,
-    //         cancelable: true,
-    //         view: window });
-    //       console.log(new_click_event);console.log(d3.event);
-    //       brush_elm.parentElement.querySelector('.selection').dispatchEvent(new_click_event);
-    //     } else {
-    //       const new_click_event = new MouseEvent('mousedown', {
-    //         pageX: d3.event.pageX,
-    //         pageY: d3.event.pageY,
-    //         clientX: d3.event.clientX,
-    //         clientY: d3.event.clientY,
-    //         bubbles: true,
-    //         cancelable: true,
-    //         view: window });
-    //       console.log(new_click_event);console.log(d3.event);
-    //       brush_elm.dispatchEvent(new_click_event);
-    //     }
-    // });
+        }
+      })
+      .on('mouseout', () => {
+        clearTimeout(t);
+        t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
+      });
 
     this.updateMiniBars();
   }

@@ -218,6 +218,7 @@ class MapSelect {
           .data(filterLevelGeom(this.nuts.features, filter), d => d.id)
           .enter()
           .append('path')
+          .attr('class', 'tg_ft')
           .attr('title', d => `${d.properties[app.current_config.name_field]} (${d.id})`)
           .attr('fill', d => (d.id !== app.current_config.my_region ? color_countries : color_highlight))
           .attr('d', path);

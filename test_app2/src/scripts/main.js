@@ -423,26 +423,22 @@ export function bindTopButtons(chart, map_elem) {
       app.colors = {};
       const value = this.getAttribute('value');
       if (value === 'BarChart1') {
-        console.log('BarChart1');
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
-        console.log('ScatterPlot2');
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'RadarChart3') {
-        console.log('RadarChart3');
-        chart = new RadarChart3(app.current_data);
+        chart = new RadarChart3(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       } else if (value === 'Similarity1plus') {
-        console.log('Similarity1plus');
-        chart = new Similarity1plus(app.current_data);
+        chart = new Similarity1plus(app.current_data); // eslint-disable-line no-param-reassign
         bindUI_chart(chart, map_elem);
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
@@ -482,10 +478,7 @@ function bindHelpMenu() {
   Array.prototype.slice.call(helps_buttons_study_zone).forEach((btn_i) => {
     // eslint-disable-next-line no-param-reassign
     btn_i.onclick = function () {
-      const filter_name = [
-        this.previousSibling.previousSibling.getAttribute('filter-value'),
-        app.current_config.current_level,
-      ].join('_')
+      const filter_name = this.previousSibling.previousSibling.getAttribute('filter-value');
       const o = study_zones.find(d => d.id === filter_name);
 
       // eslint-disable-next-line new-cap
@@ -565,13 +558,11 @@ function loadData() {
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
       prepareVariablesInfo(metadata_indicateurs);
-      console.log(metadata_indicateurs);
       const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       const start_region = getRandom(features_menu.map(d => d.id), 13);
       const start_variable = getRandom(
         ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
       prepare_dataset(full_dataset, app);
-      console.log(territorial_mesh);console.log(variables_info);console.log(app);console.log(study_zones);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
       createMenu(features_menu, variables_info, study_zones, territorial_mesh);
@@ -613,6 +604,7 @@ const getRatioToWide = () => {
   } else if (window.matchMedia('(max-width: 959px)').matches) {
     return 540 / 1350;
   }
+  return 1350 / 1350;
 };
 
 window.onresize = function () {

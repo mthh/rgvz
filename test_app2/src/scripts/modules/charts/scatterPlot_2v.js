@@ -284,7 +284,49 @@ export class ScatterPlot2 {
         id: 'ind_ranks',
         class: 'choice_ind',
       })
-      .text('Valeurs de rang');
+      .text('Rangs normalisés');
+
+    menu_selection.append('p')
+      .attr('id', 'selection_subtitle')
+      .styles({ margin: '10px 0px 2px 0px' })
+      .html('Sélection des régions ayant des valeurs...');
+
+    menu_selection.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_above_mean' })
+      .text('inférieures à la moyenne')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
+        this.classList.add('pressed');
+        self.selectBelowMean();
+      });
+
+    menu_selection.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_above_my_region' })
+      .text('inférieurs à ma région')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
+        this.classList.add('pressed');
+        self.selectBelowMyRegion();
+      });
+
+    menu_selection.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_below_mean' })
+      .text('supérieures à la moyenne')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
+        this.classList.add('pressed');
+        self.selectAboveMean();
+      });
+
+    menu_selection.append('button')
+      .attrs({ class: 'button_blue', id: 'btn_below_my_region' })
+      .text('supérieures à ma région')
+      .on('click', function () {
+        menu_selection.selectAll('button').attr('class', 'button_blue');
+        this.classList.add('pressed');
+        self.selectAboveMyRegion();
+      });
+
 
     this.bindMenu();
     // this.update();
@@ -393,6 +435,7 @@ export class ScatterPlot2 {
       .duration(125)
       .styles(d => ({
         fill: app.colors[d.id] || default_color,
+        stroke: app.colors[d.id] ? 'rgb(97, 97, 97)' : 'rgb(206, 206, 206)',
       }));
   }
 
@@ -437,6 +480,7 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
+          stroke: app.colors[d.id] ? 'rgb(97, 97, 97)' : 'rgb(206, 206, 206)',
         }))
         .on('end', () => {
           self.bindTooltips(true);
@@ -448,6 +492,7 @@ export class ScatterPlot2 {
         .duration(125)
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
+          stroke: app.colors[d.id] ? 'rgb(97, 97, 97)' : 'rgb(206, 206, 206)',
         }))
         .attrs(d => ({
           r: 5,
@@ -495,10 +540,11 @@ export class ScatterPlot2 {
         }))
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
+          stroke: app.colors[d.id] ? 'rgb(97, 97, 97)' : 'rgb(206, 206, 206)',
         }))
         .on('end', () => {
           self.bindTooltips(false);
-        })
+        });
 
       dots.enter()
         .insert('circle')
@@ -506,6 +552,7 @@ export class ScatterPlot2 {
         .duration(125)
         .styles(d => ({
           fill: app.colors[d.id] || default_color,
+          stroke: app.colors[d.id] ? 'rgb(97, 97, 97)' : 'rgb(206, 206, 206)',
         }))
         .attrs(d => ({
           r: 5,
@@ -851,7 +898,6 @@ export class ScatterPlot2 {
         this.classList.add('active');
         menu.select('#ind_ranks')
           .attr('class', 'choice_ind');
-        // self.g_bar.selectAll('g').remove();
         self.update();
       });
 
@@ -864,9 +910,84 @@ export class ScatterPlot2 {
         this.classList.add('active');
         menu.select('#ind_raw_values')
           .attr('class', 'choice_ind');
-        // self.g_bar.selectAll('rect').remove();
         self.update();
       });
+  }
+
+  selectBelowMean() {
+    const mean1 = getMean(this.data.map(ft => ft[this.variable1]));
+    const mean2 = getMean(this.data.map(ft => ft[this.variable2]));
+    svg_container.select('.brush').call(this.brush.move, null);
+    app.colors = {};
+    for (let i = 0, len_i = this.data.length; i < len_i; i++) {
+      const ft = this.data[i];
+      if (ft[this.variable1] <= mean1 && ft[this.variable2] <= mean2) {
+        app.colors[ft.id] = comp2(
+          ft[this.variable1], ft[this.variable2],
+          this.ref_value1, this.ref_value2,
+          this.xInversed, this.yInversed);
+      }
+    }
+    app.colors[app.current_config.my_region] = color_highlight;
+    this.updateLight();
+    this.updateMapRegio();
+    this.map_elem.removeRectBrush();
+  }
+
+  selectBelowMyRegion() {
+    svg_container.select('.brush').call(this.brush.move, null);
+    app.colors = {};
+    for (let i = 0, len_i = this.data.length; i < len_i; i++) {
+      const ft = this.data[i];
+      if (ft[this.variable1] <= this.ref_value1 && ft[this.variable2] <= this.ref_value2) {
+        app.colors[ft.id] = comp2(
+          ft[this.variable1], ft[this.variable2],
+          this.ref_value1, this.ref_value2,
+          this.xInversed, this.yInversed);
+      }
+    }
+    app.colors[app.current_config.my_region] = color_highlight;
+    this.updateLight();
+    this.updateMapRegio();
+    this.map_elem.removeRectBrush();
+  }
+
+  selectAboveMean() {
+    const mean1 = getMean(this.data.map(ft => ft[this.variable1]));
+    const mean2 = getMean(this.data.map(ft => ft[this.variable2]));
+    svg_container.select('.brush').call(this.brush.move, null);
+    app.colors = {};
+    for (let i = 0, len_i = this.data.length; i < len_i; i++) {
+      const ft = this.data[i];
+      if (ft[this.variable1] >= mean1 && ft[this.variable2] >= mean2) {
+        app.colors[ft.id] = comp2(
+          ft[this.variable1], ft[this.variable2],
+          this.ref_value1, this.ref_value2,
+          this.xInversed, this.yInversed);
+      }
+    }
+    app.colors[app.current_config.my_region] = color_highlight;
+    this.updateLight();
+    this.updateMapRegio();
+    this.map_elem.removeRectBrush();
+  }
+
+  selectAboveMyRegion() {
+    svg_container.select('.brush').call(this.brush.move, null);
+    app.colors = {};
+    for (let i = 0, len_i = this.data.length; i < len_i; i++) {
+      const ft = this.data[i];
+      if (ft[this.variable1] >= this.ref_value1 && ft[this.variable2] >= this.ref_value2) {
+        app.colors[ft.id] = comp2(
+          ft[this.variable1], ft[this.variable2],
+          this.ref_value1, this.ref_value2,
+          this.xInversed, this.yInversed);
+      }
+    }
+    app.colors[app.current_config.my_region] = color_highlight;
+    this.updateLight();
+    this.updateMapRegio();
+    this.map_elem.removeRectBrush();
   }
 
   prepareTableStat() {
