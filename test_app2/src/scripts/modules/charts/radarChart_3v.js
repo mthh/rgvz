@@ -239,6 +239,21 @@ export class RadarChart3 {
         self.g.selectAll('.radarArea')
           .transition().duration(200)
           .style('fill-opacity', cfg.opacityArea);
+      })
+      .on('click', (d) => {
+        const ft_id = d.name;
+        self.map_elem.target_layer
+          .selectAll('path')
+          .each(function (ft) {
+            if (ft.id === ft_id) {
+              this.style.stroke = 'orange';
+              this.style.strokeWidth = '2px';
+              setTimeout(() => {
+                this.style.stroke = 'initial';
+                this.style.strokeWidth = 'initial';
+              }, 5000);
+            }
+          });
       });
       // .on('click', function () {
       //   const p = this.parentElement;

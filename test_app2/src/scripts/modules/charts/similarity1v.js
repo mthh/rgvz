@@ -359,7 +359,25 @@ export class Similarity1plus {
             .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
         })
         .on('click', function (d) {
-          if (this.style.fill !== color_countries) self.displayLine(d.id);
+          if (this.style.fill !== color_countries) {
+            self.displayLine(d.id);
+          }
+          self.map_elem.target_layer
+            .selectAll('path')
+            .each(function (ft) {
+              if (ft.id === d.id) {
+                const old_fill_value = this.style.fill;
+                this.style.fill = 'red';
+                this.style.stroke = 'orange';
+                this.style.strokeWidth = '2px';
+                setTimeout(() => {
+                  this.style.fill = old_fill_value;
+                  this.style.stroke = 'initial';
+                  this.style.strokeWidth = 'initial';
+                }, 5000);
+              }
+            });
+
         });
   }
 
