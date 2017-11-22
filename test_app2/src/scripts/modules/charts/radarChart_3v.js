@@ -184,7 +184,6 @@ export class RadarChart3 {
       throw new Error('Expected element with same axes name than existing data.');
     }
     elem.axes.forEach((ft) => {
-      console.log(this.inversedAxis);
       if (this.inversedAxis.has(ft.axis)) {
         ft.value = 100 - ft.value;
       }
@@ -896,5 +895,20 @@ export class RadarChart3 {
   makeTableStat() {
     const features = this.prepareTableStat();
     this.table_stats = new TableResumeStat(features);
+  }
+
+  getHelpMessage() {
+    return `
+<h3>Position  - 3 indicateurs</h3>
+
+<b>Aide générale</b>
+
+Ce graphique construit tel « une cible » permet de représenter la position de l’unité territoriale de référence pour 3 à 8 indicateurs simultanément. Les cercles concentriques qui constituent le graphique expriment les déciles de la distribution pour chacun des indicateurs sélectionnés (premier cercle = premier décile, valeurs minimales par défaut / cercle extérieur = dernier décile, valeurs maximales par défaut). Les indicateurs représentés sur ce graphique sont de fait normalisés selon leur rang respectif dans la distribution statistique pour chacun des indicateurs : 0 correspondant à la valeur minimale (100 % des unités territoriales disposent de valeurs plus fortes) et 100 la valeur maximale (100 % des unité territoriales sont caractérisées par des valeurs moins fortes).
+
+Le cercle représenté en tireté rouge représente la valeur médiane (50) pour l’espace d’étude. Si pour un indicateur la unité territoriale se situe à l’intérieur de ce cercle, cela signifie que la valeur pour cet indicateur se situe en-dessous de la médiane de l’espace d’étude. Si pour un autre indicateur la unité territoriale se situe à l’extérieur de ce cercle, cela signifie que la valeur pour cet indicateur se situe au dessus de la médiane de l’espace d’étude.
+
+Il est possible de cliquer sur la carte pour visualiser le positionnement d’autres unités territoriales par rapport à l’unité territoriale de référence. Il est déconseillé de représenter simultanément plus de 3 unités territoriales sur le même graphique, au risque de rendre sa lecture aléatoire.
+
+Ce n’est pas tant la forme créée sur ce graphique qu’il faut analyser (la forme dépend largement de la position des indicateurs sur le graphique, aléatoire par définition) que la position au regard de l’espace de référence ou d’autres unités territoriales sélectionnées sur le graphique. L’utilisateur peut dès lors inverser le sens du classement (clic droit sur le label de l’indicateur, adapté pour des indicateurs comme le taux de chômage ou un taux élevé ne signifie pas forcément une situation favorable) ou peut inverser l’ordre d’apparition des variables sur le graphique (clic gauche) si l’on souhaite par exemple rapprocher des indicateurs de même thématique côte à côte.`;
   }
 }

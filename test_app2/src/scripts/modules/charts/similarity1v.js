@@ -569,4 +569,27 @@ export class Similarity1plus {
     const features = this.prepareTableStat();
     this.table_stats = new TableResumeStat(features);
   }
+
+  getHelpMessage() {
+    return `
+<h3>Ressemblances</h3>
+
+<b>Aide générale</b>
+
+Les graphiques de ressemblance permettent de visualiser pour 1 à 8 indicateurs les unités territoriales les plus proches statistiquement à l’unité territoriale de référence.
+
+Cette proximité est mesurée par la distance euclidienne. Cette fonction permet d’évaluer la distance normalisée globale (exprimée en rang) séparant l’unité territoriale de référence avec l’ensemble des autres unités territoriales pour un ensemble d’indicateurs. La formule de la fonction est la suivante :
+
+<b>Σ(xi - yi)²</b>
+
+Si la valeur de l’indice équivaut à 0, la similarité est totale entre deux unités territoriales. Plus la valeur de l’indice est élevée, plus la dissimilarité est importante. A noter que cette métrique euclidienne est assez sensible aux ordres de grandeur hétérogènes entre plusieurs indicateurs (un fort écart pour un indicateur peut affecter significativement la valeur de l’indice).
+
+Pour éviter de potentielles erreurs d’interprétation liées à cet indice de similarité synthétique, Regioviz propose systématiquement une représentation graphique permettant d’évaluer visuellement le degré de similarité indicateur par indicateur.
+
+Par défaut, l’application renvoie les 5 unités territoriales pour l’espace d’étude et les indicateurs sélectionnées qui sont définis par la distance euclidienne la plus faible. Libre à l’utilisateur de choisir plus ou moins d’unités territoriales de comparaison en fonction de ses objectifs d’analyse.
+
+Sur le graphique apparaissent les n unités territoriales les plus proches pour chaque indicateur dans leurs unités de mesure respectives. L’unité territoriale de référence apparaît systématiquement au centre de chacun des graphiques. Un clic gauche sur une des unités territoriales sur le graphique ou sur la carte génère une ligne entre chaque indicateur permettant d’évaluer le degré de ressemblance avec l’unité territoriale de référence et visualiser ainsi si celle-ci se positionne au-dessus ou en dessous, et pour quel indicateur.
+
+Par défaut, la taille des cercles sur le graphique est constante. Mais l’utilisateur peut activer l’option « cercles proportionnels au numérateur » pour visualiser graphiquement la masse des unités territoriales. Par exemple, si l’indicateur PIB par habitant est sélectionné, la taille des cercles sera proportionnelle à la masse de PIB des unités territoriales. Si c’est la part des 0-24 ans dans la population totale, la taille des figurés sera proportionnelle à la masse de la population âgée de 0 à 24 ans. Cette option a été créée afin de pouvoir restituer les ordres de grandeur potentiellement hétérogènes des unités territoriales proposées dans l’application.`;
+  }
 }

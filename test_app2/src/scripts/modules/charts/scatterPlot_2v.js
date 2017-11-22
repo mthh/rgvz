@@ -1024,4 +1024,16 @@ export class ScatterPlot2 {
     const features = this.prepareTableStat();
     this.table_stats = new TableResumeStat(features);
   }
+
+  getHelpMessage() {
+    return `
+<h3>Position  - 2 indicateurs</h3>
+
+<b>Aide générale</b>
+Ce graphique bidimensionnel représente la position de l’unité territoriale de référence sur deux indicateurs pour un espace d’étude et un maillage territorial d’analyse donné. La valeur de l’unité territoriale de référence apparaît en surbrillance (jaune). Les lignes représentées par un tireté rouge représentent la moyenne de l’espace d’étude pour chacun des indicateurs sélectionnés (non pondérée).
+
+Sur le graphique et la carte, les unités territoriales qui disposent de valeurs supérieures à la unité territoriale de référence pour les deux indicateurs sont représentées en vert. Les unités territoriales caractérisées par des valeurs inférieures à l’unité territoriale de référence pour les deux indicateurs sont représentées en rouge. Celles qui sont supérieures pour l’indicateur représenté sur l’axe des abscisses et inférieur sur l’axe des ordonnées sont représentées en orange ; et violet à l’inverse. Sur ce graphique, il est possible d’inverser l’ordre de classement de l’indicateur (appuyer sur le « + ») : les valeurs minimales seront alors considérées comme maximale sur l’axe.
+
+Par défaut, ce graphique est exprimé dans les valeurs brutes de l’indicateur (pourcentage par exemple). En sélectionnant l’option «valeurs de rang », l’indicateur est normalisé de 0 (valeur minimale) à 100 (valeur maximale). L’utilisation possible de ce type de transformation est la suivante : une unité territoriale disposant d’un indice de 67 sur un indicateur signifie que 33 % des unités territoriales de l’espace d’étude sont caractérisées par des valeurs supérieures à l’unité territoriale de référence pour les indicateurs sélectionnés. Et réciproquement. Les valeurs de rang permettent notamment de rendre comparables des unités de mesure et des paramètres de dispersion de deux indicateurs. Il ne faut néanmoins pas omettre que cette transformation nuit à la restitution de la dispersion statistique effective des indicateurs.`;
+  }
 }

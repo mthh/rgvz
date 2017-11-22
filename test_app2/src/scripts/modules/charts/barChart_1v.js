@@ -935,4 +935,16 @@ export class BarChart1 {
     const feature = this.prepareTableStat();
     this.table_stats = new TableResumeStat([feature]);
   }
+
+  getHelpMessage() {
+    return `
+<h3>Position – 1 Indicateur</h3>
+
+<b>Aide générale</b>
+Ce graphique représente l’indicateur sélectionné ordonné de la valeur minimale à la valeur maximale (barres bleues) pour l’espace d’étude et le maillage territorial d’analyse sélectionné. La valeur de l’unité territoriale sélectionnée apparaît en surbrillance (jaune). La ligne représentée par un tireté rouge représente la moyenne de l’espace d’étude (non pondérée).
+
+Sur ce graphique, il est possible d’inverser l’ordre de classement de l’indicateur (appuyer sur le « + »).
+
+La carte et le graphique sont interactifs dans la mesure où l’utilisateur peut choisir de sélectionner des unités territoriales (clic gauche appuyé de la souris) et visualiser leur positionnement simultanément sur la carte (localisation géographique) ou sur le diagramme de distribution (positionnement statistique). Il peut aussi en un clic choisir de visualiser les unités territoriales ayant des valeurs inférieures/supérieures à la moyenne de l’espace d’étude ou inférieures/supérieures à la valeur de l’unité territoriale de référence (« ma région »).`;
+  }
 }

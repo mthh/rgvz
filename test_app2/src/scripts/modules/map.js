@@ -152,6 +152,17 @@ function makeMapLegend(legend_elems, size, translateY) {
   legends.append('text')
     .attrs({ x: rect_size + spacing, y: rect_size - spacing })
     .text(d => d.text);
+
+  if (legend_elems[legend_elems.length - 1].color instanceof Array) {
+    const elems = grp_lgd.selectAll('g.legend')._groups[0];
+    const last_elem = d3.select(elems[elems.length - 1]);
+    last_elem.append('polygon')
+      .attr('points', `0,0 ${rect_size},${rect_size} 0,${rect_size}`)
+      .style('fill', last_elem.node().__data__.color[0]);
+    last_elem.append('polygon')
+      .attr('points', `0,0 ${rect_size},0 ${rect_size},${rect_size}`)
+      .style('fill', last_elem.node().__data__.color[1]);
+  }
 }
 
 function getLegendElems(type) {
@@ -172,7 +183,7 @@ function getLegendElems(type) {
         { color: color_countries, text: 'Autres régions de l\'espace d\'étude' },
         { color: color_sup, text: 'Rang plus élevé que ma région (2 indicateurs)' },
         { color: color_inf, text: 'Rang moins élevé que ma région (2 indicateurs)' },
-        { color: null, text: 'Rang plus élevé que ma région (1 indicateur sur 2)' },
+        { color: ['orange', 'rgb(160, 30, 160)'], text: 'Rang plus élevé que ma région (1 indicateur sur 2)' },
       ],
       '95', '50',
     ];

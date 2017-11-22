@@ -91,8 +91,8 @@ export function prepareVariablesInfo(metadata_indicateurs) {
     .forEach((ft) => {
       variables_info.push({
         ratio: ft.id,
-        num: `${ft.id1}_${parseInt(ft.Year, 10)}`,
-        denum: `${ft.id2}_${parseInt(ft.Year, 10)}`,
+        num: `${ft.id1}`,
+        denum: `${ft.id2}`,
         name: `${ft.Name} (${parseInt(ft.Year, 10)})`,
         unit: `${ft.Unit}`,
         group: ft.Theme,

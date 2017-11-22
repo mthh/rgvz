@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css?family=Signika|Courgette');
 
-
 @media only screen and (max-width: 959px) {
   body {
     font-size: 10px;
@@ -75,6 +74,7 @@ body {
   -ms-transition: background-color 100ms linear;
   transition: background-color 100ms linear;
 }
+
 /* Styles for the spinner displayed while the data is loading: */
 .spinner {
   margin: 100px auto;
@@ -138,6 +138,7 @@ body {
 }
 /* End of style for the notification zone */
 
+/* Styles for svg elements */
 .area {
   fill: steelblue;
   clip-path: url(#clip);
@@ -156,7 +157,9 @@ body {
 .axis--y > g.tick > line, .axis--x > g.tick > line{
   stroke: #BEBEBE;
 }
+/* End of styles for svg elements */
 
+/* Styles for information (i) icon and information dialogs */
 span.i_info {
   font-family: Courgette;
   color: #4f81bd;
@@ -169,56 +172,7 @@ span.i_info {
 div.tingle-modal-box__content {
   padding: 1rem 2rem 2rem 2rem !important;
 }
-
-/* Style for tables : */
-.dataTable-wrapper {
-  margin-top: 20px;
-}
-
-thead > tr {
-  background: #4f81bd;
-  color: white;
-}
-
-tr td:nth-child(1){
-  background: #4f81bd;
-  color: white;
-}
-
-tr {
-  color: #4f81bd;
-  font-weight: 800;
-}
-
-tr.yellow, tr.yellow td:nth-child(1) {
-  background: yellow;
-  color: #4f81bd;
-}
-
-tr.green { background: green; }
-tr.red { background: red; }
-
-span.small {
-    font-weight: 400;
-    font-size: 0.9em;
-}
-
-.dataTable-table > thead > tr > th {
-  vertical-align: top !important;
-}
-
-.dataTable-sorter::before, .dataTable-sorter::after {
-  opacity: 0.1 !important;
-}
-
-.dataTable-sorter::before {
-  bottom: auto;
-}
-
-.asc .dataTable-sorter::after, .desc .dataTable-sorter::before {
-  opacity: 0.6 !important;
-}
-/* End of style for tables... */
+/* End of styles for information icons and information dialog */
 
 /* Styles for the left menu */
 .title_menu {
@@ -294,7 +248,6 @@ span.label_chk.disabled {
   color: lightgray;
   cursor: not-allowed;
 }
-
 /* End on styles for left menu */
 
 /* Styles for top menu */
@@ -424,7 +377,7 @@ span.label_chk.disabled {
 }
 
 #menu_selection > .button_blue {
-  margin: 0.4em 4em;
+  margin: 0.4em 5em;
 }
 /* End of styles for buttons */
 
@@ -517,7 +470,6 @@ input.nb_select::-webkit-outer-spin-button {
 /* Styles for minitable (displaying statistical summary) */
 .minitable_container {
   text-align: center;
-  font-size: 0.7em;
   font-family: "Signika", sans-serif;
 }
 
@@ -527,8 +479,23 @@ input.nb_select::-webkit-outer-spin-button {
 
 .minitable > tbody > tr > td, .minitable > thead > tr > th  {
   padding: 0.4em 1em;
+  font-size: 0.7em;
+  font-weight: 400;
 }
 
+thead > tr {
+  background: #4f81bd;
+  color: white;
+}
+
+tr td:nth-child(1){
+  background: #4f81bd;
+  color: white;
+}
+
+tr {
+  color: #4f81bd;
+}
 /* End of style for minitable */
 
 /* Style for menu / buttons under some charts */

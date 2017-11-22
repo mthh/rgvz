@@ -47,7 +47,7 @@ export const app = {
   current_ids: [],
 };
 
-function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level = 'NUTS1') {
+function setDefaultConfig(code = 'FRE', variable = 'REVMEN') { // }, level = 'NUTS1') {
   const var_info = variables_info.find(ft => ft.ratio === variable);
   app.current_config = {
     // The name of the field of the dataset containing the ID of each feature:
@@ -77,7 +77,7 @@ function setDefaultConfig(code = 'FRE', variable = 'RT_CHOM_1574') { // }, level
   app.colors[app.current_config.my_region] = color_highlight;
 }
 
-function setDefaultConfigMenu(code = 'FRE', variable = 'RT_CHOM_1574', level = 'N1') {
+function setDefaultConfigMenu(code = 'FRE', variable = 'REVMEN', level = 'N1') {
   document.querySelector(`.target_region.square[value="${code}"]`).classList.add('checked');
   document.querySelector(`.target_variable.small_square[value="${variable}"]`).classList.add('checked');
   document.querySelector('.filter_v.square[filter-value="no_filter"]').classList.add('checked');
@@ -443,6 +443,7 @@ export function bindTopButtons(chart, map_elem) {
         map_elem.bindBrushClick(chart);
         chart.bindMap(map_elem);
       }
+      app.chart = chart;
     });
 }
 
@@ -561,7 +562,7 @@ function loadData() {
       const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       const start_region = getRandom(features_menu.map(d => d.id), 13);
       const start_variable = getRandom(
-        ['RT_CHOM_1574', 'RT_EMP_2564', 'RT_ENSSUP_2564', 'RT_REV', 'RT_VA_TERT', 'RT_PIB_HAB']);
+        ['REVMEN', 'CHOM1574', 'CHOM1524']);
       prepare_dataset(full_dataset, app);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
@@ -587,6 +588,7 @@ function loadData() {
       bindUI_chart(chart, map_elem);
       map_elem.bindBrushClick(chart);
       chart.bindMap(map_elem);
+      app.chart = chart;
     });
 }
 

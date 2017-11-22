@@ -1,3 +1,4 @@
+import tingle from 'tingle.js';
 import { app } from './../main';
 
 
@@ -129,7 +130,7 @@ export function makeHeaderChart() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'img/edit-table-insert-row-above.svg',
+      src: 'img/picto_download2.png',
       id: 'img_table',
     })
     .styles({ margin: '3px', float: 'right' })
@@ -167,7 +168,7 @@ export function makeHeaderChart() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'img/printer.svg',
+      src: 'img/picto_report2.png',
       id: 'img_printer',
     })
     .styles({ margin: '3px', float: 'right' });
@@ -176,8 +177,25 @@ export function makeHeaderChart() {
     .attrs({
       width: 20,
       height: 20,
-      src: 'img/gtk-info.svg',
+      src: 'img/picto_information2.png',
       id: 'img_info',
     })
-    .styles({ margin: '3px', float: 'right' });
+    .styles({ margin: '3px', float: 'right' })
+    .on('click', function () {
+      const help_message = app.chart.getHelpMessage().split('\n').join('<br>');
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'button', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(help_message);
+      modal.open();
+    });
 }
