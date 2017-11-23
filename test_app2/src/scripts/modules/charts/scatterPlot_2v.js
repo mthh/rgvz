@@ -91,8 +91,8 @@ export class ScatterPlot2 {
     this.variable2 = app.current_config.ratio[1];
     this.rank_variable1 = `pr_${this.variable1}`;
     this.rank_variable2 = `pr_${this.variable2}`;
-    this.unit1 = variables_info.find(ft => ft.ratio === this.variable1).unit;
-    this.unit2 = variables_info.find(ft => ft.ratio === this.variable2).unit;
+    this.unit1 = variables_info.find(ft => ft.id === this.variable1).unit;
+    this.unit2 = variables_info.find(ft => ft.id === this.variable2).unit;
     this.pretty_name1 = app.current_config.ratio_pretty_name[0];
     this.pretty_name2 = app.current_config.ratio_pretty_name[1];
     this.data = ref_data.filter(ft => !!ft[this.variable1] && !!ft[this.variable2])
@@ -764,7 +764,7 @@ export class ScatterPlot2 {
   changeVariableX(code_variable) {
     this.variable1 = code_variable;
     this.rank_variable1 = `pr_${this.variable1}`;
-    const var_info = variables_info.find(ft => ft.ratio === code_variable);
+    const var_info = variables_info.find(ft => ft.id === code_variable);
     this.pretty_name1 = var_info.name;
     this.unit1 = var_info.unit;
     svg_container.select('#title-axis-x')
@@ -794,7 +794,7 @@ export class ScatterPlot2 {
   changeVariableY(code_variable) {
     this.variable2 = code_variable;
     this.rank_variable2 = `pr_${this.variable2}`;
-    const var_info = variables_info.find(ft => ft.ratio === code_variable);
+    const var_info = variables_info.find(ft => ft.id === code_variable);
     this.pretty_name2 = var_info.name;
     this.unit2 = var_info.unit;
     svg_container.select('#title-axis-y')

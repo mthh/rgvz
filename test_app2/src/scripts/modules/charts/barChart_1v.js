@@ -67,8 +67,7 @@ export class BarChart1 {
     };
 
     this.brushed_top = () => {
-      if (!this._focus) { console.log('b'); return; }
-      if (!this.map_elem) { console.log('c'); return; }
+      if (!this._focus || !this.map_elem) return;
 
       const d3_event = d3.event;
       const ratio_to_use = this.ratio_to_use;
@@ -160,7 +159,7 @@ export class BarChart1 {
     const available_ratios = app.current_config.ratio;
     const ratio_to_use = available_ratios[0];
     this.ratio_to_use = ratio_to_use;
-    this.unit = variables_info.find(ft => ft.ratio === ratio_to_use).unit;
+    this.unit = variables_info.find(ft => ft.id === ratio_to_use).unit;
     this.data = ref_data.filter(ft => !!ft[ratio_to_use]);
     this.data.sort((a, b) => a[ratio_to_use] - b[ratio_to_use]);
     this.current_ids = this.data.map(d => d.id);
@@ -364,7 +363,6 @@ export class BarChart1 {
       .attrs({ class: 'title_variable' })
       .styles({
         'font-family': '\'Signika\', sans-serif',
-        'font-weight': '800',
         'font-size': '0.8em',
         'margin-top': '12px',
         'margin-left': '40px',
@@ -374,17 +372,17 @@ export class BarChart1 {
     for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
       const code_variable = available_ratios[i];
       const name_variable = app.current_config.ratio_pretty_name[i];
-      const unit = variables_info.find(ft => ft.ratio === code_variable).unit;
+      const unit = variables_info.find(ft => ft.id === code_variable).unit;
       const year = name_variable.match(/\([^)]*\)$/)[0];
       const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
 
       this.selec_var.append('option')
-        .attr('value', code_variable)
+        .attr('value', `v_${code_variable}`)
         .text(name_variable.replace(year, unit_year));
     }
 
     this.selec_var.on('change', function () {
-      const code_variable = this.value;
+      const code_variable = this.value.slice(2);
       self.changeVariable(code_variable);
       self.changeStudyZone();
       self.updateCompletude();
@@ -869,22 +867,22 @@ export class BarChart1 {
 
   addVariable(code_variable, name_variable) {
     // Fetch the unit for this indicator:
-    const unit = variables_info.find(ft => ft.ratio === code_variable).unit;
+    const unit = variables_info.find(ft => ft.id === code_variable).unit;
     const year = name_variable.match(/\([^)]*\)$/)[0];
     const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
     // Add the variable to the input element allowing to choose variables:
     this.selec_var.append('option')
-      .attr('value', code_variable)
+      .attr('value', `v_${code_variable}`)
       .text(name_variable.replace(year, unit_year));
 
     // And use it immediatly:
-    this.selec_var.node().value = code_variable;
+    this.selec_var.node().value = `v_${code_variable}`;
     this.selec_var.dispatch('change');
   }
 
   removeVariable(code_variable) {
     // Add the variable to the input element allowing to choose variables:
-    this.selec_var.select(`option[value=${code_variable}]`).remove();
+    this.selec_var.select(`option[value=v_${code_variable}]`).remove();
     if (this.ratio_to_use === code_variable) {
       this.selec_var.node().value = this.selec_var.select('option').node().value;
       this.selec_var.dispatch('change');
@@ -893,7 +891,7 @@ export class BarChart1 {
 
   changeVariable(code_variable) {
     this.ratio_to_use = code_variable;
-    this.unit = variables_info.find(ft => ft.ratio === code_variable).unit;
+    this.unit = variables_info.find(ft => ft.id === code_variable).unit;
   }
 
   remove() {

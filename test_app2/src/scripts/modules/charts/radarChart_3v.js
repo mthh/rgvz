@@ -12,7 +12,7 @@ let svg_bar, margin, bbox_svg, width, height;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
-  margin = { top: 70, right: 70, bottom: 80, left: 70 };
+  margin = { top: 50, right: 60, bottom: 50, left: 60 };
   bbox_svg = svg_bar.node().getBoundingClientRect();
   width = +bbox_svg.width - margin.left - margin.right;
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
@@ -26,13 +26,17 @@ const wrap = (_text, _width) => {
       words = text.text().split(/\s+/).reverse(),
       lineHeight = 1.4,
       x = +text.attr('x'),
-      dy = parseFloat(text.attr('dy')); // ems
+      dy = parseFloat(text.attr('dy')), // ems
+      nb_var = app.current_config.ratio.length;
     let y = +text.attr('y');
+    let id = +text.attr('id');
     let line = [];
     let lineNumber = 0;
-    if (y > height / 2 - 35) {
-      y -= 40;
-    }
+    // if (y > height / 2 - 35) {
+    //   y -= 40;
+    // }
+    if (id === 0) y = y + 12;
+    if (id === nb_var / 2) y = y - 12;
     let tspan = text.text(null)
       .append('tspan')
       .attr('x', x)
@@ -75,7 +79,7 @@ export const prepare_data_radar_default = (data, variables) => {
     axes: [],
   };
   variables.forEach((v) => {
-    const t = variables_info.find(d => d.ratio === v).name;
+    const t = variables_info.find(d => d.id === v).id;
     const _v = `pr_${v}`;
     ojb_my_region.axes.push({
       axis: t, value: v_my_region[_v],
@@ -94,7 +98,7 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
     axes: [],
   };
   variables.forEach((v) => {
-    const t = variables_info.find(d => d.ratio === v).name;
+    const t = variables_info.find(d => d.id === v).id;
     const _v = `pr_${v}`;
     obj.axes.push({
       axis: t, value: ft_values[_v],
@@ -112,8 +116,8 @@ export class RadarChart3 {
       margin: margin, // The margins of the SVG
       levels: 10, // How many levels or inner circles should there be drawn
       maxValue: 100, // What is the value that the biggest circle will represent
-      labelFactor: 1.3, // How much farther than the radius of the outer circle should the labels be placed
-      wrapWidth: 95, // The number of pixels after which a label needs to be given a new line
+      labelFactor: 1.2, // How much farther than the radius of the outer circle should the labels be placed
+      wrapWidth: 75, // The number of pixels after which a label needs to be given a new line
       opacityArea: 0.10, // The opacity of the area of the blob
       dotRadius: 4, // The size of the colored circles of each blog
       opacityCircles: 0.1, // The opacity of the circles of each blob
@@ -144,7 +148,6 @@ export class RadarChart3 {
     this.prepareData(data);
     this.drawAxisGrid();
     this.drawArea();
-    this.handleLegend();
 
     this.completude = new CompletudeSection();
     // Compute the "complétude" value for these ratios:
@@ -185,7 +188,7 @@ export class RadarChart3 {
     }
     elem.axes.forEach((ft) => {
       if (this.inversedAxis.has(ft.axis)) {
-        ft.value = 100 - ft.value;
+        ft.value = 100 - ft.value; // eslint-disable-line no-param-reassign
       }
     });
     this.data.push(elem);
@@ -245,26 +248,17 @@ export class RadarChart3 {
           .selectAll('path')
           .each(function (ft) {
             if (ft.id === ft_id) {
-              this.style.stroke = 'orange';
-              this.style.strokeWidth = '2px';
+              const cloned = this.cloneNode();
+              cloned.style.stroke = 'yellow';
+              cloned.style.strokeWidth = '2.25px';
+              cloned.classList.add('cloned');
+              self.map_elem.layers.node().appendChild(cloned);
               setTimeout(() => {
-                this.style.stroke = 'initial';
-                this.style.strokeWidth = 'initial';
+                cloned.remove();
               }, 5000);
             }
           });
       });
-      // .on('click', function () {
-      //   const p = this.parentElement;
-      //   if (p.previousSibling.className !== 'tooltip') {
-      //     const group = g.node();
-      //     group.insertBefore(p, group.querySelector('.tooltip'));
-      //     const new_order = [];
-      //     g.selectAll('.radarWrapper').each(d => new_order.push(d.name));
-      //     new_order.reverse();
-      //     updateLegend(new_order);
-      //   }
-      // });
 
     // Create the outlines
     blobWrapper.append('path')
@@ -480,6 +474,8 @@ export class RadarChart3 {
       .attr('dy', '0.35em')
       .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
       .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
+      .style('fill', d => (self.inversedAxis.has(d) ? 'red' : 'black'))
+      .style('cursor', 'pointer')
       .text(d => d)
       .on('click', labelClicked)
       .on('contextmenu', cfg.allowInverseData ? labelCtxMenu : null)
@@ -499,63 +495,63 @@ export class RadarChart3 {
     this.axisGrid = axisGrid;
   }
 
-  handleLegend() {
-    const cfg = this.cfg;
-    if (cfg.legend !== false && typeof cfg.legend === 'object') {
-      const names = this.data.map(el => el.name);
-      if (cfg.legend.title) {
-        this.legendZone.append('text')
-          .attr('class', 'title')
-          .attr('transform', 'translate(0, -20)')
-          .attr('x', cfg.w - 70)
-          .attr('y', 10)
-          .attr('font-size', '12px')
-          .attr('fill', '#404040')
-          .text(cfg.legend.title);
-      }
-      const legend = this.legendZone
-        .selectAll('g')
-        .data(names);
-      const legendEnter = legend
-        .enter()
-        .append('g');
-
-      // Create rectangles markers
-      legendEnter
-        .append('rect')
-        .attrs((d, i) => ({
-          x: cfg.w - 65,
-          y: i * 20,
-          width: 10,
-          height: 10,
-        }))
-        .style('fill', d => app.colors[d.name]);
-
-      // Create labels
-      legendEnter
-        .append('text')
-        .attrs((d, i) => ({
-          x: cfg.w - 52,
-          y: i * 20 + 9,
-          fill: '#737373',
-          'font-size': '11px',
-        }))
-        .text(d => d);
-
-      legend.merge(legendEnter).selectAll('rect')
-        .attr('y', (d, i) => i * 20)
-        .style('fill', d => app.colors[d.name]);
-
-      legend.merge(legendEnter).selectAll('text')
-        .attrs((d, i) => ({
-          x: cfg.w - 52,
-          y: i * 20 + 9,
-        }))
-        .text(d => d);
-
-      legend.exit().remove();
-    }
-  }
+  // handleLegend() {
+  //   const cfg = this.cfg;
+  //   if (cfg.legend !== false && typeof cfg.legend === 'object') {
+  //     const names = this.data.map(el => el.name);
+  //     if (cfg.legend.title) {
+  //       this.legendZone.append('text')
+  //         .attr('class', 'title')
+  //         .attr('transform', 'translate(0, -20)')
+  //         .attr('x', cfg.w - 70)
+  //         .attr('y', 10)
+  //         .attr('font-size', '12px')
+  //         .attr('fill', '#404040')
+  //         .text(cfg.legend.title);
+  //     }
+  //     const legend = this.legendZone
+  //       .selectAll('g')
+  //       .data(names);
+  //     const legendEnter = legend
+  //       .enter()
+  //       .append('g');
+  //
+  //     // Create rectangles markers
+  //     legendEnter
+  //       .append('rect')
+  //       .attrs((d, i) => ({
+  //         x: cfg.w - 65,
+  //         y: i * 20,
+  //         width: 10,
+  //         height: 10,
+  //       }))
+  //       .style('fill', d => app.colors[d.name]);
+  //
+  //     // Create labels
+  //     legendEnter
+  //       .append('text')
+  //       .attrs((d, i) => ({
+  //         x: cfg.w - 52,
+  //         y: i * 20 + 9,
+  //         fill: '#737373',
+  //         'font-size': '11px',
+  //       }))
+  //       .text(d => d);
+  //
+  //     legend.merge(legendEnter).selectAll('rect')
+  //       .attr('y', (d, i) => i * 20)
+  //       .style('fill', d => app.colors[d.name]);
+  //
+  //     legend.merge(legendEnter).selectAll('text')
+  //       .attrs((d, i) => ({
+  //         x: cfg.w - 52,
+  //         y: i * 20 + 9,
+  //       }))
+  //       .text(d => d);
+  //
+  //     legend.exit().remove();
+  //   }
+  // }
 
   drawArea() {
     const cfg = this.cfg;
@@ -655,13 +651,6 @@ export class RadarChart3 {
     const tooltip = g.append('text')
       .attrs({ class: 'tooltip', x: 0, y: 0, dy: '0.35em', 'text-anchor': 'middle' })
       .styles({ 'font-size': '12px', display: 'none' });
-
-    this.legendZone = svg_bar.append('g')
-      .attrs({
-        id: 'legendZone',
-        class: 'legend',
-        transform: `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`,
-      });
   }
 
   update() {
@@ -686,18 +675,15 @@ export class RadarChart3 {
     const t = this.g.selectAll('.radarWrapper')
       .transition()
       .duration(225);
-      // .on('end', () => {
-      //   parent.selectAll('text.legend')
-      //     .text(d => d)
-      //     .call(wrap, cfg.wrapWidth);
-      //   // wrap(parent.selectAll('text.legend'), cfg.wrapWidth);
-      // });
+
     update_axis.select('text.legend')
       .attrs((d, i) => ({
         id: i,
         x: rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI),
         y: rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI),
       }))
+      .style('fill', d => (this.inversedAxis.has(d) ? 'red' : 'black'))
+      .style('cursor', 'pointer')
       .text(d => d)
       .call(wrap, cfg.wrapWidth);
 
@@ -720,7 +706,7 @@ export class RadarChart3 {
         cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
         cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
       }))
-      .styles((d) => ({
+      .styles(d => ({
         fill: app.colors[d.id],
         'fill-opacity': 0.8,
       }));
@@ -762,6 +748,7 @@ export class RadarChart3 {
   remove() {
     this.table_stats.remove();
     this.table_stats = null;
+    this.map_elem.layers.selectAll('.cloned').remove();
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
     d3.select('#svg_bar').html('');
@@ -783,7 +770,6 @@ export class RadarChart3 {
     this.prepareData(app.current_data);
     this.drawAxisGrid();
     this.drawArea();
-    this.handleLegend();
     other_features.forEach((id) => {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
@@ -803,7 +789,6 @@ export class RadarChart3 {
     this.prepareData(app.current_data);
     this.drawAxisGrid();
     this.drawArea();
-    this.handleLegend();
     other_features.forEach((id) => {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);
@@ -823,7 +808,6 @@ export class RadarChart3 {
     this.prepareData(app.current_data);
     this.drawAxisGrid();
     this.drawArea();
-    this.handleLegend();
     other_features.forEach((id) => {
       const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
       this.add_element(a);

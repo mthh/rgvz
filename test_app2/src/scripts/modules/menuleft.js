@@ -44,7 +44,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
     const var_names = variables.filter(d => d.group === gp_name);
     for (let j = 0, len_j = var_names.length; j < len_j; j++) {
       const name_var = var_names[j].name;
-      const code_var = var_names[j].ratio;
+      const code_var = var_names[j].id;
       const sub_entry = document.createElement('p');
       sub_entry.className = 'small';
       sub_entry.innerHTML = `<span value="${code_var}" class="target_variable small_square"></span><span class="label_chk">${name_var}</span><span class="i_info">i</span>`;

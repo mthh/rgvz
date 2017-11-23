@@ -48,20 +48,20 @@ export const app = {
 };
 
 function setDefaultConfig(code = 'FRE', variable = 'REVMEN') { // }, level = 'NUTS1') {
-  const var_info = variables_info.find(ft => ft.ratio === variable);
+  const var_info = variables_info.find(ft => ft.id === variable);
   app.current_config = {
     // The name of the field of the dataset containing the ID of each feature:
     id_field: 'id',
     // The name of the field of the dataset containing the name of each feature:
     name_field: 'name',
     // The name of the field of the dataset containing the population of each feature:
-    pop_field: 'POP_AGE_T_2016',
+    pop_field: 'POP_AGE_T',
     // The name of the field of the geojson layer containing the ID of each feature
     // (these values should match with the values of the "id_field" in the
     // tabular dataset)
     id_field_geom: 'id',
-    num: [var_info.num],
-    denum: [var_info.denum],
+    num: [var_info.id1],
+    denum: [var_info.id2],
     ratio: [variable],
     ratio_pretty_name: [var_info.name],
     ratio_unit: [var_info.unit],
@@ -282,7 +282,7 @@ function bindUI_chart(chart, map_elem) {
         }
         this.classList.add('checked');
         const code_variable = this.getAttribute('value');
-        const name_variable = variables_info.find(d => d.ratio === code_variable).name;
+        const name_variable = variables_info.find(d => d.id === code_variable).name;
         addVariable(app, code_variable);
         // makeTable(app.current_data, app.current_config);
         chart.addVariable(code_variable, name_variable);
@@ -453,7 +453,7 @@ function bindHelpMenu() {
     // eslint-disable-next-line no-param-reassign
     btn_i.onclick = function () {
       const code_variable = this.previousSibling.previousSibling.getAttribute('value');
-      const o = variables_info.find(d => d.ratio === code_variable);
+      const o = variables_info.find(d => d.id === code_variable);
       // eslint-disable-next-line new-cap
       const modal = new tingle.modal({
         stickyFooter: false,
@@ -559,14 +559,17 @@ function loadData() {
       ] = results;
       alertify.set('notifier', 'position', 'bottom-left');
       prepareVariablesInfo(metadata_indicateurs);
-      const features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
-      const start_region = getRandom(features_menu.map(d => d.id), 13);
+      // TODO : Reorder it in the dataset :
+      let features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
+      features_menu = features_menu.slice(0, 1).concat(
+        features_menu.slice(6)).concat(features_menu.slice(1, 6));
+      const start_region = getRandom(features_menu.map(d => d.id), 12);
       const start_variable = getRandom(
         ['REVMEN', 'CHOM1574', 'CHOM1524']);
       prepare_dataset(full_dataset, app);
       setDefaultConfig(start_region, start_variable, 'N1');
       prepareGeomLayerId(nuts, app.current_config.id_field_geom);
-      createMenu(features_menu, variables_info, study_zones, territorial_mesh);
+      createMenu(features_menu, variables_info.filter(d => d.group), study_zones, territorial_mesh);
       updateMenuStudyZones();
       bindHelpMenu();
       makeTopMenu();

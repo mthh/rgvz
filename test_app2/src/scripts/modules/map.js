@@ -243,7 +243,7 @@ class MapSelect {
           .attrs({ d: path });
       }
     }
-
+    this.layers = layers;
     fitLayer();
     app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
     this.target_layer.selectAll('path')

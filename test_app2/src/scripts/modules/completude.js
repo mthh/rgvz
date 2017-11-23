@@ -3,6 +3,7 @@ export default class CompletudeSection {
     this.completude_population = document.querySelector('.completude_section > #completude_population');
     this.completude_features = document.querySelector('.completude_section > #completude_features');
     this.completude_features.className = 'active';
+    this.completude_population.className = '';
     const self = this;
     this.completude_features.onclick = function () {
       this.classList.remove('active');

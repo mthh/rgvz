@@ -1,8 +1,8 @@
-import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip, getMean } from './../helpers';
+import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip2, getMean } from './../helpers';
 import { color_disabled, color_countries, color_default_dissim, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 // import { svg_map } from './../map';
-import { app, resetColors } from './../../main';
+import { app, resetColors, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
 
@@ -12,6 +12,7 @@ let bbox_svg;
 let width;
 let height;
 let svg_container;
+let t;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
@@ -50,7 +51,7 @@ export class Similarity1plus {
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Prepare the tooltip displayed on mouseover:
-    prepareTooltip(svg_container);
+    this.tooltip = prepareTooltip2(d3.select(svg_bar.node().parentElement), null);
 
     this.completude = new CompletudeSection();
     this.completude.update(
@@ -151,22 +152,25 @@ export class Similarity1plus {
     let height_to_use = offset / 2;
     for (let i = 0; i < nb_variables; i++) {
       const ratio_name = self.ratios[i];
+      const selector_ratio_name = `l_${ratio_name}`;
       const num_name = self.nums[i];
       const my_region_value = self.my_region[ratio_name];
       const ratio_values = this.data.map(d => d[ratio_name]);
-      let g = this.draw_group.select(`#${ratio_name}`);
-      let axis = this.draw_group.select(`g.axis--x.${ratio_name}`);
+      let g = this.draw_group.select(`#${selector_ratio_name}`);
+      let axis = this.draw_group.select(`g.axis--x.${selector_ratio_name}`);
+      let layer_other;
+      let layer_highlighted;
       if (!g.node()) {
         g = this.draw_group
           .append('g')
           .attrs({
-            id: ratio_name,
+            id: selector_ratio_name,
             num: num_name,
             class: 'grp_var',
           });
         axis = g.append('g')
           .attrs({
-            class: `axis axis--x ${ratio_name}`,
+            class: `axis axis--x ${selector_ratio_name}`,
             transform: 'translate(0, 10)',
           });
         g.append('text')
@@ -179,6 +183,11 @@ export class Similarity1plus {
             'font-family': '"Signika",sans-serif',
           })
           .text(ratio_name);
+        layer_other = g.append('g').attr('class', 'otherfeature');
+        layer_highlighted = g.append('g').attr('class', 'highlighted');
+      } else {
+        layer_other = g.select('g.otherfeature');
+        layer_highlighted = g.select('g.highlighted');
       }
       g.attr('transform', `translate(0, ${height_to_use})`);
       let _min;
@@ -216,10 +225,10 @@ export class Similarity1plus {
         .duration(125)
         .call(d3.axisBottom(xScale));
 
-      const bubbles = g.selectAll('.bubble')
-        .data(data, d => d.id);
+      const bubbles1 = layer_other.selectAll('.bubble')
+        .data(data.filter(d => app.colors[d.id] === undefined), d => d.id);
 
-      bubbles
+      bubbles1
         .transition()
         .duration(125)
         .attrs((d) => {
@@ -233,19 +242,19 @@ export class Similarity1plus {
           };
         })
         .styles(d => ({
-          fill: app.colors[d.id] || color_countries,
-          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.1,
+          fill: color_countries,
+          'fill-opacity': 0.1,
           stroke: 'darkgray',
           'stroke-width': 0.75,
           'stroke-opacity': 0.75,
         }));
 
-      bubbles
+      bubbles1
         .enter()
         .insert('circle')
         .styles(d => ({
-          fill: app.colors[d.id] || color_countries,
-          'fill-opacity': d.id === app.current_config.my_region ? 1 : app.colors[d.id] ? 0.7 : 0.1,
+          fill: color_countries,
+          'fill-opacity': 0.1,
           stroke: 'darkgray',
           'stroke-width': 0.75,
           'stroke-opacity': 0.75,
@@ -265,7 +274,59 @@ export class Similarity1plus {
           };
         });
 
-      bubbles.exit().transition().duration(125).remove();
+      bubbles1.exit().transition().duration(125).remove();
+
+      const bubbles2 = layer_highlighted.selectAll('.bubble')
+        .data(data.filter(d => app.colors[d.id] !== undefined), d => d.id);
+
+      bubbles2
+        .transition()
+        .duration(125)
+        .attrs((d) => {
+          let x_value = xScale(d[ratio_name]);
+          if (x_value > width) x_value = width + 200;
+          else if (x_value < 0) x_value = -200;
+          return {
+            cx: x_value,
+            cy: 10,
+            r: size_func(d[num_name]),
+          };
+        })
+        .styles(d => ({
+          fill: app.colors[d.id],
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : 0.7,
+          stroke: 'darkgray',
+          'stroke-width': 0.75,
+          'stroke-opacity': 0.75,
+        }));
+
+      bubbles2
+        .enter()
+        .insert('circle')
+        .styles(d => ({
+          fill: app.colors[d.id],
+          'fill-opacity': d.id === app.current_config.my_region ? 1 : 0.7,
+          stroke: 'darkgray',
+          'stroke-width': 0.75,
+          'stroke-opacity': 0.75,
+        }))
+        .transition()
+        .duration(125)
+        .attrs((d) => {
+          let x_value = xScale(d[ratio_name]);
+          if (x_value > width) x_value = width + 200;
+          else if (x_value < 0) x_value = -200;
+          return {
+            id: d.id,
+            class: 'bubble',
+            cx: x_value,
+            cy: 10,
+            r: size_func(d[num_name]),
+          };
+        });
+
+      bubbles2.exit().transition().duration(125).remove();
+
       height_to_use += offset;
     }
     setTimeout(() => { this.makeTooltips(); }, 125);
@@ -331,32 +392,39 @@ export class Similarity1plus {
     this.draw_group.selectAll('g.grp_var')
       .selectAll('circle')
         .on('mouseover', () => {
-          svg_container.select('.tooltip').style('display', null);
+          clearTimeout(t);
+          this.tooltip.style('display', null);
         })
         .on('mouseout', () => {
-          svg_container.select('.tooltip').style('display', 'none');
+          clearTimeout(t);
+          t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
         })
-        .on('mousemove', function (d) {
-          const tooltip = svg_container.select('.tooltip');
-          const ratio_n = this.parentElement.id;
-          const num_n = this.parentElement.getAttribute('num');
-          const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].split(')')[0];
-          tooltip.select('rect').attrs({ width: 0, height: 0 });
-          tooltip
-            .select('text.id_feature')
-            .text(`${d.id}`);
-          tooltip.select('text.value_feature1')
-            .text(`Ratio: ${Math.round(d[ratio_n] * 10) / 10}`);
-          tooltip.select('text.value_feature2')
-            .text(`Stock: ${Math.round(d[num_n] * 10) / 10}`);
-          const b = tooltip.node().getBoundingClientRect();
-          tooltip.select('rect')
-            .attrs({
-              width: b.width + 20,
-              height: b.height + 7.5,
-            });
-          tooltip
-            .attr('transform', `translate(${[d3.mouse(this)[0] - 5, d3.mouse(this)[1] - 45 + ty]})`);
+        .on('mousemove mousedown', function (d) {
+          const ratio_n = this.parentElement.parentElement.id.replace('l_', '');
+          const unit_ratio = variables_info.find(ft => ft.id === ratio_n).unit;
+          let num_n, unit_num, coef;
+          if (self.proportionnal_symbols) {
+            num_n = this.parentElement.parentElement.getAttribute('num');
+            const o = variables_info.find(ft => ft.id === num_n);
+            unit_num = o.unit;
+            coef = +o.formula;
+            coef = isNaN(coef) || coef === 0 ? 1 : coef;
+          }
+
+          clearTimeout(t);
+          self.tooltip.select('.title')
+            .html([
+              '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+          self.tooltip.select('.content')
+            .html([
+              `${ratio_n} : ${Math.round(d[ratio_n] * 10) / 10} ${unit_ratio}`,
+              self.proportionnal_symbols ? `${num_n} (numérateur) : ${Math.round(d[num_n] * coef * 10) / 10} ${unit_num}` : '',
+            ].join('<br>'));
+          self.tooltip
+            .styles({
+              display: null,
+              left: `${d3.event.pageX - 5}px`,
+              top: `${d3.event.pageY - 65}px` });
         })
         .on('click', function (d) {
           if (this.style.fill !== color_countries) {
@@ -366,18 +434,15 @@ export class Similarity1plus {
             .selectAll('path')
             .each(function (ft) {
               if (ft.id === d.id) {
-                const old_fill_value = this.style.fill;
-                this.style.fill = 'red';
-                this.style.stroke = 'orange';
-                this.style.strokeWidth = '2px';
-                setTimeout(() => {
-                  this.style.fill = old_fill_value;
-                  this.style.stroke = 'initial';
-                  this.style.strokeWidth = 'initial';
-                }, 5000);
+                const cloned = this.cloneNode();
+                cloned.style.fill = 'red';
+                cloned.style.stroke = 'orange';
+                cloned.style.strokeWidth = '2.25px';
+                cloned.classList.add('cloned');
+                self.map_elem.layers.node().appendChild(cloned);
+                setTimeout(() => { cloned.remove(); }, 5000);
               }
             });
-
         });
   }
 
@@ -387,7 +452,7 @@ export class Similarity1plus {
     svg_container.selectAll('.grp_var')
       .selectAll(`#${id_region}.bubble`)
       .each(function () {
-        const ty = +this.parentElement.getAttribute('transform').split('translate(0, ')[1].replace(')', '');
+        const ty = +this.parentElement.parentElement.getAttribute('transform').split('translate(0, ')[1].replace(')', '');
         coords.push([this.cx.baseVal.value, this.cy.baseVal.value + ty]);
       });
 
@@ -489,7 +554,7 @@ export class Similarity1plus {
       ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
 
-    this.draw_group.select(`g#${code_variable}`).remove();
+    this.draw_group.select(`g#l_${code_variable}`).remove();
     // And use it immediatly:
     this.updateTableStat();
     this.update();
@@ -530,6 +595,7 @@ export class Similarity1plus {
   }
 
   remove() {
+    this.map_elem.layers.selectAll('.cloned').remove();
     this.map_elem.unbindBrushClick();
     this.map_elem = null;
     this.table_stats.remove();

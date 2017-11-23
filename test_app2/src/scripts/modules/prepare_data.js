@@ -87,18 +87,19 @@ export function filterLevelGeom(nuts_features, filter = 'N1') {
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
   metadata_indicateurs
-    .filter(ft => ft.Regioviz_item === 'Indicateur')
+    .filter(ft => ft.Regioviz_item === 'Indicateur' || ft.Regioviz_item === 'Stock')
     .forEach((ft) => {
       variables_info.push({
-        ratio: ft.id,
-        num: `${ft.id1}`,
-        denum: `${ft.id2}`,
+        id: ft.id,
+        id1: `${ft.id1}`,
+        id2: `${ft.id2}`,
         name: `${ft.Name} (${parseInt(ft.Year, 10)})`,
         unit: `${ft.Unit}`,
         group: ft.Theme,
         methodo: ft.Methodology,
         source: ft.Data_source,
         last_update: ft.Last_update,
+        formula: ft.Formula,
       });
     });
   metadata_indicateurs
@@ -160,12 +161,12 @@ export function changeRegion(app, id_region, map_elem) {
 * @return {void}
 */
 export function addVariable(app, code_ratio) {
-  const variable_info = variables_info.filter(d => d.ratio === code_ratio)[0];
+  const variable_info = variables_info.filter(d => d.id === code_ratio)[0];
   app.colors = {};
   app.colors[app.current_config.my_region] = color_highlight;
-  app.current_config.num.push(variable_info.num);
-  app.current_config.denum.push(variable_info.denum);
-  app.current_config.ratio.push(variable_info.ratio);
+  app.current_config.num.push(variable_info.id1);
+  app.current_config.denum.push(variable_info.id2);
+  app.current_config.ratio.push(variable_info.id);
   app.current_config.ratio_pretty_name.push(variable_info.name);
   app.current_config.ratio_unit.push(variable_info.unit);
   filterLevelVar(app);
@@ -204,10 +205,10 @@ export function resetVariables(app, codes_ratio) {
   app.current_config.ratio_unit = [];
   for (let i = 0, len = codes_ratio.length; i < len; i++) {
     const code_ratio = codes_ratio[i];
-    const variable_info = variables_info.filter(d => d.ratio === code_ratio)[0];
-    app.current_config.num.push(variable_info.num);
-    app.current_config.denum.push(variable_info.denum);
-    app.current_config.ratio.push(variable_info.ratio);
+    const variable_info = variables_info.filter(d => d.id === code_ratio)[0];
+    app.current_config.num.push(variable_info.id1);
+    app.current_config.denum.push(variable_info.id2);
+    app.current_config.ratio.push(variable_info.id);
     app.current_config.ratio_pretty_name.push(variable_info.name);
     app.current_config.ratio_unit.push(variable_info.unit);
   }
