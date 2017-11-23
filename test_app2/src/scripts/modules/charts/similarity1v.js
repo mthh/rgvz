@@ -401,11 +401,13 @@ export class Similarity1plus {
         })
         .on('mousemove mousedown', function (d) {
           const content = [];
+          let _h = 65;
           const ratio_n = this.parentElement.parentElement.id.replace('l_', '');
           const unit_ratio = variables_info.find(ft => ft.id === ratio_n).unit;
           const rank = +this.getAttribute('rank');
           content.push(`${ratio_n} : ${Math.round(d[ratio_n] * 10) / 10} ${unit_ratio}`);
           if (self.proportionnal_symbols) {
+            _h += 20;
             const num_n = this.parentElement.parentElement.getAttribute('num');
             const o = variables_info.find(ft => ft.id === num_n);
             const unit_num = o.unit;
@@ -432,7 +434,7 @@ export class Similarity1plus {
             .styles({
               display: null,
               left: `${d3.event.pageX - 5}px`,
-              top: `${d3.event.pageY - 65}px` });
+              top: `${d3.event.pageY - _h}px` });
         })
         .on('click', function (d) {
           if (this.style.fill !== color_countries) {
@@ -537,16 +539,13 @@ export class Similarity1plus {
         // eslint-disable-next-line no-param-reassign
         ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
       });
+      // eslint-disable-next-line no-param-reassign
+      ft.dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(ft[v], 2)).reduce((a, b) => a + b));
     });
+    this.data.sort((a, b) => a.dist - b.dist);
+    this.data.forEach((el, i) => { el.rank = i; });
     this.highlight_selection = this.highlight_selection.map((d) => {
-      const obj = Object.assign(d, {});
-      const ft = this.data.find(elem => elem.id === obj.id);
-      if (!ft) return undefined;
-      this.ratios.forEach((v) => {
-        obj[v] = +ft[v];
-        obj[`dist_${v}`] = +ft[`dist_${v}`];
-      });
-      return obj;
+      return this.data.find(el => el.id === d.id);
     }).filter(d => !!d);
     // And use it immediatly:
     this.updateTableStat();
@@ -560,6 +559,20 @@ export class Similarity1plus {
     this.nums = app.current_config.num.slice();
     this.data = app.current_data.filter(
       ft => this.ratios.map(v => !!ft[v]).every(v => v === true)).slice();
+    this.data.forEach((ft) => {
+      this.ratios.forEach((v) => {
+        // eslint-disable-next-line no-param-reassign
+        ft[`dist_${v}`] = math_abs(+ft[v] - +this.my_region[v]);
+      });
+      // eslint-disable-next-line no-param-reassign
+      ft.dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(ft[v], 2)).reduce((a, b) => a + b));
+    });
+    this.data.sort((a, b) => a.dist - b.dist);
+    this.data.forEach((el, i) => { el.rank = i; });
+    this.highlight_selection = this.highlight_selection.map((d) => {
+      return this.data.find(el => el.id === d.id);
+    }).filter(d => !!d);
+
     this.my_region = this.data.find(d => d.id === app.current_config.my_region);
 
     this.draw_group.select(`g#l_${code_variable}`).remove();
