@@ -171,7 +171,29 @@ export function makeHeaderChart() {
       src: 'img/picto_report2.png',
       id: 'img_printer',
     })
-    .styles({ margin: '3px', float: 'right' });
+    .styles({ margin: '3px', float: 'right' })
+    .on('click', () => {
+      const content = `<div id="prep_rapport"><h3>Rapport en cours de préparation...</h3>
+<div class="spinner"><div class="cube1"></div><div class="cube2"></div></div></div>`;
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(content);
+      modal.open();
+      setTimeout(() => {
+        modal.setContent(`<div id="prep_rapport">
+<p><a class="buttonDownload" href="#">Télécharger</a> <a class="buttonDownload" href="#">Ouvrir</a></p></div>`);
+      }, 2500);
+    });
 
   header_bar_section.insert('img')
     .attrs({
@@ -181,7 +203,7 @@ export function makeHeaderChart() {
       id: 'img_info',
     })
     .styles({ margin: '3px', float: 'right' })
-    .on('click', function () {
+    .on('click', () => {
       const help_message = app.chart.getHelpMessage().split('\n').join('<br>');
       // eslint-disable-next-line new-cap
       const modal = new tingle.modal({

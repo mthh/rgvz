@@ -720,6 +720,7 @@ export class BarChart1 {
       this.last_map_selection = undefined;
       return;
     }
+    this.map_elem.tooltip.style('display', 'none');
     const ratio_to_use = this.ratio_to_use;
     const ref_value = this.ref_value;
     const self = this;

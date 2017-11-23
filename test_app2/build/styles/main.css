@@ -578,7 +578,7 @@ tr {
 }
 .slider-checkbox input:checked + .label:before {
   background-color: #1877c1;
-  content: "\f00c";
+  content: "";
   padding-left: 0.2em;
 }
 .slider-checkbox input:checked + .label:after {
@@ -597,8 +597,8 @@ tr {
   transition: background-color 0.3s, left 0.3s;
 }
 .slider-checkbox .label:before {
-  content: "\f00d";
-  color: #fff;
+  content: "";
+  color: #667078;
   box-sizing: border-box;
   font-family: FontAwesome;
   padding-left: 1.3em;
@@ -624,8 +624,13 @@ tr {
 }
 
 .slider-checkbox input:not(:checked) + .label:before {
-  background-color: #0a4776;
+  background-color: #667078;
 }
+
+.label.not_selected {
+  color: #667078;
+}
+
 /* End of styles for slider checkbox */
 
 /* Styles for 2nd slider checkbox */
@@ -763,6 +768,27 @@ tr {
 }
 /* End of styles for tooltips */
 
+/* Styles for map tooltips */
+.tooltip_map {
+  pointer-events: none;
+  position: absolute;
+  background-color: black;
+  padding: 5px 8px;
+  margin: auto;
+  font-family: "Signika", sans-serif;
+  font-size: 0.9em;
+  border-radius: 4px;
+  color: white;
+}
+.tooltip_map > .title {
+  margin: auto;
+}
+.tooltip_map > .content {
+  display: none;
+  height: 0;
+}
+/* End of styles for map tooltips */
+
 span.arrow_down:before {
   content: '\025BA';
   margin-right: 4px;
@@ -800,3 +826,102 @@ span.arrow_right:before {
   user-select: initial;
   pointer-events: initial;
 }
+
+/* Styles for rapport dialog */
+#prep_rapport {
+  text-align: center;
+  min-height: 390px;
+}
+#prep_rapport > .spinner > .cube1, #prep_rapport > .spinner > .cube2 {
+  background-color: #4f81bd;
+}
+#prep_rapport > p {
+  margin: auto;
+  text-align: center;
+  padding-top: 20%;
+}
+.buttonDownload {
+	display: inline-block;
+	position: relative;
+	padding: 10px 25px;
+
+	background-color: #4f81bd;
+	color: white;
+
+	font-family: sans-serif;
+	text-decoration: none;
+	font-size: 0.9em;
+	text-align: center;
+	text-indent: 15px;
+}
+
+.buttonDownload:hover {
+	background-color: #002565;
+	color: white;
+}
+
+.buttonDownload:before, .buttonDownload:after {
+	content: ' ';
+	display: block;
+	position: absolute;
+	left: 15px;
+	top: 52%;
+}
+
+/* Download box shape  */
+.buttonDownload:before {
+	width: 10px;
+	height: 2px;
+	border-style: solid;
+	border-width: 0 2px 2px;
+}
+
+/* Download arrow shape */
+.buttonDownload:after {
+	width: 0;
+	height: 0;
+	margin-left: 3px;
+	margin-top: -7px;
+
+	border-style: solid;
+	border-width: 4px 4px 0 4px;
+	border-color: transparent;
+	border-top-color: inherit;
+
+	animation: downloadArrow 2s linear infinite;
+	animation-play-state: paused;
+}
+
+.buttonDownload:hover:before {
+	border-color: #4f81bd;
+}
+
+.buttonDownload:hover:after {
+	border-top-color: #4f81bd;
+	animation-play-state: running;
+}
+
+/* keyframes for the download icon anim */
+@keyframes downloadArrow {
+	/* 0% and 0.001% keyframes used as a hackish way of having the button frozen on a nice looking frame by default */
+	0% {
+		margin-top: -7px;
+		opacity: 1;
+	}
+
+	0.001% {
+		margin-top: -15px;
+		opacity: 0;
+	}
+
+	50% {
+		opacity: 1;
+	}
+
+	100% {
+		margin-top: 0;
+		opacity: 0;
+	}
+}
+
+/* End of styles for download button */

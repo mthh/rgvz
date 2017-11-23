@@ -1,7 +1,6 @@
-import tippy from 'tippy.js';
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight, color_default_dissim, RATIO_WH_MAP } from './options';
-import { getSvgPathType, svgPathToCoords, euclidian_distance } from './helpers';
+import { getSvgPathType, svgPathToCoords, euclidian_distance, prepareTooltip2 } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
 // const svg_map = d3.select('svg#svg_map'),
@@ -250,16 +249,11 @@ class MapSelect {
       .each(function () {
         this._pts = svgPathToCoords(this.getAttribute('d'), app.type_path);
       });
-    this.tooltips = tippy(this.target_layer.node().querySelectorAll('path'), {
-      animation: 'fade',
-      duration: 0,
-      followCursor: true,
-      // performance: true,
-    });
+    this.tooltip = prepareTooltip2(d3.select(svg_map.node().parentElement), null, 'tooltip_map');
+    this.bindTooltips();
   }
 
   updateLevelRegion(filter = 'N1') {
-    this.tooltips.destroyAll();
     const new_selection = filterLevelGeom(this.nuts.features, filter);
     const selection = this.target_layer
       .selectAll('path')
@@ -282,12 +276,35 @@ class MapSelect {
       .each(function () {
         this._pts = undefined;
       });
-    this.tooltips = tippy(this.target_layer.node().querySelectorAll('path'), {
-      animation: 'fade',
-      duration: 0,
-      followCursor: true,
-      // performance: true,
-    });
+    this.bindTooltips();
+  }
+
+  bindTooltips() {
+    const self = this;
+    this.target_layer.selectAll('path')
+      .on('mouseover', () => {
+        // clearTimeout(t);
+        this.tooltip.style('display', null);
+      })
+      .on('mouseout', () => {
+        // clearTimeout(t);
+        // t = setTimeout(() => {
+        this.tooltip.style('display', 'none');
+      // }, 250);
+      })
+      .on('mousemove mousedown', function () {
+        // clearTimeout(t);
+        self.tooltip.select('.title').html(this.getAttribute('title'));
+        const b = self.tooltip.select('.title').node().getBoundingClientRect();
+        const left = d3.event.pageX < (window.innerWidth - (b.width + 20))
+          ? d3.event.pageX - 5
+          : d3.event.pageX - b.width;
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${left}px`,
+            top: `${d3.event.pageY - b.height - 20}px` });
+      });
   }
 
   resetColors(current_ids) {
@@ -329,6 +346,7 @@ class MapSelect {
       document.getElementById('img_map_select').classList.add('disabled');
     }
     if (chart.handle_brush_map) {
+      const self = this;
       document.getElementById('img_rect_selec').classList.remove('disabled');
       document.getElementById('img_rect_selec').classList.add('active');
       document.getElementById('img_map_zoom').classList.remove('active');
@@ -341,6 +359,28 @@ class MapSelect {
       svg_map.append('g')
         .attr('class', 'brush_map')
         .call(this.brush_map);
+
+      svg_map.select('.brush_map')
+        .on('mousemove mousedown', function () {
+          const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
+          const elem = elems.find(e => e.className.baseVal === 'tg_ft');
+          if (elem) {
+            const new_click_event = new MouseEvent('mousemove', {
+              pageX: d3.event.pageX,
+              pageY: d3.event.pageY,
+              clientX: d3.event.clientX,
+              clientY: d3.event.clientY,
+              bubbles: true,
+              cancelable: true,
+              view: window });
+            elem.dispatchEvent(new_click_event);
+          } else {
+            self.tooltip.style('display', 'none');
+          }
+        })
+        .on('mouseout', () => {
+          self.tooltip.style('display', 'none');
+        });
     } else {
       document.getElementById('img_rect_selec').classList.remove('active');
       document.getElementById('img_rect_selec').classList.add('disabled');

@@ -65,13 +65,13 @@ function prepareTooltip(parent_svg_elem) {
   return tooltip;
 }
 
-function prepareTooltip2(parent, before) {
+function prepareTooltip2(parent, before, classname='tooltip') {
   const t = parent.select('.tooltip');
   if (t.node()) {
     return t;
   }
   const tooltip = parent.insert('div', before)
-    .attr('class', 'tooltip')
+    .attr('class', classname)
     .style('display', 'none');
 
   tooltip.append('p').attr('class', 'title');

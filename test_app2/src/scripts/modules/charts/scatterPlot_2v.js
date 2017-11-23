@@ -589,6 +589,7 @@ export class ScatterPlot2 {
       this.last_map_selection = undefined;
       return;
     }
+    this.map_elem.tooltip.style('display', 'none');
     svg_container.select('.brush').call(this.brush.move, null);
     const self = this;
     const [topleft, bottomright] = event.selection;
