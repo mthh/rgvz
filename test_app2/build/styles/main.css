@@ -762,6 +762,16 @@ tr {
   font-weight: bold;
 }
 
+.tooltip > .title.red {
+  margin: auto;
+  background-color: red;
+  padding: 2px 8px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  color: white;
+  font-weight: bold;
+}
+
 .tooltip > .content {
   margin: auto;
   padding: 1px 8px;
@@ -769,7 +779,7 @@ tr {
 /* End of styles for tooltips */
 
 /* Styles for map tooltips */
-.tooltip_map {
+.tooltip_map, .tooltip-black {
   pointer-events: none;
   position: absolute;
   background-color: black;
@@ -780,7 +790,7 @@ tr {
   border-radius: 4px;
   color: white;
 }
-.tooltip_map > .title {
+.tooltip_map > .title, .tooltip-black > .content {
   margin: auto;
 }
 .tooltip_map > .content {

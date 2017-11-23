@@ -12,7 +12,7 @@ let svg_bar, margin, bbox_svg, width, height;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
-  margin = { top: 50, right: 60, bottom: 50, left: 60 };
+  margin = { top: 60, right: 70, bottom: 60, left: 70 };
   bbox_svg = svg_bar.node().getBoundingClientRect();
   width = +bbox_svg.width - margin.left - margin.right;
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
@@ -474,6 +474,7 @@ export class RadarChart3 {
       .attr('dy', '0.35em')
       .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
       .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
+      .attr('title-tooltip', (_, i) => app.current_config.ratio_pretty_name[i])
       .style('fill', d => (self.inversedAxis.has(d) ? 'red' : 'black'))
       .style('cursor', 'pointer')
       .text(d => d)

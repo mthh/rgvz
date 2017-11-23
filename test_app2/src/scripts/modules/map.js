@@ -1,6 +1,6 @@
 import { app } from './../main';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight, color_default_dissim, RATIO_WH_MAP } from './options';
-import { getSvgPathType, svgPathToCoords, euclidian_distance, prepareTooltip2 } from './helpers';
+import { getSvgPathType, svgPathToCoords, euclidian_distance, prepareTooltip2, getElementsFromPoint } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
 // const svg_map = d3.select('svg#svg_map'),
@@ -362,7 +362,7 @@ class MapSelect {
 
       svg_map.select('.brush_map')
         .on('mousemove mousedown', function () {
-          const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
+          const elems = getElementsFromPoint(d3.event.pageX, d3.event.pageY);
           const elem = elems.find(e => e.className.baseVal === 'tg_ft');
           if (elem) {
             const new_click_event = new MouseEvent('mousemove', {

@@ -88,6 +88,25 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
     section4.appendChild(entry);
   }
 
+  const section5 = document.createElement('div');
+  section4.id = 'menu_territ_level';
+  section4.className = 'box';
+  section4.style.overflow = 'auto';
+  section4.style.maxHeight = '20%';
+  const img1 = document.createElement('img');
+  img1.src = 'img/logo_riate.png';
+  img1.style.margin = '0px 3px';
+  const img2 = document.createElement('img');
+  img2.src = 'img/logo_cget.png';
+  img2.style.margin = '0px 3px';
+  const blabla = document.createElement('span');
+  blabla.style.verticalAlign = 'super';
+  blabla.style.fontSize = '0.5em';
+  blabla.innerHTML = '<a style="margin: 0 4px;" href="#">Crédits</a><a style="margin: 0 4px;" href="#">Plus d\'informations</a>'
+  section5.appendChild(img1);
+  section5.appendChild(img2);
+  section5.appendChild(blabla);
+
   // The actual menu containing these 4 sections:
   const menu = document.getElementById('menu');
   menu.id = 'menu';
@@ -100,6 +119,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   menu.appendChild(section3);
   menu.appendChild(title_section4);
   menu.appendChild(section4);
+  menu.appendChild(section5);
 };
 
 export { createMenu };

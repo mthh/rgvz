@@ -10,7 +10,7 @@ import { BarChart1 } from './modules/charts/barChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { Similarity1plus } from './modules/charts/similarity1v';
-import { unbindUI, selectFirstAvailableVar, prepareGeomLayerId, getRandom } from './modules/helpers';
+import { unbindUI, selectFirstAvailableVar, prepareGeomLayerId, getRandom, Tooltipsify } from './modules/helpers';
 import {
   prepare_dataset,
   filterLevelVar,
@@ -173,7 +173,13 @@ function updateAvailableCharts(nb_var) {
 }
 
 function updateMyCategorySection() {
-  document.querySelector('.filter_info').innerHTML = app.current_config.my_category;
+  if (app.current_config.my_category) {
+    document.querySelector('.filter_info').innerHTML = app.current_config.my_category ;
+  } else if (app.current_config.filter_key instanceof Array) {
+    document.querySelector('.filter_info').innerHTML = `Régions dans un voisinage de ${+d3.select('#dist_filter').property('value')} km`;
+  } else {
+    document.querySelector('.filter_info').innerHTML = `Ensemble des régions`;
+  }
 }
 
 /**
@@ -444,6 +450,7 @@ export function bindTopButtons(chart, map_elem) {
         chart.bindMap(map_elem);
       }
       app.chart = chart;
+      Tooltipsify('[title-tooltip]');
     });
 }
 
@@ -592,6 +599,7 @@ function loadData() {
       map_elem.bindBrushClick(chart);
       chart.bindMap(map_elem);
       app.chart = chart;
+      Tooltipsify('[title-tooltip]');
     });
 }
 

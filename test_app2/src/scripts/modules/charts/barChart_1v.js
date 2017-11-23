@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip2, getMean, svgPathToCoords, selectFirstAvailableVar } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip2, getMean, svgPathToCoords, selectFirstAvailableVar, getElementsFromPoint } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset, addVariable } from './../prepare_data';
 import { svg_map } from './../map';
@@ -239,15 +239,15 @@ export class BarChart1 {
       .call(brush_bottom);
 
     const groupe_line_mean = focus.append('g').attr('class', 'mean');
-    groupe_line_mean.append('text')
-      .attrs({ x: 60, y: y(this.mean_value) + 20 })
-      .styles({
-        display: 'none',
-        fill: 'red',
-        'fill-opacity': '0.8',
-        'font-family': '\'Signika\', sans-serif',
-      })
-      .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10} ${this.unit}`);
+    // groupe_line_mean.append('text')
+    //   .attrs({ x: 60, y: y(this.mean_value) + 20 })
+    //   .styles({
+    //     display: 'none',
+    //     fill: 'red',
+    //     'fill-opacity': '0.8',
+    //     'font-family': '\'Signika\', sans-serif',
+    //   })
+    //   .text(`Valeur moyenne : ${Math.round(this.mean_value * 10) / 10} ${this.unit}`);
 
     groupe_line_mean.append('line')
       .attrs({
@@ -265,12 +265,31 @@ export class BarChart1 {
       .attrs({ x1: 0, x2: width, y1: y(this.mean_value), y2: y(this.mean_value), 'stroke-width': '14px', class: 'transp_mean_line' })
       .style('stroke', 'transparent')
       .on('mouseover', () => {
-        groupe_line_mean.select('text')
-          .style('display', 'initial');
+        clearTimeout(t);
+        this.tooltip.style('display', null).select('.title').attr('class', 'title red');
       })
       .on('mouseout', () => {
-        groupe_line_mean.select('text')
-          .style('display', 'none');
+        clearTimeout(t);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+      })
+      .on('mousemove mousedown', (d) => {
+        clearTimeout(t);
+        const content = ['Moyenne de l\'espace d\'étude'];
+        let _h = 65;
+        if (app.current_config.my_category) {
+          content.push('<br>', ' (', app.current_config.my_category, ')');
+          _h += 20;
+        }
+        self.tooltip.select('.title')
+          .attr('class', 'title red')
+          .html(content.join(''));
+        self.tooltip.select('.content')
+          .html(['Valeur : ', Math.round(self.mean_value * 10) / 10, ' ', self.unit].join(''));
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - _h}px` });
       });
 
     this.updateMiniBars();
@@ -512,15 +531,16 @@ export class BarChart1 {
     this.g_bar.selectAll('.bar')
       .on('mouseover', () => {
         clearTimeout(t);
-        this.tooltip.style('display', null);
+        this.tooltip.style('display', null).select('.title').attr('class', 'title');
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
       })
       .on('mousemove mousedown', (d) => {
         clearTimeout(t);
         self.tooltip.select('.title')
+          .attr('class', 'title')
           .html([
             '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
         self.tooltip.select('.content')
@@ -537,8 +557,8 @@ export class BarChart1 {
 
     svg_container.select('.brush_top')
       .on('mousemove mousedown', function () {
-        const elems = document.elementsFromPoint(d3.event.pageX, d3.event.pageY);
-        const elem = elems.find(e => e.className.baseVal === 'bar');
+        const elems = getElementsFromPoint(d3.event.pageX, d3.event.pageY);
+        const elem = elems.find(e => e.className.baseVal === 'bar' || e.className.baseVal === 'transp_mean_line');
         if (elem) {
           const new_click_event = new MouseEvent('mousemove', {
             pageX: d3.event.pageX,

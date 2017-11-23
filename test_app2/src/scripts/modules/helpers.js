@@ -9,6 +9,14 @@ const math_cos = Math.cos;
 const math_sqrt = Math.sqrt;
 const HALF_PI = Math.PI / 2;
 
+const getElementsFromPoint = (x, y) => {
+  return document.elementsFromPoint
+    ? Array.prototype.slice.call(document.elementsFromPoint(x, y))
+    : document.msElementsFromPoint
+    ? Array.prototype.slice.call(document.msElementsFromPoint(x, y))
+    : null;
+};
+
 function prepareTooltip(parent_svg_elem) {
   const tooltip = parent_svg_elem.append('g')
     .attr('class', 'tooltip')
@@ -80,6 +88,50 @@ function prepareTooltip2(parent, before, classname='tooltip') {
   return tooltip;
 }
 
+const Tooltipsify = (selector, options={}) => {
+  const opts = {
+    parent: options.parent || document.body,
+    className: options.className || 'tooltip-black',
+    dataAttr: options.dataAttr || 'title-tooltip',
+    timeout: options.timeout || 5,
+  };
+  const elems = d3.selectAll(selector);
+  if (elems._groups[0].length === 0) return;
+
+  let tooltip_parent = d3.select(opts.parent).select(`.${opts.className}`);
+  let tooltip;
+  let t;
+
+  if (!tooltip_parent.node()) {
+    tooltip_parent = d3.select(opts.parent).insert('div')
+      .attr('class', opts.className)
+      .style('display', 'none');
+    tooltip = tooltip_parent.append('p').attr('class', 'content');
+  } else {
+    tooltip = tooltip_parent.select('.content');
+  }
+
+  elems
+    .on('mouseover', () => {
+      clearTimeout(t);
+      tooltip_parent.style('display', null);
+    })
+    .on('mouseout', () => {
+      clearTimeout(t);
+      t = setTimeout(() => { tooltip_parent.style('display', 'none'); }, opts.timeout);
+    })
+    .on('mousemove mousedown', function (d) {
+      clearTimeout(t);
+      tooltip
+        .html(this.getAttribute(opts.dataAttr));
+      const b = tooltip.node().getBoundingClientRect();
+      tooltip_parent
+        .styles({
+          display: null,
+          left: `${d3.event.pageX - 5}px`,
+          top: `${d3.event.pageY - b.height - 15}px` });
+    });
+}
 
 function unbindUI() {
   // Removes the current behavior corresponding to clicking on the left menu:
@@ -340,4 +392,6 @@ export {
   selectFirstAvailableVar,
   prepareGeomLayerId,
   getRandom,
+  Tooltipsify,
+  getElementsFromPoint,
 };

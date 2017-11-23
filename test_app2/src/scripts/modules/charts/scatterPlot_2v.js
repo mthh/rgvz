@@ -168,7 +168,35 @@ export class ScatterPlot2 {
         'stroke-dasharray': '10, 5',
         'stroke-width': '2px',
       })
-      .style('stroke', 'red');
+      .style('stroke', 'red')
+      .on('mouseover', () => {
+        clearTimeout(t);
+        this.tooltip.style('display', null).select('.title').attr('class', 'title red');
+      })
+      .on('mouseout', () => {
+        clearTimeout(t);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+      })
+      .on('mousemove mousedown', (d) => {
+        clearTimeout(t);
+        const content = ['Moyenne de l\'espace d\'étude'];
+        let _h = 65;
+        if (app.current_config.my_category) {
+          content.push('<br>', ' (', app.current_config.my_category, ')');
+          _h += 20;
+        }
+        self.tooltip.select('.title')
+          .attr('class', 'title red')
+          .html(content.join(''));
+        self.tooltip.select('.content')
+          .html([`Valeur (${this.variable1}): `, Math.round(this.mean_variable1 * 10) / 10, ' ', self.unit1].join(''));
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - _h}px` });
+      });
+
     groupe_line_mean.append('line')
       .style('stroke', 'red')
       .attrs({
@@ -180,6 +208,33 @@ export class ScatterPlot2 {
         'clip-path': 'url(#clip)',
         'stroke-dasharray': '10, 5',
         'stroke-width': '2px',
+      })
+      .on('mouseover', () => {
+        clearTimeout(t);
+        this.tooltip.style('display', null).select('.title').attr('class', 'title red');
+      })
+      .on('mouseout', () => {
+        clearTimeout(t);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+      })
+      .on('mousemove mousedown', (d) => {
+        clearTimeout(t);
+        const content = ['Moyenne de l\'espace d\'étude'];
+        let _h = 65;
+        if (app.current_config.my_category) {
+          content.push('<br>', ' (', app.current_config.my_category, ')');
+          _h += 20;
+        }
+        self.tooltip.select('.title')
+          .attr('class', 'title red')
+          .html(content.join(''));
+        self.tooltip.select('.content')
+          .html([`Valeur (${this.variable2}): `, Math.round(this.mean_variable2 * 10) / 10, ' ', self.unit2].join(''));
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - _h}px` });
       });
 
     this.plot.append('g')
@@ -289,7 +344,7 @@ export class ScatterPlot2 {
     menu_selection.append('p')
       .attr('id', 'selection_subtitle')
       .styles({ margin: '10px 0px 2px 0px' })
-      .html('Sélection des régions ayant des valeurs...');
+      .html('Sur les deux indicateurs, sélection des régions ayant des valeurs...');
 
     menu_selection.append('button')
       .attrs({ class: 'button_blue', id: 'btn_above_mean' })
@@ -400,6 +455,7 @@ export class ScatterPlot2 {
         class: 'title-axis',
         x: margin.left + width / 2,
         y: margin.top + height + margin.bottom / 2 + 15,
+        'title-tooltip': this.pretty_name1,
       })
       .html(this.variable1 + ' &#x25BE;')
       .on('click', function () {
@@ -417,6 +473,7 @@ export class ScatterPlot2 {
         x: margin.left / 2,
         y: margin.top + (height / 2) - 10,
         transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
+        'title-tooltip': this.pretty_name2,
       })
       .html(this.variable2 + ' &#x25BE;')
       .on('click', function () {
@@ -527,9 +584,6 @@ export class ScatterPlot2 {
       this.plot.select('#axis--x').transition().duration(125).call(this.xAxis);
       this.plot.select('#axis--y').transition().duration(125).call(this.yAxis);
 
-      // const dots = this.scatter.selectAll('.dot')
-      //   .data(data, d => d.id);
-
       dots
         .transition()
         .duration(125)
@@ -631,11 +685,12 @@ export class ScatterPlot2 {
     this.scatter.selectAll('.dot')
       .on('mouseover.tooltip', () => {
         clearTimeout(t);
-        self.tooltip.style('display', null);
+        self.tooltip.style('display', null).select('.title').attr('class', 'title');
       })
       .on('mousemove.tooltip', function (d) {
         clearTimeout(t);
         self.tooltip.select('.title')
+          .attr('class', 'title')
           .html([
             '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
         let yoffset;
@@ -665,7 +720,7 @@ export class ScatterPlot2 {
       })
       .on('mouseout.tooltip', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
       });
   }
 
@@ -769,6 +824,7 @@ export class ScatterPlot2 {
     this.pretty_name1 = var_info.name;
     this.unit1 = var_info.unit;
     svg_container.select('#title-axis-x')
+      .attr('title-tooltip', this.pretty_name1)
       .html(code_variable + ' &#x25BE;');
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
@@ -799,6 +855,7 @@ export class ScatterPlot2 {
     this.pretty_name2 = var_info.name;
     this.unit2 = var_info.unit;
     svg_container.select('#title-axis-y')
+      .attr('title-tooltip', this.pretty_name2)
       .html(code_variable + ' &#x25BE;');
     // TODO: Also change the position of the button alowing to inverse the serie
     this.updateItemsCtxMenu();
