@@ -21,7 +21,6 @@ const updateDimensions = () => {
 };
 
 const makeTableTooltip = (data_feature) => {
-  console.log(data_feature);
   const doc = document;
   const nb_features = data_feature.axes.length;
   const column_names = ['/', 'Ratio', 'Rang', 'Écart à ma région'];
@@ -124,10 +123,10 @@ export const prepare_data_radar_default = (data, variables) => {
     axes: [],
   };
   variables.forEach((v) => {
-    const t = variables_info.find(d => d.id === v).id;
+    const t = variables_info.find(d => d.id === v);
     const _v = `pr_${v}`;
     ojb_my_region.axes.push({
-      axis: t, value: v_my_region[_v], raw_value: v_my_region[v],
+      axis: t.id, value: v_my_region[_v], raw_value: v_my_region[v], raw_value_unit: t.unit,
     });
   });
   return ojb_my_region;
@@ -143,10 +142,10 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
     axes: [],
   };
   variables.forEach((v) => {
-    const t = variables_info.find(d => d.id === v).id;
+    const t = variables_info.find(d => d.id === v);
     const _v = `pr_${v}`;
     obj.axes.push({
-      axis: t, value: ft_values[_v], raw_value: ft_values[v],
+      axis: t.id, value: ft_values[_v], raw_value: ft_values[v], raw_value_unit: t.unit,
     });
   });
   return obj;
@@ -236,10 +235,10 @@ export class RadarChart3 {
   }
 
   add_element(elem) {
-    const n_axis = elem.axes.map(i => i.axis);
-    if (!(JSON.stringify(n_axis.sort()) === JSON.stringify(this.allAxis.sort()))) {
-      throw new Error('Expected element with same axes name than existing data.');
-    }
+    // const n_axis = elem.axes.map(i => i.axis);
+    // if (!(JSON.stringify(n_axis.sort()) === JSON.stringify(this.allAxis.sort()))) {
+    //   throw new Error('Expected element with same axes name than existing data.');
+    // }
     elem.axes.forEach((ft) => {
       if (this.inversedAxis.has(ft.axis)) {
         ft.value = 100 - ft.value; // eslint-disable-line no-param-reassign
@@ -359,19 +358,19 @@ export class RadarChart3 {
       .attr('cx', (d, i) => this.rScale(d.value) * math_cos(this.angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => this.rScale(d.value) * math_sin(this.angleSlice * i - HALF_PI))
       .style('fill', 'none')
-      .style('pointer-events', 'all')
-      .on('mouseover', function (d) {
-        self.g.select('.tooltip')
-          .attr('x', this.cx.baseVal.value - 10)
-          .attr('y', this.cy.baseVal.value - 10)
-          .transition()
-          .style('display', 'block')
-          .text(self.Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
-      })
-      .on('mouseout', () => {
-        self.g.select('.tooltip').transition()
-          .style('display', 'none').text('');
-      });
+      .style('pointer-events', 'all');
+      // .on('mouseover', function (d) {
+      //   self.g.select('.tooltip')
+      //     .attr('x', this.cx.baseVal.value - 10)
+      //     .attr('y', this.cy.baseVal.value - 10)
+      //     .transition()
+      //     .style('display', 'block')
+      //     .text(self.Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
+      // })
+      // .on('mouseout', () => {
+      //   self.g.select('.tooltip').transition()
+      //     .style('display', 'none').text('');
+      // });
 
     this.makeTooltips();
   }
@@ -554,7 +553,7 @@ export class RadarChart3 {
 
   makeTooltips() {
     const self = this;
-    this.g.selectAll('.radarArea')
+    this.g.selectAll('.radarInvisibleCircle')
       .on('mouseover', () => {
         clearTimeout(t);
         this.tooltip.style('display', null);
@@ -563,25 +562,55 @@ export class RadarChart3 {
         clearTimeout(t);
         t = setTimeout(() => {
           this.tooltip.style('display', 'none').selectAll('p').html('');
-          this.tooltip.selectAll('table').remove();
         }, 250);
       })
       .on('mousemove mousedown', function (d) {
+        const code_variable = d.axis;
+        const id_feature = d.id;
+        const direction = self.inversedAxis.has(code_variable)
+          ? 'inférieure' : 'supérieure';
 
         clearTimeout(t);
         self.tooltip.select('.title')
           .attr('class', 'title')
-          .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
-        if (!self.tooltip.select('table').node()) {
-          const table_elem = makeTableTooltip(d);
-          self.tooltip.node().append(table_elem);
-        }
+          .html([app.feature_names[id_feature], ' (', id_feature, ')'].join(''));
+        self.tooltip.select('.content')
+          .attr('class', 'content')
+          .html([
+            `${self.Format(100 - d.value)} ${self.cfg.unit} régions ont une valeur ${direction}`,
+            `${code_variable} : ${d.raw_value} ${d.raw_value_unit}`,
+          ].join('<br>'));
         self.tooltip
-          .styles({
-            display: null,
-            left: `${d3.event.pageX - 5}px`,
-            top: `${d3.event.pageY - self.tooltip.node().getBoundingClientRect().height}px` });
-      });
+          .styles({ display: null, left: `${d3.event.pageX - 5}px`, top: `${d3.event.pageY - self.tooltip.node().getBoundingClientRect().height}px` })
+      })
+    // this.g.selectAll('.radarArea')
+    //   .on('mouseover', () => {
+    //     clearTimeout(t);
+    //     this.tooltip.style('display', null);
+    //   })
+    //   .on('mouseout', () => {
+    //     clearTimeout(t);
+    //     t = setTimeout(() => {
+    //       this.tooltip.style('display', 'none').selectAll('p').html('');
+    //       this.tooltip.selectAll('table').remove();
+    //     }, 250);
+    //   })
+    //   .on('mousemove mousedown', function (d) {
+    //
+    //     clearTimeout(t);
+    //     self.tooltip.select('.title')
+    //       .attr('class', 'title')
+    //       .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
+    //     if (!self.tooltip.select('table').node()) {
+    //       const table_elem = makeTableTooltip(d);
+    //       self.tooltip.node().append(table_elem);
+    //     }
+    //     self.tooltip
+    //       .styles({
+    //         display: null,
+    //         left: `${d3.event.pageX - 5}px`,
+    //         top: `${d3.event.pageY - self.tooltip.node().getBoundingClientRect().height}px` });
+    //   });
   }
 
   updateLegend() {
@@ -609,26 +638,26 @@ export class RadarChart3 {
         self.displayed_ids = self.data.map(_d => _d.name);
         self.update();
       });
-    menu_selection.selectAll('.mini-legend-item')
-      .on('click', function () {
-        const b = this.getBoundingClientRect();
-        const d = self.data.find(a => a.name === this.parentElement.__data__);
-
-        clearTimeout(t);
-        self.tooltip.select('.title')
-          .attr('class', 'title')
-          .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
-        if (!self.tooltip.select('table').node()) {
-          const table_elem = makeTableTooltip(d);
-          self.tooltip.node().append(table_elem);
-        }
-        const b2 = self.tooltip.node().getBoundingClientRect();
-        self.tooltip
-          .styles({
-            display: null,
-            left: `${b.left + b.width}px`,
-            top: `${b.top - 20 - b2.height}px` });
-      });
+    // menu_selection.selectAll('.mini-legend-item')
+    //   .on('click', function () {
+    //     const b = this.getBoundingClientRect();
+    //     const d = self.data.find(a => a.name === this.parentElement.__data__);
+    //
+    //     clearTimeout(t);
+    //     self.tooltip.select('.title')
+    //       .attr('class', 'title')
+    //       .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
+    //     if (!self.tooltip.select('table').node()) {
+    //       const table_elem = makeTableTooltip(d);
+    //       self.tooltip.node().append(table_elem);
+    //     }
+    //     const b2 = self.tooltip.node().getBoundingClientRect();
+    //     self.tooltip
+    //       .styles({
+    //         display: null,
+    //         left: `${b.left + b.width}px`,
+    //         top: `${b.top - 20 - b2.height}px` });
+    //   });
   }
 
   drawArea() {
@@ -712,23 +741,23 @@ export class RadarChart3 {
       .attr('cx', (d, i) => rScale(d.value) * math_cos(angleSlice * i - HALF_PI))
       .attr('cy', (d, i) => rScale(d.value) * math_sin(angleSlice * i - HALF_PI))
       .style('fill', 'none')
-      .style('pointer-events', 'all')
-      .on('mouseover', function (d) {
-        g.select('.tooltip')
-          .attr('x', this.cx.baseVal.value - 10)
-          .attr('y', this.cy.baseVal.value - 10)
-          .transition()
-          .style('display', 'block')
-          .text(Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
-      })
-      .on('mouseout', () => {
-        g.select('.tooltip').transition()
-          .style('display', 'none').text('');
-      });
+      .style('pointer-events', 'all');
+      // .on('mouseover', function (d) {
+      //   g.select('.tooltip')
+      //     .attr('x', this.cx.baseVal.value - 10)
+      //     .attr('y', this.cy.baseVal.value - 10)
+      //     .transition()
+      //     .style('display', 'block')
+      //     .text(Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
+      // })
+      // .on('mouseout', () => {
+      //   g.select('.tooltip').transition()
+      //     .style('display', 'none').text('');
+      // });
 
-    g.append('text')
-      .attrs({ class: 'tooltip', x: 0, y: 0, dy: '0.35em', 'text-anchor': 'middle' })
-      .styles({ 'font-size': '12px', display: 'none' });
+    // g.append('text')
+    //   .attrs({ class: 'tooltip', x: 0, y: 0, dy: '0.35em', 'text-anchor': 'middle' })
+    //   .styles({ 'font-size': '12px', display: 'none' });
 
     this.makeTooltips();
   }
