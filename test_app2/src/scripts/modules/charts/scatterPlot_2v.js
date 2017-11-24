@@ -301,24 +301,24 @@ export class ScatterPlot2 {
       calcCompletudeSubset(app, [this.variable1, this.variable2], 'array'),
       calcPopCompletudeSubset(app, [this.variable1, this.variable2]));
 
-    // Deactivate the rect brush selection on the map
-    // while the user press the Ctrl key:
-    document.onkeydown = (event) => {
-      if (event && event.key === 'Control') {
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', 'none');
-      }
-    };
-    // Reactivate the rect brush selection on the map
-    // when the user doesn't press the Ctrl key anymore
-    document.onkeyup = (event) => {
-      if (event && event.key === 'Control') {
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', null);
-      }
-    };
+    // // Deactivate the rect brush selection on the map
+    // // while the user press the Ctrl key:
+    // document.onkeydown = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', 'none');
+    //   }
+    // };
+    // // Reactivate the rect brush selection on the map
+    // // when the user doesn't press the Ctrl key anymore
+    // document.onkeyup = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', null);
+    //   }
+    // };
 
     const menu_selection = d3.select(svg_bar.node().parentElement)
       .append('div')

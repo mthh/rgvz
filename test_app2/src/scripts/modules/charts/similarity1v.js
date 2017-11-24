@@ -1,4 +1,4 @@
-import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip2, getMean } from './../helpers';
+import { comp, math_round, math_abs, math_sqrt, PropSizer, prepareTooltip2, getMean, Tooltipsify } from './../helpers';
 import { color_disabled, color_countries, color_default_dissim, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 // import { svg_map } from './../map';
@@ -58,22 +58,23 @@ export class Similarity1plus {
       calcCompletudeSubset(app, this.ratios, 'array'),
       calcPopCompletudeSubset(app, this.ratios));
 
-    // Create the button allowing to choose
-    // if the colors are inversed
-    // (like green/red for superior/inferior regions)
-    svg_container.append('image')
-      .attrs({
-        x: width + margin.left + 5,
-        y: 232.5,
-        width: 15,
-        height: 15,
-        'xlink:href': 'img/reverse_plus.png',
-        id: 'img_reverse',
-      })
-      .on('click', () => {
-        this.serie_inversed = !this.serie_inversed;
-        this.applySelection(this.highlight_selection.length);
-      });
+    this.inversedAxis = new Set();
+    // // Create the button allowing to choose
+    // // if the colors are inversed
+    // // (like green/red for superior/inferior regions)
+    // svg_container.append('image')
+    //   .attrs({
+    //     x: width + margin.left + 5,
+    //     y: 232.5,
+    //     width: 15,
+    //     height: 15,
+    //     'xlink:href': 'img/reverse_plus.png',
+    //     id: 'img_reverse',
+    //   })
+    //   .on('click', () => {
+    //     this.serie_inversed = !this.serie_inversed;
+    //     this.applySelection(this.highlight_selection.length);
+    //   });
 
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
@@ -81,7 +82,7 @@ export class Similarity1plus {
       .append('div')
       .attr('id', 'menu_selection')
       .styles({ position: 'relative', color: '#4f81bd', 'text-align': 'center' });
-    const selection_close = menu_selection.append('p');
+    const selection_close = menu_selection.append('p').attr('class', 'selection_display');
     selection_close.append('span')
       .html('Sélection des');
     selection_close.append('input')
@@ -169,7 +170,7 @@ export class Similarity1plus {
             class: `axis axis--x ${selector_ratio_name}`,
             transform: 'translate(0, 10)',
           });
-        g.append('text')
+        let txt = g.append('text')
           .attrs({
             x: 0,
             y: -7.5,
@@ -180,6 +181,23 @@ export class Similarity1plus {
             'title-tooltip': ratio_pretty_name,
           })
           .text(ratio_name);
+        g.append('image')
+          .attrs({
+            x: txt.node().getBoundingClientRect().width + 5,
+            y: -18,
+            width: 14,
+            height: 14,
+            'xlink:href': 'img/reverse_plus.png',
+            id: 'img_reverse',
+          })
+          .on('click', () => {
+            if (self.inversedAxis.has(ratio_name)) {
+              self.inversedAxis.delete(ratio_name);
+            } else {
+              self.inversedAxis.add(ratio_name);
+            }
+            self.update();
+          });
         layer_other = g.append('g').attr('class', 'otherfeature');
         layer_highlighted = g.append('g').attr('class', 'highlighted');
       } else {
@@ -207,7 +225,8 @@ export class Similarity1plus {
         _max = my_region_value + dist_axis + margin_min_max;
       }
       this.highlight_selection.forEach((elem) => {
-        app.colors[elem.id] = comp(elem[ratio_name], my_region_value, this.serie_inversed);
+        app.colors[elem.id] = comp(
+          elem[ratio_name], my_region_value, !self.inversedAxis.has(ratio_name));
       });
 
       app.colors[app.current_config.my_region] = color_highlight;
@@ -357,6 +376,7 @@ export class Similarity1plus {
   handleClickMap(d, parent) {
     let to_display = false;
     const id = d.id;
+    // const value_input_selection = +d3.select('#menu_selection').select('.nb_select').property('value');
     if (this.current_ids.indexOf(id) < 0 || id === app.current_config.my_region) return;
     if (app.colors[id] !== undefined) {
       // Remove the clicked feature from the colored selection on the chart:
@@ -372,14 +392,7 @@ export class Similarity1plus {
       // Change the color on the map:
       d3.select(parent).attr('fill', color_default_dissim);
       // Add the clicked feature on the colored selection on the chart:
-      // eslint-disable-next-line no-restricted-properties
       const obj = this.data.find(el => el.id === id);
-      // const global_dist = math_sqrt(this.ratios.map(v => `dist_${v}`).map(v => Math.pow(+d.properties[v], 2)).reduce((a, b) => a + b));
-      // const obj = {
-      //   id,
-      //   dist: global_dist,
-      // };
-      // this.ratios.forEach((v) => { obj[v] = +d.properties[v]; });
       this.highlight_selection.push(obj);
       to_display = true;
     }
@@ -451,7 +464,7 @@ export class Similarity1plus {
                 cloned.style.stroke = 'orange';
                 cloned.style.strokeWidth = '2.25px';
                 cloned.classList.add('cloned');
-                self.map_elem.layers.node().appendChild(cloned);
+                self.map_elem.layers.select('#temp').node().appendChild(cloned);
                 setTimeout(() => { cloned.remove(); }, 5000);
               }
             });
@@ -546,13 +559,19 @@ export class Similarity1plus {
     });
     this.data.sort((a, b) => a.dist - b.dist);
     this.data.forEach((el, i) => { el.rank = i; });
-    this.highlight_selection = this.highlight_selection.map((d) => {
-      return this.data.find(el => el.id === d.id);
-    }).filter(d => !!d);
-    // And use it immediatly:
+
+    // To keep the same selection :
+    // this.highlight_selection = this.highlight_selection.map((d) => {
+    //   return this.data.find(el => el.id === d.id);
+    // }).filter(d => !!d);
+    // this.update();
+
+    // To use a new selection according to 'nb_select' value:
+    this.applySelection(+d3.select('#menu_selection').select('.nb_select').property('value'));
+
     this.updateTableStat();
-    this.update();
     this.updateMapRegio();
+    Tooltipsify('[title-tooltip]');
   }
 
   removeVariable(code_variable) {

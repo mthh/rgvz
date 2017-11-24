@@ -81,6 +81,7 @@ export function makeHeaderMapSection() {
       height: 20,
       src: 'img/gimp-tool-rect-select.png',
       id: 'img_rect_selec',
+      title: 'Rectangle de sélection',
     });
 
   header_map_section.insert('img')
@@ -90,6 +91,7 @@ export function makeHeaderMapSection() {
       height: 20,
       src: 'img/gimp-tool-zoom.png',
       id: 'img_map_zoom',
+      title: 'Zoom',
     });
 
   header_map_section.insert('img')
@@ -99,12 +101,14 @@ export function makeHeaderMapSection() {
       height: 20,
       src: 'img/gimp-cursor.png',
       id: 'img_map_select',
+      title: 'Sélection par clic',
     });
 
   header_map_section.insert('div')
     .attrs({
       id: 'zoom_in',
-      class: 'top_half_circle',
+      class: 'top_half_circle noselect',
+      title: 'Zoom positif',
     })
     .append('span')
     .text('+');
@@ -112,7 +116,8 @@ export function makeHeaderMapSection() {
   header_map_section.insert('div')
     .attrs({
       id: 'zoom_out',
-      class: 'top_half_circle',
+      class: 'top_half_circle noselect',
+      title: 'Zoom négatif',
     })
     .append('span')
     .text('-');
@@ -132,36 +137,47 @@ export function makeHeaderChart() {
       height: 20,
       src: 'img/picto_download2.png',
       id: 'img_table',
+      title: 'Téléchargement des données',
     })
-    .styles({ margin: '3px', float: 'right' })
+    .styles({ margin: '3px', float: 'right', cursor: 'pointer' })
     .on('click', () => {
-      const columns = Object.keys(app.current_data[0]);
-      const content = [
-        columns.join(','), '\r\n',
-        app.current_data.map(d => columns.map(c => d[c]).join(',')).join('\r\n'),
-      ].join('');
-      const elem = document.createElement('a');
-      elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`);
-      elem.setAttribute('download', 'Regioviz_export.csv');
-      elem.style.display = 'none';
-      document.body.appendChild(elem);
-      elem.click();
-      document.body.removeChild(elem);
-      // if (document.querySelector('.dataTable-wrapper').style.display) {
-      //   document.querySelector('#svg_map').style.display = 'none';
-      //   document.querySelector('#svg_legend').style.display = 'none';
-      //   document.querySelector('#header_map').style.display = 'none';
-      //   document.querySelector('#header_table').style.display = null;
-      //   document.querySelector('.dataTable-wrapper').style.display = null;
-      //   this.style.filter = 'invert(75%)';
-      // } else {
-      //   document.querySelector('#svg_map').style.display = null;
-      //   document.querySelector('#svg_legend').style.display = null;
-      //   document.querySelector('#header_map').style.display = null;
-      //   document.querySelector('#header_table').style.display = 'none';
-      //   document.querySelector('.dataTable-wrapper').style.display = 'none';
-      //   this.style.filter = null;
-      // }
+      const content = `<div id="prep_rapport"><h3>Données en cours de préparation...</h3>
+<div class="spinner"><div class="cube1"></div><div class="cube2"></div></div></div>`;
+      // eslint-disable-next-line new-cap
+      const modal = new tingle.modal({
+        stickyFooter: false,
+        closeMethods: ['overlay', 'escape'],
+        closeLabel: 'Close',
+        onOpen() {
+          document.querySelector('div.tingle-modal.tingle-modal--visible').style.background = 'rgba(0,0,0,0.4)';
+        },
+        onClose() {
+          modal.destroy();
+        },
+      });
+      modal.setContent(content);
+      modal.open();
+      setTimeout(() => {
+        modal.setContent(`<h3>Téléchargements</h3><div style="text-align:center;">
+<p><a class="buttonDownload large" id="dl_data" href="#">Table de données (.csv)</a></p>
+<p><a class="buttonDownload large" id="dl_metadata" href="#">Métadonnées (.csv)</a></p>
+<p><a class="buttonDownload large" id="dl_geolayer" href="#">Fond de carte (.geojson)</a></p></div>`);
+        d3.select('#dl_data')
+          .on('click', () => {
+            const columns = Object.keys(app.current_data[0]);
+            const table_content = [
+              columns.join(','), '\r\n',
+              app.current_data.map(d => columns.map(c => d[c]).join(',')).join('\r\n'),
+            ].join('');
+            const elem = document.createElement('a');
+            elem.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(table_content)}`);
+            elem.setAttribute('download', 'Regioviz_export.csv');
+            elem.style.display = 'none';
+            document.body.appendChild(elem);
+            elem.click();
+            document.body.removeChild(elem);
+          });
+      }, 1000);
     });
 
   header_bar_section.insert('img')
@@ -170,8 +186,9 @@ export function makeHeaderChart() {
       height: 20,
       src: 'img/picto_report2.png',
       id: 'img_printer',
+      title: 'Export d\'un rapport',
     })
-    .styles({ margin: '3px', float: 'right' })
+    .styles({ margin: '3px', float: 'right', cursor: 'pointer' })
     .on('click', () => {
       const content = `<div id="prep_rapport"><h3>Rapport en cours de préparation...</h3>
 <div class="spinner"><div class="cube1"></div><div class="cube2"></div></div></div>`;
@@ -192,7 +209,7 @@ export function makeHeaderChart() {
       setTimeout(() => {
         modal.setContent(`<div id="prep_rapport">
 <p><a class="buttonDownload" href="#">Télécharger</a> <a class="buttonDownload" href="#">Ouvrir</a></p></div>`);
-      }, 2500);
+      }, 2000);
     });
 
   header_bar_section.insert('img')
@@ -201,8 +218,9 @@ export function makeHeaderChart() {
       height: 20,
       src: 'img/picto_information2.png',
       id: 'img_info',
+      title: 'Aide',
     })
-    .styles({ margin: '3px', float: 'right' })
+    .styles({ margin: '3px', float: 'right', cursor: 'pointer' })
     .on('click', () => {
       const help_message = app.chart.getHelpMessage().split('\n').join('<br>');
       // eslint-disable-next-line new-cap

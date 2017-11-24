@@ -1,7 +1,7 @@
 // import debug from 'debug';
 import tingle from 'tingle.js';
 import alertify from 'alertifyjs';
-import { createMenu } from './modules/menuleft';
+import { createMenu, handleInputRegioName } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, svg_map, zoomClick } from './modules/map';
 // import { makeTable } from './modules/table';
@@ -82,6 +82,8 @@ function setDefaultConfigMenu(code = 'FRE', variable = 'REVMEN', level = 'N1') {
   document.querySelector(`.target_variable.small_square[value="${variable}"]`).classList.add('checked');
   document.querySelector('.filter_v.square[filter-value="no_filter"]').classList.add('checked');
   document.querySelector(`.territ_level.square[value="${level}"]`).classList.add('checked');
+  document.querySelector('.regio_name > #search').value = app.feature_names[code];
+  document.querySelector('.regio_name > #autocomplete').value = app.feature_names[code];
   updateAvailableRatios(code);
 }
 
@@ -192,6 +194,17 @@ function updateMyCategorySection() {
 *
 */
 function bindUI_chart(chart, map_elem) {
+  // User click on the arrow next to the input element in the first section
+  // of the left menu:
+  d3.select('span.down_arrow')
+    .on('click', () => {
+      const list_regio = document.getElementById('list_regio');
+      if (list_regio.classList.contains('hidden')) {
+        list_regio.classList.remove('hidden');
+      } else {
+        list_regio.classList.add('hidden');
+      }
+    });
   // User change the study zone:
   d3.selectAll('span.filter_v')
     .on('click', function () {
@@ -229,9 +242,14 @@ function bindUI_chart(chart, map_elem) {
       if (!this.classList.contains('checked')) {
         d3.selectAll('span.target_region').attr('class', 'target_region square');
         this.classList.add('checked');
+
         const id_region = this.getAttribute('value');
         const old_nb_var = app.current_config.ratio.length;
         changeRegion(app, id_region, map_elem);
+
+        document.getElementById('list_regio').classList.add('hidden');
+        document.querySelector('.regio_name > #search').value = app.feature_names[id_region];
+        document.querySelector('.regio_name > #autocomplete').value = app.feature_names[id_region];
         // Update the availables ratio on the left menu
         // (this may change the current selected ratio(s) as some variables are
         // not available for some features) and fetch the number of selected
@@ -570,6 +588,7 @@ function loadData() {
       let features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       features_menu = features_menu.slice(0, 1).concat(
         features_menu.slice(6)).concat(features_menu.slice(1, 6));
+      features_menu.forEach((ft) => { ft.name = ft.name.replace(' — ', ' - '); });
       const start_region = getRandom(features_menu.map(d => d.id), 12);
       const start_variable = getRandom(
         ['REVMEN', 'CHOM1574', 'CHOM1524']);
@@ -580,6 +599,7 @@ function loadData() {
       updateMenuStudyZones();
       bindHelpMenu();
       makeTopMenu();
+      handleInputRegioName(features_menu);
       makeHeaderChart();
       makeHeaderMapSection();
       setDefaultConfigMenu(start_region, start_variable, 'N1');

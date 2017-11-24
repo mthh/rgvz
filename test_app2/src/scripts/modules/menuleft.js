@@ -1,14 +1,29 @@
 import { removeDuplicates } from './helpers';
+import { app } from './../main';
+
 
 const createMenu = function createMenu(names, variables, study_zones, territorial_mesh) {
   // First section, regions names:
-  const title_section1 = document.createElement('p');
-  title_section1.className = 'title_menu';
-  title_section1.innerHTML = 'Ma région';
+  // const title_section1 = document.createElement('p');
+  // title_section1.className = 'title_menu';
+  // title_section1.innerHTML = 'Ma région';
+  const title_section1 = document.createElement('div');
+  title_section1.style.backgroundColor = '#4f81bd'
+  title_section1.style.color = 'white';
+  title_section1.style.overflow = 'hidden';
+  title_section1.innerHTML = `
+<div class="regio_name">
+<p>Ma région : </p>
+<input type = "text" id = "search"/>
+<input id="autocomplete" type="text" disabled="disabled" />
+<span class='down_arrow'> &#x25BE;</span>`;
+
   const section1 = document.createElement('div');
-  section1.className = 'box';
+  section1.id = 'list_regio';
+  section1.className = 'box hidden';
   section1.style.overflow = 'auto';
-  section1.style.height = '15%';
+  // section1.style.height = '15%';
+  // section1.style.height = '0';
   for (let i = 0, len_i = names.length; i < len_i; i++) {
     const id = names[i].id;
     const name = names[i].name;
@@ -93,18 +108,23 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   section4.className = 'box';
   section4.style.overflow = 'auto';
   section4.style.maxHeight = '20%';
+  const img2 = document.createElement('img');
+  img2.src = 'img/Marianne_CGET_RVB.png';
+  img2.style.margin = '10px';
+  img2.style.width = '8em';
+  img2.style.float = 'left';
   const img1 = document.createElement('img');
   img1.src = 'img/logo_riate.png';
-  img1.style.margin = '0px 3px';
-  const img2 = document.createElement('img');
-  img2.src = 'img/logo_cget.png';
-  img2.style.margin = '0px 3px';
+  img1.style.margin = '20px 10px';
+  img1.style.width = '8em';
+  img1.style.float = 'right';
   const blabla = document.createElement('span');
-  blabla.style.verticalAlign = 'super';
+  blabla.style.margin = '0px 10px';
   blabla.style.fontSize = '0.5em';
+  blabla.style.float = 'right';
   blabla.innerHTML = '<a style="margin: 0 4px;" href="#">Crédits</a><a style="margin: 0 4px;" href="#">Plus d\'informations</a>'
-  section5.appendChild(img1);
   section5.appendChild(img2);
+  section5.appendChild(img1);
   section5.appendChild(blabla);
 
   // The actual menu containing these 4 sections:
@@ -120,6 +140,60 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   menu.appendChild(title_section4);
   menu.appendChild(section4);
   menu.appendChild(section5);
+  // handleInputRegioName(names);
 };
 
-export { createMenu };
+const handleInputRegioName = (allowed_names) => {
+  const ids_names = {};
+  allowed_names.forEach((ft) => { ids_names[ft.name.toLowerCase()] = ft.id; });
+  const names = allowed_names.map(d => d.name.toUpperCase());
+  const names2 = names.map(d => d.toLowerCase());
+
+  document.getElementById('search').onblur = function () {
+    if (!ids_names[this.value.toLowerCase()]) {
+      document.getElementById('autocomplete').value = app.current_config.my_region_pretty_name;
+      this.value = app.current_config.my_region_pretty_name;
+    }
+    document.getElementById('list_regio').classList.add('hidden');
+  };
+
+  document.getElementById('search').onkeyup = function (ev) {
+    const value = this.value;
+    if (!value || value === '') {
+      // document.getElementById('autocomplete').value = app.current_config.my_region_pretty_name;
+      // this.value = app.current_config.my_region_pretty_name;
+      return;
+    }
+    document.getElementById('list_regio').classList.remove('hidden');
+    const new_value = value.toLowerCase();
+    document.getElementById('autocomplete').value = '';
+    for (let i = 0; i < names2.length; i++) {
+      if (names2[i].lastIndexOf(new_value, 0) === 0) {
+        if (ev && (ev.key === 'Tab' || ev.key === 'Enter')) {
+          const t = value + names2[i].substr(new_value.length, names2[i].length);
+          document.getElementById('search').value = t;
+          document.getElementById('autocomplete').value = t;
+        }
+        const str_after = names2[i].substr(new_value.length, names2[i].length);
+        const new_str = value + str_after;
+        document.getElementById('autocomplete').value = new_str;
+        // if (ev && ev.key === 'Tab') {
+        //   document.querySelector('#search').value = names2[i];
+        //   document.querySelector('#autocomplete').value = names2[i];
+        //   return;
+        // }
+        // const str_after = names2[i].substr(new_value.length, names2[i].length);
+        // const new_str = value + str_after;
+        // document.getElementById('autocomplete').value = new_str;
+        // return;
+      }
+    }
+    const a = document.getElementById('autocomplete').value;
+    const b = document.getElementById('search').value;
+    const code = ids_names[a.toLowerCase()];
+    if (a === b && code) {
+      document.querySelector(`.target_region.square[value="${code}"]`).click();
+    }
+  };
+};
+export { createMenu, handleInputRegioName };

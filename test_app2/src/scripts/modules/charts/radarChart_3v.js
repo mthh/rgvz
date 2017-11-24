@@ -1,6 +1,6 @@
 import alertify from 'alertifyjs';
 import {
-  math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean } from './../helpers';
+  math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean, Tooltipsify } from './../helpers';
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { app, variables_info } from './../../main';
@@ -179,6 +179,12 @@ export class RadarChart3 {
       };
     }
     this.makeTableStat();
+    d3.select(svg_bar.node().parentElement.parentElement)
+      .append('div')
+      .attr('id', 'menu_selection')
+      .styles({ position: 'relative', 'text-align': 'left', 'padding-left': '5em', top: '-2em' });
+
+    this.updateLegend();
   }
 
   add_element(elem) {
@@ -252,7 +258,7 @@ export class RadarChart3 {
               cloned.style.stroke = 'yellow';
               cloned.style.strokeWidth = '2.25px';
               cloned.classList.add('cloned');
-              self.map_elem.layers.node().appendChild(cloned);
+              self.map_elem.layers.select('#temp').node().appendChild(cloned);
               setTimeout(() => {
                 cloned.remove();
               }, 5000);
@@ -474,7 +480,7 @@ export class RadarChart3 {
       .attr('dy', '0.35em')
       .attr('x', (d, i) => rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI))
       .attr('y', (d, i) => rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI))
-      .attr('title-tooltip', (_, i) => app.current_config.ratio_pretty_name[i])
+      .attr('title-tooltip', d => variables_info.find(ft => ft.id === d).name)
       .style('fill', d => (self.inversedAxis.has(d) ? 'red' : 'black'))
       .style('cursor', 'pointer')
       .text(d => d)
@@ -496,6 +502,17 @@ export class RadarChart3 {
     this.axisGrid = axisGrid;
   }
 
+  updateLegend() {
+    const menu_selection = d3.select('#menu_selection');
+    menu_selection.selectAll('p').remove();
+    menu_selection.selectAll('p')
+      .data(this.data.map(a => a.name), d => d)
+      .enter()
+      .append('p')
+      .attr('class', 'mini-legend-item')
+      .style('margin', 'auto')
+      .html(d => `<p class="color_square" style="background-color:${app.colors[d]}"></p><span>${app.feature_names[d]}</span>`);
+  }
   // handleLegend() {
   //   const cfg = this.cfg;
   //   if (cfg.legend !== false && typeof cfg.legend === 'object') {
@@ -679,6 +696,7 @@ export class RadarChart3 {
 
     update_axis.select('text.legend')
       .attrs((d, i) => ({
+        'title-tooltip': variables_info.find(ft => ft.id === d).name,
         id: i,
         x: rScale(maxValue * cfg.labelFactor) * math_cos(angleSlice * i - HALF_PI),
         y: rScale(maxValue * cfg.labelFactor) * math_sin(angleSlice * i - HALF_PI),
@@ -723,6 +741,8 @@ export class RadarChart3 {
         cx: rScale(d.value) * math_cos(angleSlice * i - HALF_PI),
         cy: rScale(d.value) * math_sin(angleSlice * i - HALF_PI),
       }));
+
+    this.updateLegend();
   }
 
   round_stroke(val) {
@@ -797,6 +817,7 @@ export class RadarChart3 {
     this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
+    Tooltipsify('[title-tooltip]');
   }
 
   removeVariable(code_variable) {
@@ -816,6 +837,7 @@ export class RadarChart3 {
     this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
+    Tooltipsify('[title-tooltip]');
   }
 
   prepareTableStat() {

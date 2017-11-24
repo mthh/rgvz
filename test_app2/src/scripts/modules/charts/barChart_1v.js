@@ -5,6 +5,8 @@ import { svg_map } from './../map';
 import { app, resetColors, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
+import ContextMenu from './../contextMenu';
+
 
 let svg_bar = d3.select('svg#svg_bar'),
   margin = { top: 10, right: 20, bottom: 100, left: 45 },
@@ -352,60 +354,97 @@ export class BarChart1 {
     // Prepare the tooltip displayed on mouseover:
     this.tooltip = prepareTooltip2(d3.select(svg_bar.node().parentElement), null);
 
-    // Deactivate the brush rect selection on the map + on the chart
-    // when he user press the Ctrl key:
-    document.onkeydown = (event) => {
-      if (event && event.key === 'Control') {
-        svg_container.select('.brush_top')
-          .selectAll('.selection, .overlay')
-          .style('display', 'none');
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', 'none');
-      }
-    };
-    document.onkeyup = (event) => {
-      if (event && event.key === 'Control') {
-        svg_container.select('.brush_top')
-          .selectAll('.selection, .overlay')
-          .style('display', null);
-        svg_map.select('.brush_map')
-          .selectAll('.selection, .overlay')
-          .style('display', null);
-      }
-    };
+    // // Deactivate the brush rect selection on the map + on the chart
+    // // when he user press the Ctrl key:
+    // document.onkeydown = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_container.select('.brush_top')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', 'none');
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', 'none');
+    //   }
+    // };
+    // document.onkeyup = (event) => {
+    //   if (event && event.key === 'Control') {
+    //     svg_container.select('.brush_top')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', null);
+    //     svg_map.select('.brush_map')
+    //       .selectAll('.selection, .overlay')
+    //       .style('display', null);
+    //   }
+    // };
 
     const header_bar_section = d3.select('#header_chart');
 
-    this.selec_var = header_bar_section
-      .insert('select', '#img_table')
-      .attrs({ class: 'title_variable' })
-      .styles({
-        'font-family': '\'Signika\', sans-serif',
-        'font-size': '0.8em',
-        'margin-top': '12px',
-        'margin-left': '40px',
-        float: 'left',
-      });
+    // this.selec_var = header_bar_section
+    //   .insert('select', '#img_table')
+    //   .attrs({ class: 'title_variable' })
+    //   .styles({
+    //     'font-family': '\'Signika\', sans-serif',
+    //     'font-size': '0.8em',
+    //     'margin-top': '12px',
+    //     'margin-left': '40px',
+    //     float: 'left',
+    //   });
 
-    for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
-      const code_variable = available_ratios[i];
-      const name_variable = app.current_config.ratio_pretty_name[i];
+    // for (let i = 0, len_i = available_ratios.length; i < len_i; i++) {
+    //   const code_variable = available_ratios[i];
+    //   const name_variable = app.current_config.ratio_pretty_name[i];
+    //   const unit = variables_info.find(ft => ft.id === code_variable).unit;
+    //   const year = name_variable.match(/\([^)]*\)$/)[0];
+    //   const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
+    //
+    //   this.selec_var.append('option')
+    //     .attr('value', `v_${code_variable}`)
+    //     .text(name_variable.replace(year, unit_year));
+    // }
+    //
+    // this.selec_var.on('change', function () {
+    //   const code_variable = this.value.slice(2);
+    //   self.changeVariable(code_variable);
+    //   self.changeStudyZone();
+    //   self.updateCompletude();
+    // });
+
+    this.menu_var = new ContextMenu();
+    this.items_menu = available_ratios.map((elem, i) => {
+      const code_variable = elem;
+      let name_variable = app.current_config.ratio_pretty_name[i];
       const unit = variables_info.find(ft => ft.id === code_variable).unit;
       const year = name_variable.match(/\([^)]*\)$/)[0];
       const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
-
-      this.selec_var.append('option')
-        .attr('value', `v_${code_variable}`)
-        .text(name_variable.replace(year, unit_year));
-    }
-
-    this.selec_var.on('change', function () {
-      const code_variable = this.value.slice(2);
-      self.changeVariable(code_variable);
-      self.changeStudyZone();
-      self.updateCompletude();
+      name_variable = name_variable.replace(year, unit_year);
+      return {
+        name: name_variable,
+        code: code_variable,
+        action: () => {
+          this.changeVariable(code_variable, name_variable);
+          this.changeStudyZone();
+          this.updateCompletude();
+        },
+      };
     });
+
+    this.title_variable = header_bar_section.append('span')
+      .attrs({
+        class: 'title_variable',
+        // 'title-tooltip': app.current_config.ratio_pretty_name[0],
+      })
+      .html(this.items_menu[0].name.replace(/\(/, '&').split('&').join('<br>(') + ' &#x25BE;')
+      .on('click', function () {
+        const bbox = this.getBoundingClientRect();
+        const items = self.items_menu.filter(el => el.code !== self.ratio_to_use);
+        if (items.length > 0) {
+          self.menu_var.showMenu(
+            d3.event,
+            document.body,
+            items,
+            [bbox.left - 5, bbox.bottom + 2.5]);
+        }
+      });
 
     // Create the menu under the chart allowing to use some useful selections
     // (above or below the mean value and above or below my_region)
@@ -891,34 +930,51 @@ export class BarChart1 {
     const unit = variables_info.find(ft => ft.id === code_variable).unit;
     const year = name_variable.match(/\([^)]*\)$/)[0];
     const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
-    // Add the variable to the input element allowing to choose variables:
-    this.selec_var.append('option')
-      .attr('value', `v_${code_variable}`)
-      .text(name_variable.replace(year, unit_year));
-
-    // And use it immediatly:
-    this.selec_var.node().value = `v_${code_variable}`;
-    this.selec_var.dispatch('change');
+    const name_var = name_variable.replace(year, unit_year);
+    this.items_menu.push({
+      name: name_var,
+      code: code_variable,
+      action: () => {
+        this.changeVariable(code_variable, name_var);
+        this.changeStudyZone();
+        this.updateCompletude();
+      },
+    });
+    this.items_menu[this.items_menu.length - 1].action();
+    // // Add the variable to the input element allowing to choose variables:
+    // this.selec_var.append('option')
+    //   .attr('value', `v_${code_variable}`)
+    //   .text(name_variable.replace(year, unit_year));
+    //
+    // // And use it immediatly:
+    // this.selec_var.node().value = `v_${code_variable}`;
+    // this.selec_var.dispatch('change');
   }
 
   removeVariable(code_variable) {
-    // Add the variable to the input element allowing to choose variables:
-    this.selec_var.select(`option[value=v_${code_variable}]`).remove();
+    // Remove the variable from the list of items:
+    for (let i = this.items_menu.length - 1; i > -1; i--) {
+      if (this.items_menu[i].code === code_variable) {
+        this.items_menu.splice(i, 1);
+        break;
+      }
+    }
     if (this.ratio_to_use === code_variable) {
-      this.selec_var.node().value = this.selec_var.select('option').node().value;
-      this.selec_var.dispatch('change');
+      this.items_menu[0].action();
     }
   }
 
-  changeVariable(code_variable) {
+  changeVariable(code_variable, name_variable) {
     this.ratio_to_use = code_variable;
     this.unit = variables_info.find(ft => ft.id === code_variable).unit;
+    this.title_variable.html(
+      name_variable.replace(/\(/, '&').split('&').join('<br>(') + ' &#x25BE;')
   }
 
   remove() {
     this._focus.remove();
     this.context.remove();
-    this.selec_var.remove();
+    this.title_variable.remove();
     this.table_stats.remove();
     this.table_stats = null;
     this.map_elem.unbindBrushClick();

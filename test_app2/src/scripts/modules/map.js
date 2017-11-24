@@ -72,7 +72,9 @@ function map_zoomed() {
   layers.selectAll('g')
     .transition(t)
     .style('stroke-width', function () {
-      return `${styles[this.id]['stroke-width'] / transform.k}px`;
+      return styles[this.id] ?
+        `${styles[this.id]['stroke-width'] / transform.k}px`
+        : null;
     });
 
   layers.selectAll('g')
@@ -242,6 +244,9 @@ class MapSelect {
           .attrs({ d: path });
       }
     }
+    layers.append('g')
+      .attrs({ id: 'temp' });
+
     this.layers = layers;
     fitLayer();
     app.type_path = getSvgPathType(this.target_layer.select('path').node().getAttribute('d'));
