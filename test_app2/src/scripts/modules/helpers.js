@@ -17,62 +17,6 @@ const getElementsFromPoint = (x, y) => {
     : null;
 };
 
-function prepareTooltip(parent_svg_elem) {
-  const tooltip = parent_svg_elem.append('g')
-    .attr('class', 'tooltip')
-    .style('display', 'none');
-
-  tooltip.append('rect')
-    .attrs({ x: 15, width: 0, height: 0, fill: 'beige' })
-    .style('opacity', 0.75);
-
-  tooltip.append('text')
-    .attrs({ class: 'id_feature', x: 25, dy: '1.2em', 'font-size': '14px' })
-    .style('font-weight', 'bold');
-
-  tooltip.append('text')
-    .attrs({
-      class: 'value_feature1',
-      x: 25,
-      dy: '2.4em',
-      'font-size': '14px',
-    });
-
-  tooltip.append('text')
-    .attrs({
-      class: 'value_feature2',
-      x: 25,
-      dy: '3.5em',
-      'font-size': '14px',
-    });
-
-  tooltip.append('text')
-    .attrs({
-      class: 'value_feature3',
-      x: 25,
-      dy: '4.6em',
-      'font-size': '14px',
-    });
-
-  tooltip.append('text')
-    .attrs({
-      class: 'value_feature4',
-      x: 25,
-      dy: '5.7em',
-      'font-size': '14px',
-    });
-
-  tooltip.append('text')
-    .attrs({
-      class: 'value_feature5',
-      x: 25,
-      dy: '6.8em',
-      'font-size': '14px',
-    });
-
-  return tooltip;
-}
-
 function prepareTooltip2(parent, before, classname='tooltip') {
   const t = parent.select('.tooltip');
   if (t.node()) {

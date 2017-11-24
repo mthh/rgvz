@@ -468,6 +468,7 @@ export function bindTopButtons(chart, map_elem) {
         chart.bindMap(map_elem);
       }
       app.chart = chart;
+      app.map = map_elem;
       Tooltipsify('[title-tooltip]');
     });
 }
@@ -619,6 +620,7 @@ function loadData() {
       map_elem.bindBrushClick(chart);
       chart.bindMap(map_elem);
       app.chart = chart;
+      app.map = map_elem;
       Tooltipsify('[title-tooltip]');
     });
 }

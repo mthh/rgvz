@@ -160,8 +160,8 @@ export function makeHeaderChart() {
       setTimeout(() => {
         modal.setContent(`<h3>Téléchargements</h3><div style="text-align:center;">
 <p><a class="buttonDownload large" id="dl_data" href="#">Table de données (.csv)</a></p>
-<p><a class="buttonDownload large" id="dl_metadata" href="#">Métadonnées (.csv)</a></p>
-<p><a class="buttonDownload large" id="dl_geolayer" href="#">Fond de carte (.geojson)</a></p></div>`);
+<p><a class="buttonDownload large disabled" id="dl_metadata" href="#">Métadonnées (.csv)</a></p>
+<p><a class="buttonDownload large" id="dl_geolayer" href="data/CGET_nuts_all.geojson">Fond de carte (.geojson)</a></p></div>`);
         d3.select('#dl_data')
           .on('click', () => {
             const columns = Object.keys(app.current_data[0]);

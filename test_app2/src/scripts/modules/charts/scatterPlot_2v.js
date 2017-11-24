@@ -175,7 +175,7 @@ export class ScatterPlot2 {
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       })
       .on('mousemove mousedown', (d) => {
         clearTimeout(t);
@@ -215,7 +215,7 @@ export class ScatterPlot2 {
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       })
       .on('mousemove mousedown', (d) => {
         clearTimeout(t);
@@ -330,14 +330,14 @@ export class ScatterPlot2 {
     chart_type.append('span')
       .attrs({
         id: 'ind_raw_values',
-        class: 'choice_ind active',
+        class: 'choice_ind active noselect',
       })
       .text('Valeurs brutes');
 
     chart_type.append('span')
       .attrs({
         id: 'ind_ranks',
-        class: 'choice_ind',
+        class: 'choice_ind noselect',
       })
       .text('Rangs normalisés');
 
@@ -452,7 +452,7 @@ export class ScatterPlot2 {
     svg_container.append('text')
       .attrs({
         id: 'title-axis-x',
-        class: 'title-axis',
+        class: 'title-axis noselect',
         x: margin.left + width / 2,
         y: margin.top + height + margin.bottom / 2 + 15,
         'title-tooltip': this.pretty_name1,
@@ -469,7 +469,7 @@ export class ScatterPlot2 {
     svg_container.append('text')
       .attrs({
         id: 'title-axis-y',
-        class: 'title-axis',
+        class: 'title-axis noselect',
         x: margin.left / 2,
         y: margin.top + (height / 2) - 10,
         transform: `rotate(-90, ${margin.left / 2}, ${margin.top + (height / 2)})`,
@@ -691,8 +691,7 @@ export class ScatterPlot2 {
         clearTimeout(t);
         self.tooltip.select('.title')
           .attr('class', 'title')
-          .html([
-            '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+          .html([d.name, ' (', d.id, ')'].join(''));
         let yoffset;
         if (with_rank) {
           self.tooltip.select('.content')
@@ -720,7 +719,7 @@ export class ScatterPlot2 {
       })
       .on('mouseout.tooltip', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       });
   }
 
@@ -955,7 +954,7 @@ export class ScatterPlot2 {
         self.type = 'value';
         this.classList.add('active');
         menu.select('#ind_ranks')
-          .attr('class', 'choice_ind');
+          .attr('class', 'choice_ind noselect');
         self.update();
       });
 
@@ -967,7 +966,7 @@ export class ScatterPlot2 {
         self.type = 'rank';
         this.classList.add('active');
         menu.select('#ind_raw_values')
-          .attr('class', 'choice_ind');
+          .attr('class', 'choice_ind noselect');
         self.update();
       });
   }

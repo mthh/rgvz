@@ -58,23 +58,8 @@ export class Similarity1plus {
       calcCompletudeSubset(app, this.ratios, 'array'),
       calcPopCompletudeSubset(app, this.ratios));
 
+    // To decide wether to inverse the positive/negative color for an axis
     this.inversedAxis = new Set();
-    // // Create the button allowing to choose
-    // // if the colors are inversed
-    // // (like green/red for superior/inferior regions)
-    // svg_container.append('image')
-    //   .attrs({
-    //     x: width + margin.left + 5,
-    //     y: 232.5,
-    //     width: 15,
-    //     height: 15,
-    //     'xlink:href': 'img/reverse_plus.png',
-    //     id: 'img_reverse',
-    //   })
-    //   .on('click', () => {
-    //     this.serie_inversed = !this.serie_inversed;
-    //     this.applySelection(this.highlight_selection.length);
-    //   });
 
     // Create the section containing the input element allowing to chose
     // how many "close" regions we want to highlight.
@@ -96,26 +81,8 @@ export class Similarity1plus {
     section.append('input')
       .attrs({ type: 'checkbox', id: 'check_prop' });
     section.append('label')
-      .attrs({ class: 'label not_selected', for: 'check_prop' })
+      .attrs({ class: 'label not_selected noselect', for: 'check_prop' })
       .text('Cercles proportionnels au numérateur');
-
-    // const switch_button = menu_selection.append('p')
-    //   .attr('class', 'btn-switch');
-    // switch_button.append('input')
-    //   .attrs({ type: 'radio', id: 'yes', name: 'switch', class: 'btn-switch__radio btn-switch__radio_yes' })
-    // switch_button.append('input')
-    //   .attrs({ type: 'radio', id: 'no', name: 'switch', class: 'btn-switch__radio btn-switch__radio_no' })
-    //   .property('checked', 'checked');
-    // const yes_label = switch_button.append('label')
-    //   .attrs({ for: 'yes', class: 'btn-switch__label btn-switch__label_yes'});
-    // yes_label.append('span')
-    //   .attr('class', 'btn-switch__txt')
-    //   .html('&#xf00c;');
-    // const no_label = switch_button.append('label')
-    //   .attrs({ for: 'no', class: 'btn-switch__label btn-switch__label_no' });
-    // no_label.append('span')
-    //   .attr('class', 'btn-switch__txt')
-    //   .html('&#xf00d;');
 
     this.bindMenu();
     this.makeTableStat();
@@ -175,6 +142,7 @@ export class Similarity1plus {
             x: 0,
             y: -7.5,
             fill: '#4f81bd',
+            class: 'noselect',
             'font-size': '11px',
             'font-weight': 'bold',
             'font-family': '"Signika",sans-serif',
@@ -412,7 +380,7 @@ export class Similarity1plus {
         })
         .on('mouseout', () => {
           clearTimeout(t);
-          t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 250);
+          t = setTimeout(() => { this.tooltip.style('display', 'none').html(''); }, 250);
         })
         .on('mousemove mousedown', function (d) {
           const content = [];
@@ -441,8 +409,7 @@ export class Similarity1plus {
           }
           clearTimeout(t);
           self.tooltip.select('.title')
-            .html([
-              '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+            .html([d.name, ' (', d.id, ')'].join(''));
           self.tooltip.select('.content')
             .html(content.join('<br>'));
           self.tooltip
@@ -624,10 +591,10 @@ export class Similarity1plus {
     menu.select('#check_prop')
       .on('change', function () {
         if (this.checked) {
-          menu.select('.slider-checkbox > .label').attr('class', 'label');
+          menu.select('.slider-checkbox > .label').attr('class', 'label noselect');
           self.proportionnal_symbols = true;
         } else {
-          menu.select('.slider-checkbox > .label').attr('class', 'label not_selected');
+          menu.select('.slider-checkbox > .label').attr('class', 'label noselect not_selected');
           self.proportionnal_symbols = false;
         }
         self.update();
@@ -690,7 +657,7 @@ Les graphiques de ressemblance permettent de visualiser pour 1 à 8 indicateurs 
 
 Cette proximité est mesurée par la distance euclidienne. Cette fonction permet d’évaluer la distance normalisée globale (exprimée en rang) séparant l’unité territoriale de référence avec l’ensemble des autres unités territoriales pour un ensemble d’indicateurs. La formule de la fonction est la suivante :
 
-<b>Σ(xi - yi)²</b>
+<p style="text-align:center;font-size: 1em;"><b>Σ(xi - yi)²</b></p>
 
 Si la valeur de l’indice équivaut à 0, la similarité est totale entre deux unités territoriales. Plus la valeur de l’indice est élevée, plus la dissimilarité est importante. A noter que cette métrique euclidienne est assez sensible aux ordres de grandeur hétérogènes entre plusieurs indicateurs (un fort écart pour un indicateur peut affecter significativement la valeur de l’indice).
 

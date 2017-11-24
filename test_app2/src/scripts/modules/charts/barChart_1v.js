@@ -90,7 +90,7 @@ export class BarChart1 {
       //   elem.dispatchEvent(new_click_event);
       // } else {
       clearTimeout(t);
-      t = setTimeout(() => { this.tooltip.style('display', 'none'); }, 5);
+      t = setTimeout(() => { this.tooltip.style('display', 'none').selectAll('p').html(''); }, 5);
       // }
 
       // if (d3_event && d3_event.selection
@@ -272,7 +272,7 @@ export class BarChart1 {
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       })
       .on('mousemove mousedown', (d) => {
         clearTimeout(t);
@@ -574,14 +574,13 @@ export class BarChart1 {
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title'); }, 250);
+        t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       })
       .on('mousemove mousedown', (d) => {
         clearTimeout(t);
         self.tooltip.select('.title')
           .attr('class', 'title')
-          .html([
-            '<b>', d.name, ' (', d.id, ')', '</b>'].join(''));
+          .html([d.name, ' (', d.id, ')'].join(''));
         self.tooltip.select('.content')
           .html([
             self.ratio_to_use, ' : ', math_round(d[self.ratio_to_use] * 10) / 10, ' ', self.unit, '<br>',
@@ -610,12 +609,12 @@ export class BarChart1 {
           elem.dispatchEvent(new_click_event);
         } else {
           clearTimeout(t);
-          t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
+          t = setTimeout(() => { self.tooltip.style('display', 'none').selectAll('p').html(''); }, 250);
         }
       })
       .on('mouseout', () => {
         clearTimeout(t);
-        t = setTimeout(() => { self.tooltip.style('display', 'none'); }, 250);
+        t = setTimeout(() => { self.tooltip.style('display', 'none').selectAll('p').html(''); }, 250);
       });
 
     this.updateMiniBars();
@@ -931,6 +930,7 @@ export class BarChart1 {
     const year = name_variable.match(/\([^)]*\)$/)[0];
     const unit_year = `${year.slice(0, 1)}${unit}, ${year.slice(1, 6)}`;
     const name_var = name_variable.replace(year, unit_year);
+    // Add the variable to the input element allowing to choose variables:
     this.items_menu.push({
       name: name_var,
       code: code_variable,
@@ -940,15 +940,8 @@ export class BarChart1 {
         this.updateCompletude();
       },
     });
+    // And use it immediatly:
     this.items_menu[this.items_menu.length - 1].action();
-    // // Add the variable to the input element allowing to choose variables:
-    // this.selec_var.append('option')
-    //   .attr('value', `v_${code_variable}`)
-    //   .text(name_variable.replace(year, unit_year));
-    //
-    // // And use it immediatly:
-    // this.selec_var.node().value = `v_${code_variable}`;
-    // this.selec_var.dispatch('change');
   }
 
   removeVariable(code_variable) {

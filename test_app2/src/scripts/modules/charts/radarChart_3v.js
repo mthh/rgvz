@@ -1,6 +1,6 @@
 import alertify from 'alertifyjs';
 import {
-  math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean, Tooltipsify } from './../helpers';
+  math_max, math_sin, math_cos, HALF_PI, computePercentileRank, getMean, Tooltipsify, prepareTooltip2 } from './../helpers';
 import { color_disabled, color_countries, color_highlight, color_default_dissim } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
 import { app, variables_info } from './../../main';
@@ -8,7 +8,7 @@ import CompletudeSection from './../completude';
 import TableResumeStat from './../tableResumeStat';
 
 
-let svg_bar, margin, bbox_svg, width, height;
+let svg_bar, margin, bbox_svg, width, height, t;
 
 const updateDimensions = () => {
   svg_bar = d3.select('#svg_bar');
@@ -18,6 +18,51 @@ const updateDimensions = () => {
   height = 500 * app.ratioToWide - margin.top - margin.bottom;
   svg_bar.attr('height', `${500 * app.ratioToWide}px`);
   svg_bar = svg_bar.append('g').attr('class', 'container');
+};
+
+const makeTableTooltip = (data_feature) => {
+  console.log(data_feature);
+  const doc = document;
+  const nb_features = data_feature.axes.length;
+  const column_names = ['/', 'Ratio', 'Rang', 'Écart à ma région'];
+  const nb_columns = column_names.length;
+  const container_div = doc.createElement('div');
+  const myTable = doc.createElement('table');
+  const headers = doc.createElement('thead');
+  const table_body = doc.createElement('tbody');
+  const headers_row = doc.createElement('tr');
+  myTable.style.position = 'relative';
+  myTable.style.display = 'inline-block';
+  myTable.className = 'minitable';
+  for (let i = 0; i < nb_columns; i++) {
+    const cell = doc.createElement('th');
+    cell.innerHTML = column_names[i];
+    headers_row.appendChild(cell);
+  }
+  headers.appendChild(headers_row);
+  myTable.appendChild(headers);
+  for (let i = 0; i < nb_features; i++) {
+    const row = doc.createElement('tr');
+    for (let j = 0; j < nb_columns; j++) {
+      const cell = doc.createElement('td');
+      const col_name = column_names[j];
+      if (col_name === '/') {
+        cell.innerHTML = data_feature.axes[i].axis;
+      } else if (col_name === 'Ratio') {
+        cell.innerHTML = Math.round(data_feature.axes[i]['raw_value'] * 10) / 10;
+      } else if (col_name === 'Rang') {
+        cell.innerHTML = Math.round(data_feature.axes[i]['value'] * 10) / 10;
+      } else {
+        cell.innerHTML = '';
+      }
+      row.appendChild(cell);
+    }
+    table_body.appendChild(row);
+  }
+  myTable.appendChild(table_body);
+  myTable.setAttribute('id', 'table_tooltip');
+  // container_div.appendChild(myTable);
+  return myTable;
 };
 
 const wrap = (_text, _width) => {
@@ -82,7 +127,7 @@ export const prepare_data_radar_default = (data, variables) => {
     const t = variables_info.find(d => d.id === v).id;
     const _v = `pr_${v}`;
     ojb_my_region.axes.push({
-      axis: t, value: v_my_region[_v],
+      axis: t, value: v_my_region[_v], raw_value: v_my_region[v],
     });
   });
   return ojb_my_region;
@@ -101,7 +146,7 @@ export const prepare_data_radar_ft = (data, variables, ft) => {
     const t = variables_info.find(d => d.id === v).id;
     const _v = `pr_${v}`;
     obj.axes.push({
-      axis: t, value: ft_values[_v],
+      axis: t, value: ft_values[_v], raw_value: ft_values[v],
     });
   });
   return obj;
@@ -144,6 +189,9 @@ export class RadarChart3 {
     this.g = svg_bar.append('g')
       .attr('id', 'RadarGrp')
       .attr('transform', `translate(${cfg.w / 2 + cfg.margin.left},${cfg.h / 2 + cfg.margin.top})`);
+
+    // Prepare the tooltip displayed on mouseover:
+    this.tooltip = prepareTooltip2(d3.select(svg_bar.node().parentElement.parentElement), null);
 
     this.prepareData(data);
     this.drawAxisGrid();
@@ -232,22 +280,22 @@ export class RadarChart3 {
       .attr('d', this.radarLine(elem.axes))
       .style('fill', app.colors[elem.name])
       .style('fill-opacity', cfg.opacityArea)
-      .on('mouseover', function () {
-        // Dim all blobs
-        self.g.selectAll('.radarArea')
-          .transition().duration(200)
-          .style('fill-opacity', 0);
-        // Bring back the hovered over blob
-        d3.select(this)
-          .transition().duration(200)
-          .style('fill-opacity', 0.3);
-      })
-      .on('mouseout', () => {
-        // Bring back all blobs
-        self.g.selectAll('.radarArea')
-          .transition().duration(200)
-          .style('fill-opacity', cfg.opacityArea);
-      })
+      // .on('mouseover', function () {
+      //   // Dim all blobs
+      //   self.g.selectAll('.radarArea')
+      //     .transition().duration(200)
+      //     .style('fill-opacity', 0);
+      //   // Bring back the hovered over blob
+      //   d3.select(this)
+      //     .transition().duration(200)
+      //     .style('fill-opacity', 0.3);
+      // })
+      // .on('mouseout', () => {
+      //   // Bring back all blobs
+      //   self.g.selectAll('.radarArea')
+      //     .transition().duration(200)
+      //     .style('fill-opacity', cfg.opacityArea);
+      // })
       .on('click', (d) => {
         const ft_id = d.name;
         self.map_elem.target_layer
@@ -318,12 +366,14 @@ export class RadarChart3 {
           .attr('y', this.cy.baseVal.value - 10)
           .transition()
           .style('display', 'block')
-          .text(self.Format(d.value) + cfg.unit);
+          .text(self.Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
       })
       .on('mouseout', () => {
         self.g.select('.tooltip').transition()
           .style('display', 'none').text('');
       });
+
+    this.makeTooltips();
   }
 
   changeOrder() {
@@ -502,74 +552,84 @@ export class RadarChart3 {
     this.axisGrid = axisGrid;
   }
 
+  makeTooltips() {
+    const self = this;
+    this.g.selectAll('.radarArea')
+      .on('mouseover', () => {
+        clearTimeout(t);
+        this.tooltip.style('display', null);
+      })
+      .on('mouseout', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          this.tooltip.style('display', 'none').selectAll('p').html('');
+          this.tooltip.selectAll('table').remove();
+        }, 250);
+      })
+      .on('mousemove mousedown', function (d) {
+
+        clearTimeout(t);
+        self.tooltip.select('.title')
+          .attr('class', 'title')
+          .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
+        if (!self.tooltip.select('table').node()) {
+          const table_elem = makeTableTooltip(d);
+          self.tooltip.node().append(table_elem);
+        }
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${d3.event.pageX - 5}px`,
+            top: `${d3.event.pageY - self.tooltip.node().getBoundingClientRect().height}px` });
+      });
+  }
+
   updateLegend() {
+    const self = this;
     const menu_selection = d3.select('#menu_selection');
-    menu_selection.selectAll('p').remove();
-    menu_selection.selectAll('p')
+    menu_selection.selectAll('div').remove();
+    menu_selection.selectAll('div')
       .data(this.data.map(a => a.name), d => d)
       .enter()
-      .append('p')
-      .attr('class', 'mini-legend-item')
+      .append('div')
+      .attr('class', 'mini-legend-line noselect')
       .style('margin', 'auto')
-      .html(d => `<p class="color_square" style="background-color:${app.colors[d]}"></p><span>${app.feature_names[d]}</span>`);
+      .html(d => `<div class="mini-legend-item"><p class="color_square" style="background-color:${app.colors[d]}"></p><span>${app.feature_names[d]}</span></div><span value="ft_${d}" class="btn_delete_mini">✘</span>`);
+    menu_selection.selectAll('.btn_delete_mini')
+      .on('click', function () {
+        const id = this.getAttribute('value').slice(3);
+        if (id === app.current_config.my_region) {
+          return;
+        }
+        app.colors[id] = null;
+        self.g.selectAll(`#${id}.radarWrapper`).remove();
+        self.g.selectAll(`#${id}.radarCircleWrapper`).remove();
+        const ix = self.data.map((_d, i) => [i, _d.name === id]).find(_d => _d[1] === true)[0];
+        self.data.splice(ix, 1);
+        self.displayed_ids = self.data.map(_d => _d.name);
+        self.update();
+      });
+    menu_selection.selectAll('.mini-legend-item')
+      .on('click', function () {
+        const b = this.getBoundingClientRect();
+        const d = self.data.find(a => a.name === this.parentElement.__data__);
+
+        clearTimeout(t);
+        self.tooltip.select('.title')
+          .attr('class', 'title')
+          .html([app.feature_names[d.name], ' (', d.name, ')'].join(''));
+        if (!self.tooltip.select('table').node()) {
+          const table_elem = makeTableTooltip(d);
+          self.tooltip.node().append(table_elem);
+        }
+        const b2 = self.tooltip.node().getBoundingClientRect();
+        self.tooltip
+          .styles({
+            display: null,
+            left: `${b.left + b.width}px`,
+            top: `${b.top - 20 - b2.height}px` });
+      });
   }
-  // handleLegend() {
-  //   const cfg = this.cfg;
-  //   if (cfg.legend !== false && typeof cfg.legend === 'object') {
-  //     const names = this.data.map(el => el.name);
-  //     if (cfg.legend.title) {
-  //       this.legendZone.append('text')
-  //         .attr('class', 'title')
-  //         .attr('transform', 'translate(0, -20)')
-  //         .attr('x', cfg.w - 70)
-  //         .attr('y', 10)
-  //         .attr('font-size', '12px')
-  //         .attr('fill', '#404040')
-  //         .text(cfg.legend.title);
-  //     }
-  //     const legend = this.legendZone
-  //       .selectAll('g')
-  //       .data(names);
-  //     const legendEnter = legend
-  //       .enter()
-  //       .append('g');
-  //
-  //     // Create rectangles markers
-  //     legendEnter
-  //       .append('rect')
-  //       .attrs((d, i) => ({
-  //         x: cfg.w - 65,
-  //         y: i * 20,
-  //         width: 10,
-  //         height: 10,
-  //       }))
-  //       .style('fill', d => app.colors[d.name]);
-  //
-  //     // Create labels
-  //     legendEnter
-  //       .append('text')
-  //       .attrs((d, i) => ({
-  //         x: cfg.w - 52,
-  //         y: i * 20 + 9,
-  //         fill: '#737373',
-  //         'font-size': '11px',
-  //       }))
-  //       .text(d => d);
-  //
-  //     legend.merge(legendEnter).selectAll('rect')
-  //       .attr('y', (d, i) => i * 20)
-  //       .style('fill', d => app.colors[d.name]);
-  //
-  //     legend.merge(legendEnter).selectAll('text')
-  //       .attrs((d, i) => ({
-  //         x: cfg.w - 52,
-  //         y: i * 20 + 9,
-  //       }))
-  //       .text(d => d);
-  //
-  //     legend.exit().remove();
-  //   }
-  // }
 
   drawArea() {
     const cfg = this.cfg;
@@ -592,22 +652,22 @@ export class RadarChart3 {
       .attr('class', 'radarArea')
       .attr('d', d => this.radarLine(d.axes))
       .style('fill', d => app.colors[d.name])
-      .style('fill-opacity', cfg.opacityArea)
-      .on('mouseover', function () {
-        // Dim all blobs
-        g.selectAll('.radarArea')
-          .transition().duration(200)
-          .style('fill-opacity', 0.1);
-        // Bring back the hovered over blob
-        d3.select(this)
-          .transition().duration(200)
-          .style('fill-opacity', 0.7);
-      })
-      .on('mouseout', () => {
-        g.selectAll('.radarArea')
-          .transition().duration(200)
-          .style('fill-opacity', cfg.opacityArea);
-      });
+      .style('fill-opacity', cfg.opacityArea);
+      // .on('mouseover', function () {
+      //   // Dim all blobs
+      //   g.selectAll('.radarArea')
+      //     .transition().duration(200)
+      //     .style('fill-opacity', 0.1);
+      //   // Bring back the hovered over blob
+      //   d3.select(this)
+      //     .transition().duration(200)
+      //     .style('fill-opacity', 0.7);
+      // })
+      // .on('mouseout', () => {
+      //   g.selectAll('.radarArea')
+      //     .transition().duration(200)
+      //     .style('fill-opacity', cfg.opacityArea);
+      // });
 
     // Create the outlines
     blobWrapper.append('path')
@@ -659,16 +719,18 @@ export class RadarChart3 {
           .attr('y', this.cy.baseVal.value - 10)
           .transition()
           .style('display', 'block')
-          .text(Format(d.value) + cfg.unit);
+          .text(Format(d.value) + cfg.unit + ' régions ont une valeur supérieure');
       })
       .on('mouseout', () => {
         g.select('.tooltip').transition()
           .style('display', 'none').text('');
       });
 
-    const tooltip = g.append('text')
+    g.append('text')
       .attrs({ class: 'tooltip', x: 0, y: 0, dy: '0.35em', 'text-anchor': 'middle' })
       .styles({ 'font-size': '12px', display: 'none' });
+
+    this.makeTooltips();
   }
 
   update() {
