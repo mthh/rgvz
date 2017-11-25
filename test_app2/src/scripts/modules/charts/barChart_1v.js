@@ -236,10 +236,6 @@ export class BarChart1 {
       .attr('class', 'brush_top')
       .call(brush_top);
 
-    const g_brush_bottom = context.append('g')
-      .attr('class', 'brush_bottom')
-      .call(brush_bottom);
-
     const groupe_line_mean = focus.append('g').attr('class', 'mean');
     // groupe_line_mean.append('text')
     //   .attrs({ x: 60, y: y(this.mean_value) + 20 })
@@ -295,6 +291,10 @@ export class BarChart1 {
       });
 
     this.updateMiniBars();
+
+    const g_brush_bottom = context.append('g')
+      .attr('class', 'brush_bottom')
+      .call(brush_bottom);
 
     const context_left_handle = g_brush_bottom.insert('image', '.handle')
       .attrs({

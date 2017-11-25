@@ -812,12 +812,15 @@ export class RadarChart3 {
     this.drawAxisGrid();
     this.drawArea();
     other_features.forEach((id) => {
-      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
-      this.add_element(a);
+      if (this.current_ids.indexOf(id) > -1) {
+        const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+        this.add_element(a);
+      }
     });
     this.updateMapRegio();
     this.updateCompletude();
     this.updateTableStat();
+    this.updateLegend();
   }
 
   addVariable(code_variable, name_variable) {
@@ -831,12 +834,15 @@ export class RadarChart3 {
     this.drawAxisGrid();
     this.drawArea();
     other_features.forEach((id) => {
-      const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
-      this.add_element(a);
+      if (this.current_ids.indexOf(id) > -1) {
+        const a = prepare_data_radar_ft(this.ref_data, this.variables, id);
+        this.add_element(a);
+      }
     });
     this.updateCompletude();
     this.updateMapRegio();
     this.updateTableStat();
+    this.updateLegend();
     Tooltipsify('[title-tooltip]');
   }
 
