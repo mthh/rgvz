@@ -1,13 +1,8 @@
 import { app } from './../main';
-import { color_disabled, color_countries, color_sup, color_inf, color_highlight, color_default_dissim, RATIO_WH_MAP } from './options';
+import { color_disabled, color_countries, color_sup, color_inf, color_highlight, RATIO_WH_MAP } from './options';
 import { getSvgPathType, svgPathToCoords, euclidian_distance, prepareTooltip2, getElementsFromPoint } from './helpers';
 import { filterLevelGeom } from './prepare_data';
 
-// const svg_map = d3.select('svg#svg_map'),
-//   margin_map = { top: 0, right: 0, bottom: 0, left: 0 },
-//   bbox_svg = svg_map.node().getBoundingClientRect(),
-//   width_map = +bbox_svg.width - margin_map.left - margin_map.right,
-//   height_map = +bbox_svg.height - margin_map.top - margin_map.bottom;
 
 const svg_map = d3.select('svg#svg_map');
 const bbox_svg = svg_map.node().getBoundingClientRect();
@@ -366,7 +361,7 @@ class MapSelect {
         .call(this.brush_map);
 
       svg_map.select('.brush_map')
-        .on('mousemove mousedown', function () {
+        .on('mousemove mousedown', () => {
           const elems = getElementsFromPoint(d3.event.pageX, d3.event.pageY);
           const elem = elems.find(e => e.className.baseVal === 'tg_ft');
           if (elem) {

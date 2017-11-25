@@ -4,13 +4,12 @@ import alertify from 'alertifyjs';
 import { createMenu, handleInputRegioName } from './modules/menuleft';
 import { makeTopMenu, makeHeaderChart, makeHeaderMapSection } from './modules/menutop';
 import { MapSelect, makeSourceSection, svg_map, zoomClick } from './modules/map';
-// import { makeTable } from './modules/table';
 import { color_highlight, MAX_VARIABLES, RATIO_WH_MAP } from './modules/options';
 import { BarChart1 } from './modules/charts/barChart_1v';
 import { ScatterPlot2 } from './modules/charts/scatterPlot_2v';
 import { RadarChart3 } from './modules/charts/radarChart_3v';
 import { Similarity1plus } from './modules/charts/similarity1v';
-import { unbindUI, selectFirstAvailableVar, prepareGeomLayerId, getRandom, Tooltipsify } from './modules/helpers';
+import { unbindUI, selectFirstAvailableVar, prepareGeomLayerId, getRandom, Tooltipsify, getRatioToWide } from './modules/helpers';
 import {
   prepare_dataset,
   filterLevelVar,
@@ -176,11 +175,11 @@ function updateAvailableCharts(nb_var) {
 
 function updateMyCategorySection() {
   if (app.current_config.my_category) {
-    document.querySelector('.filter_info').innerHTML = app.current_config.my_category ;
+    document.querySelector('.filter_info').innerHTML = app.current_config.my_category;
   } else if (app.current_config.filter_key instanceof Array) {
     document.querySelector('.filter_info').innerHTML = `Régions dans un voisinage de ${+d3.select('#dist_filter').property('value')} km`;
   } else {
-    document.querySelector('.filter_info').innerHTML = `Ensemble des régions`;
+    document.querySelector('.filter_info').innerHTML = 'Ensemble des régions';
   }
 }
 
@@ -421,13 +420,12 @@ function bindUI_chart(chart, map_elem) {
         .on('click', null);
     }
   }
-
   bindTopButtons(chart, map_elem);
 }
 
 /**
 * Function to handle click on the top menu, in order to choose
-* the kind of availables representation
+* between available representations.
 *
 * @param {Object} chart -
 * @param {Object} map_elem -
@@ -448,25 +446,16 @@ export function bindTopButtons(chart, map_elem) {
       const value = this.getAttribute('value');
       if (value === 'BarChart1') {
         chart = new BarChart1(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       } else if (value === 'ScatterPlot2') {
         chart = new ScatterPlot2(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       } else if (value === 'RadarChart3') {
         chart = new RadarChart3(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       } else if (value === 'Similarity1plus') {
         chart = new Similarity1plus(app.current_data); // eslint-disable-line no-param-reassign
-        bindUI_chart(chart, map_elem);
-        map_elem.bindBrushClick(chart);
-        chart.bindMap(map_elem);
       }
+      bindUI_chart(chart, map_elem);
+      map_elem.bindBrushClick(chart);
+      chart.bindMap(map_elem);
       app.chart = chart;
       app.map = map_elem;
       Tooltipsify('[title-tooltip]');
@@ -503,7 +492,7 @@ function bindHelpMenu() {
 
   const helps_buttons_study_zone = document.querySelector('#menu_studyzone').querySelectorAll('span.i_info');
   Array.prototype.slice.call(helps_buttons_study_zone).forEach((btn_i) => {
-    // eslint-disable-next-line no-param-reassign
+    // eslint-disable-next-line no-param-reassign, func-names
     btn_i.onclick = function () {
       const filter_name = this.previousSibling.previousSibling.getAttribute('filter-value');
       const o = study_zones.find(d => d.id === filter_name);
@@ -531,7 +520,7 @@ function bindHelpMenu() {
 
   const helps_buttons_territ_unit = document.querySelector('#menu_territ_level').querySelectorAll('span.i_info');
   Array.prototype.slice.call(helps_buttons_territ_unit).forEach((btn_i) => {
-    // eslint-disable-next-line no-param-reassign
+    // eslint-disable-next-line no-param-reassign, func-names
     btn_i.onclick = function () {
       const territ_level_name = this.previousSibling.previousSibling.getAttribute('value');
       const o = territorial_mesh.find(d => d.id === territ_level_name);
@@ -589,6 +578,7 @@ function loadData() {
       let features_menu = full_dataset.filter(ft => ft.REGIOVIZ === '1');
       features_menu = features_menu.slice(0, 1).concat(
         features_menu.slice(6)).concat(features_menu.slice(1, 6));
+      // eslint-disable-next-line no-param-reassign
       features_menu.forEach((ft) => { ft.name = ft.name.replace(' — ', ' - '); });
       const start_region = getRandom(features_menu.map(d => d.id), 12);
       const start_variable = getRandom(
@@ -626,21 +616,6 @@ function loadData() {
 }
 
 loadData();
-
-const getRatioToWide = () => {
-  if (window.matchMedia('(min-width: 1561px)').matches) {
-    return 1550 / 1350;
-  } else if (window.matchMedia('(min-width: 1361px) and (max-width: 1560px)').matches) {
-    return 1350 / 1350;
-  } else if (window.matchMedia('(min-width: 1161px) and (max-width: 1360px)').matches) {
-    return 1150 / 1350;
-  } else if (window.matchMedia('(min-width: 960px) and (max-width: 1160px)').matches) {
-    return 960 / 1350;
-  } else if (window.matchMedia('(max-width: 959px)').matches) {
-    return 540 / 1350;
-  }
-  return 1350 / 1350;
-};
 
 window.onresize = function () {
   const previous_ratio = app.ratioToWide;

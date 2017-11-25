@@ -1,5 +1,6 @@
 import { color_inf, color_sup } from './options';
 
+// eslint-disable-next-line no-restricted-properties
 const math_pow = Math.pow;
 const math_abs = Math.abs;
 const math_round = Math.round;
@@ -9,6 +10,16 @@ const math_cos = Math.cos;
 const math_sqrt = Math.sqrt;
 const HALF_PI = Math.PI / 2;
 
+/**
+* Function to dispatch, according to their availability,
+* between the appropriate 'elementsFromPoint' function
+* (as Edge seems to use a different name than the others).
+*
+* @param {Number} x - X screen coordinate.
+* @param {Number} y - Y screen coordinate.
+* @return {Array of Node} - An Array created from the resulting NodeList.
+*
+*/
 const getElementsFromPoint = (x, y) => {
   return document.elementsFromPoint
     ? Array.prototype.slice.call(document.elementsFromPoint(x, y))
@@ -17,7 +28,17 @@ const getElementsFromPoint = (x, y) => {
     : null;
 };
 
-function prepareTooltip2(parent, before, classname='tooltip') {
+/**
+* Function to prepare a tooltip zone to be used/bound later.
+*
+* @param {Object} parent - The d3 node selection for the parent.
+* @param {String} before - The selector describing the before element.
+* @param {String} classname - The className value to be used for
+*                             this tooltip (default 'tooltip').
+* @return {Object} - The d3 node element for this tooltip zone.
+*
+*/
+function prepareTooltip2(parent, before, classname = 'tooltip') {
   const t = parent.select('.tooltip');
   if (t.node()) {
     return t;
@@ -32,7 +53,21 @@ function prepareTooltip2(parent, before, classname='tooltip') {
   return tooltip;
 }
 
-const Tooltipsify = (selector, options={}) => {
+/**
+* Function to bind a tooltip (on mousedown/mousemove)
+* on each element described by the given 'selector'.
+* Options can contains the name of attribute containing
+* the tooltip value, the name of the class to be used for
+* the tooltip and the parent DOM element on which appending
+* these tooltips (these tooltips are created and destroyed
+* each time they are displayed).
+*
+* @param {String} selector
+* @param {Object} options
+* @return {Void}
+*
+*/
+const Tooltipsify = (selector, options = {}) => {
   const opts = {
     parent: options.parent || document.body,
     className: options.className || 'tooltip-black',
@@ -64,7 +99,7 @@ const Tooltipsify = (selector, options={}) => {
       clearTimeout(t);
       t = setTimeout(() => { tooltip_parent.style('display', 'none'); }, opts.timeout);
     })
-    .on('mousemove mousedown', function (d) {
+    .on('mousemove mousedown', function () {
       clearTimeout(t);
       tooltip
         .html(this.getAttribute(opts.dataAttr));
@@ -75,7 +110,7 @@ const Tooltipsify = (selector, options={}) => {
           left: `${d3.event.pageX - 5}px`,
           top: `${d3.event.pageY - b.height - 15}px` });
     });
-}
+};
 
 function unbindUI() {
   // Removes the current behavior corresponding to clicking on the left menu:
@@ -180,6 +215,13 @@ const PropSizer = function PropSizer(fixed_value, fixed_size) {
   this.get_value = size => Math.pow(size * PI, 2) / this.smax * this.fixed_value;
 };
 
+/**
+* Function removing duplicate members of an array.
+*
+* @param {Array} arr - The array on which to operate.
+* @return {Array} - The input array, without duplicates.
+*
+*/
 const removeDuplicates = function removeDuplicates(arr) {
   const tmp = [];
   for (let i = 0, len_arr = arr.length; i < len_arr; i++) {
@@ -234,6 +276,13 @@ const _getPR = (v, serie) => {
   return 100 * (count - 1) / (serie.length - 1);
 };
 
+/**
+* Compute the mean value of a serie of values.
+*
+* @param {Array} serie - An array of Number.
+* @return {Number} - The mean of the input serie of values.
+*
+*/
 const getMean = (serie) => {
   const nb_values = serie.length;
   let sum = 0;
@@ -262,6 +311,12 @@ const getStandardizedMeanStdDev = (serie) => {
   return serie.map(val => (val - mean) / stddev);
 };
 
+/**
+* Function the get a shuffled version of an array.
+*
+* @param {Array} array - The array to shuffle.
+* @return {Array} - The shuffled array.
+*/
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -271,6 +326,15 @@ const shuffle = (array) => {
   return array;
 };
 
+/**
+* Compute the euclidian distance between two Features
+* containing Point geometries.
+*
+* @param {Object} feature1
+* @param {Object} feature2
+* @return {Number} - The distance between feature1 and feature2 in their unit.
+*
+*/
 function euclidian_distance(feature1, feature2) {
   const [x1, y1] = feature1.geometry.coordinates;
   const [x2, y2] = feature2.geometry.coordinates;
@@ -283,7 +347,8 @@ function euclidian_distance(feature1, feature2) {
 * Function to select the first variable on the left menu
 * (triggered after changing region, if no more variable was selected)
 *
-* @return {void}
+* @return {String} - The code of an available variable to use.
+*
 */
 function selectFirstAvailableVar() {
   const menu = document.querySelector('#menu');
@@ -296,6 +361,16 @@ function selectFirstAvailableVar() {
   }
 }
 
+/**
+* Function to extract the 'id' field (named according
+* to 'id_field' value) on the target layer properties
+* and assign its value directly on the field name 'id'.
+*
+* @param {Object} layer - A geojson collection of features
+* @param {String} id_field - The name of the field containing
+*                           the id values.
+* @return {Void}
+*/
 function prepareGeomLayerId(layer, id_field) {
   layer.features.forEach((ft) => {
     // eslint-disable-next-line no-param-reassign
@@ -303,9 +378,33 @@ function prepareGeomLayerId(layer, id_field) {
   });
 }
 
+/**
+* Function to get a random value from an array (or from a subset of an array).
+*
+* @param {Array} arr - The array on which to operate.
+* @param {Number} false_length - The length of the subset on which to operate
+*                         (Optional - default to the real length of the array)
+* @return {Same type as the members of the input array}
+*
+*/
 function getRandom(arr, false_length) {
   return arr[Math.round(Math.random() * (false_length || arr.length))];
 }
+
+const getRatioToWide = () => {
+  if (window.matchMedia('(min-width: 1561px)').matches) {
+    return 1550 / 1350;
+  } else if (window.matchMedia('(min-width: 1361px) and (max-width: 1560px)').matches) {
+    return 1350 / 1350;
+  } else if (window.matchMedia('(min-width: 1161px) and (max-width: 1360px)').matches) {
+    return 1150 / 1350;
+  } else if (window.matchMedia('(min-width: 960px) and (max-width: 1160px)').matches) {
+    return 960 / 1350;
+  } else if (window.matchMedia('(max-width: 959px)').matches) {
+    return 540 / 1350;
+  }
+  return 1350 / 1350;
+};
 
 export {
   comp,
@@ -321,7 +420,6 @@ export {
   Rect,
   PropSizer,
   unbindUI,
-  prepareTooltip,
   prepareTooltip2,
   removeDuplicates,
   getSvgPathType,
@@ -338,4 +436,5 @@ export {
   getRandom,
   Tooltipsify,
   getElementsFromPoint,
+  getRatioToWide,
 };

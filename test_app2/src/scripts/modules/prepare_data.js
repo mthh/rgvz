@@ -24,12 +24,15 @@ export function prepare_dataset(full_dataset, app) {
 
 
 /**
+* Filter the initial dataset in order to obtain only the features
+* concerned by the current territorial division and by the selected study area
+* (or the geographical neighborhood) if any. The returned extract also only contains
+* the variables currently selected in the interface.
 *
 * @param {Object} app - The variable containing the global parameters about
 *   the current state of the application.
 * @return {Array} - The filtered data, containing only the requested variables
-*   for the feature of the current study zone,
-*    without features containing empty ratios.
+*   for the feature of the current study zone, without features containing empty ratios.
 *
 */
 export function filterLevelVar(app) {
@@ -71,18 +74,27 @@ export function filterLevelVar(app) {
 
 
 /**
-* TODO
+* Function allowing to filter the entities of the geographical layer
+* according to the territorial division chosen.
+*
+* @param {Array} nuts_features - The array of geojson Feature to be filtered.
+* @return {Array} - The filtered array.
+*
 */
 export function filterLevelGeom(nuts_features, filter = 'N1') {
   return nuts_features.filter(d => d.properties[filter] === 1);
 }
 
 /**
-* Function to prepare the global "variables_info" Array of objects from the array
-* containing the readed 'metadata.csv' file.
+* Function to prepare 3 global variables (both are Array of Objects) from the array
+* containing the readed 'metadata.csv' file. They respectively describe: the variables
+* to be used in the application (code, pretty name, unit, methodology, data source, date, etc),
+* the study areas to use (name, display level, etc.) and the reference territorial divisions
+* (each one described by a code making it possible to filter the features of the geographic layer
+* and the features in the reference dataset.)
 *
 * @param {Array} metadata_indicateurs - The array returned by d3.csv.
-* @return {void}
+* @return {void} - Nothing as these 3 objects are globals and modified in place.
 *
 */
 export function prepareVariablesInfo(metadata_indicateurs) {
@@ -117,7 +129,7 @@ export function prepareVariablesInfo(metadata_indicateurs) {
 }
 
 /**
-* Set and apply a new filter (ie. restrict the study zone) on the dataset to be used.
+* Set and apply a new filter (ie. restrict the study area) on the dataset to be used.
 *
 * @param {String} filter_type - The name of the filter to use.
 * @return {void}
@@ -138,7 +150,17 @@ export function applyFilter(app, filter_type) {
   app.colors[app.current_config.my_region] = color_highlight;
 }
 
-// TODO : Doc
+/**
+* Apply a region change (made in the left menu) in the various global variables
+* containing specific information about "my region".
+*
+* @param {Object} app - The variable containing the global parameters about
+*   the current state of the application.
+* @param {String} id_region - The id of the new targeted feature (my region).
+* @param {Object} map_elem - The current instance of the displayed map.
+* @return {Void}
+*
+*/
 export function changeRegion(app, id_region, map_elem) {
   app.current_config.my_region = id_region;
   app.current_config.my_region_pretty_name = app.feature_names[app.current_config.my_region];
@@ -155,8 +177,11 @@ export function changeRegion(app, id_region, map_elem) {
 }
 
 /**
+* Adds a variable to the currently used extract of the dataset (previously
+* obtained with the 'filterLevelVar' function).
 *
-* @param app -
+* @param app - The variable containing the global parameters about
+*   the current state of the application.
 * @param code_ratio - The code of the variable to be added.
 * @return {void}
 */
@@ -173,8 +198,11 @@ export function addVariable(app, code_ratio) {
 }
 
 /**
+* Removes a variable from the currently used extract of the dataset (previously
+* obtained with the 'filterLevelVar' function).
 *
-* @param app -
+* @param app - The variable containing the global parameters about
+*   the current state of the application.
 * @param code_ratio - The code of the variable to be remove.
 * @return {void}
 */
@@ -189,9 +217,11 @@ export function removeVariable(app, code_ratio) {
 }
 
 /**
-* Reset the current variables in use.
+* Reset the current variables in use (used in order to avoid successive calls
+* to addVariable and removeVariable if necessary).
 *
-* @param app -
+* @param app - The variable containing the global parameters about
+*   the current state of the application.
 * @param codes_ratio -
 * @return {void}
 */
@@ -216,7 +246,7 @@ export function resetVariables(app, codes_ratio) {
 }
 
 /**
-* Compute the ratio of available (= not empty) values (the "complétude") within
+* Compute the ratio of available (= not empty) values (the completeness) within
 * the subset currently in use for all the variables in "vars".
 *
 * @param {Object} app - The variable containing the global parameters about

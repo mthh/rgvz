@@ -217,7 +217,7 @@ export class ScatterPlot2 {
         clearTimeout(t);
         t = setTimeout(() => { this.tooltip.style('display', 'none').select('.title').attr('class', 'title').html(''); }, 250);
       })
-      .on('mousemove mousedown', (d) => {
+      .on('mousemove mousedown', () => {
         clearTimeout(t);
         const content = ['Moyenne de l\'espace d\'étude'];
         let _h = 65;
@@ -263,9 +263,6 @@ export class ScatterPlot2 {
       })
       .on('click', () => {
         this.xInversed = !this.xInversed;
-        // for (let i = 0; i < this.nbFt; i++) {
-        //   self.data[i][self.rank_variable1] = 100 - self.data[i][self.rank_variable1];
-        // }
         svg_container.select('#title-axis-x').style('fill', this.xInversed ? 'red' : 'black');
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
@@ -285,9 +282,6 @@ export class ScatterPlot2 {
       })
       .on('click', () => {
         this.yInversed = !this.yInversed;
-        // for (let i = 0; i < this.nbFt; i++) {
-        //   this.data[i][this.rank_variable2] = 100 - this.data[i][this.rank_variable2];
-        // }
         svg_container.select('#title-axis-y').style('fill', this.yInversed ? 'red' : 'black');
         if (this.last_map_selection) {
           this.map_elem.callBrush(this.last_map_selection);
@@ -523,9 +517,6 @@ export class ScatterPlot2 {
       const x = this.x;
       const y = this.y;
       const default_color = 'gray';
-
-      // const dots = this.scatter.selectAll('.dot')
-      //   .data(data, d => d.id);
 
       dots
         .transition()
@@ -978,7 +969,7 @@ export class ScatterPlot2 {
     app.colors = {};
     for (let i = 0, len_i = this.data.length; i < len_i; i++) {
       const ft = this.data[i];
-      if (ft[this.variable1] <= mean1 && ft[this.variable2] <= mean2) {
+      if (ft[this.variable1] < mean1 && ft[this.variable2] < mean2) {
         app.colors[ft.id] = comp2(
           ft[this.variable1], ft[this.variable2],
           this.ref_value1, this.ref_value2,
@@ -1016,7 +1007,7 @@ export class ScatterPlot2 {
     app.colors = {};
     for (let i = 0, len_i = this.data.length; i < len_i; i++) {
       const ft = this.data[i];
-      if (ft[this.variable1] >= mean1 && ft[this.variable2] >= mean2) {
+      if (ft[this.variable1] > mean1 && ft[this.variable2] > mean2) {
         app.colors[ft.id] = comp2(
           ft[this.variable1], ft[this.variable2],
           this.ref_value1, this.ref_value2,

@@ -2,12 +2,19 @@ import tingle from 'tingle.js';
 import { app } from './../main';
 
 
+/**
+* Function to prepare the menu, located on the top of the window, allowing to choose
+* between the various kind of charts offered by the application.
+* The function only creates the element on the DOM. Binding is made later.
+*
+* @return {Void}
+*/
 export function makeTopMenu() {
   const top_menu = d3.select('#menutop')
     .styles({ 'font-family': "'Signika', sans-serif", 'font-size': '0.80em', 'text-align': 'center' });
-  const width_left = `${document.querySelector('#menu').getBoundingClientRect().width + 25}px`;
-  const width_central_chart = `${document.querySelector('#bar_section').getBoundingClientRect().width}px`;
-  const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 40}px`;
+  // const width_left = `${document.querySelector('#menu').getBoundingClientRect().width + 25}px`;
+  // const width_central_chart = `${document.querySelector('#bar_section').getBoundingClientRect().width}px`;
+  // const width_map = `${document.querySelector('#map_section').getBoundingClientRect().width - 40}px`;
 
   top_menu
     .append('div')
@@ -57,6 +64,12 @@ export function makeTopMenu() {
     .html('QUELLES RÉGIONS ?');
 }
 
+/**
+* Function to prepare the icons displayed on the top of the map.
+* The function only creates the element on the DOM. Binding is made later.
+*
+* @return {Void}
+*/
 export function makeHeaderMapSection() {
   const header_map_section = d3.select('#map_section')
     .insert('div', '#svg_map')
@@ -124,6 +137,14 @@ export function makeHeaderMapSection() {
 }
 
 
+/**
+* Function to prepare the icons displayed on the top of the chart.
+* The function creates the elements on the DOM and bind click events on
+* these elements (the behavior of the different dialogs created is determined
+* at their opening by some informations present in the global variable 'app').
+*
+* @return {Void}
+*/
 export function makeHeaderChart() {
   const header_bar_section = d3.select('#bar_section')
     .insert('p', 'svg')

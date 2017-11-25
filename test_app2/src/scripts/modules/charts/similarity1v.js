@@ -380,7 +380,7 @@ export class Similarity1plus {
         })
         .on('mouseout', () => {
           clearTimeout(t);
-          t = setTimeout(() => { this.tooltip.style('display', 'none').html(''); }, 250);
+          t = setTimeout(() => { this.tooltip.style('display', 'none').selectAll('p').html(''); }, 250);
         })
         .on('mousemove mousedown', function (d) {
           const content = [];

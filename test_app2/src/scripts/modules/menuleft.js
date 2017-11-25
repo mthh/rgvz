@@ -8,7 +8,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   // title_section1.className = 'title_menu';
   // title_section1.innerHTML = 'Ma région';
   const title_section1 = document.createElement('div');
-  title_section1.style.backgroundColor = '#4f81bd'
+  title_section1.style.backgroundColor = '#4f81bd';
   title_section1.style.color = 'white';
   title_section1.style.overflow = 'hidden';
   title_section1.innerHTML = `
@@ -122,7 +122,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
   blabla.style.margin = '0px 10px';
   blabla.style.fontSize = '0.5em';
   blabla.style.float = 'right';
-  blabla.innerHTML = '<a style="margin: 0 4px;" href="#">Crédits</a><a style="margin: 0 4px;" href="#">Plus d\'informations</a>'
+  blabla.innerHTML = '<a style="margin: 0 4px;" href="#">Crédits</a><a style="margin: 0 4px;" href="#">Plus d\'informations</a>';
   section5.appendChild(img2);
   section5.appendChild(img1);
   section5.appendChild(blabla);
