@@ -171,7 +171,7 @@ export class RadarChart3 {
       strokeWidth: 2, // The width of the stroke around each blob
       roundStrokes: true, // If true the area and stroke will follow a round path (cardinal-closed)
       color: d3.scaleOrdinal(d3.schemeCategory10), // Color function,
-      format: '.2', // The format string to be used by d3.format
+      format: '.3', // The format string to be used by d3.format
       unit: '%', // The unit to display after the number on the axis and point tooltips (like $, €, %, etc)
       legend: false,
       allowInverseData: true,

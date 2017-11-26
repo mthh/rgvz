@@ -49,7 +49,7 @@ const createMenu = function createMenu(names, variables, study_zones, territoria
     const gp_name = groups_var[i];
     const entry = document.createElement('p');
     entry.className = 'name_group_var';
-
+    entry.style.cursor = 'pointer';
     entry.innerHTML = (i === 0)
       ? `<span class='arrow arrow_right'></span><span>${gp_name}</span>`
       : `<span class='arrow arrow_down'></span><span>${gp_name}</span>`;

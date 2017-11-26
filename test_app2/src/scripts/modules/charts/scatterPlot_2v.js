@@ -1,7 +1,7 @@
 import { Rect, comp2, prepareTooltip2, svgPathToCoords, _getPR, computePercentileRank, getMean } from './../helpers';
 import { color_disabled, color_countries, color_highlight } from './../options';
 import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
-import { svg_map } from './../map';
+// import { svg_map } from './../map';
 import { app, variables_info, resetColors } from './../../main';
 import ContextMenu from './../contextMenu';
 import CompletudeSection from './../completude';

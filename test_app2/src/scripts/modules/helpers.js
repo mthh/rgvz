@@ -1,5 +1,57 @@
 import { color_inf, color_sup } from './options';
 
+(function () {
+  if (!Element.prototype.remove) {
+    Element.prototype.remove = function () {
+      this.parentElement.removeChild(this);
+    };
+  }
+  if (!Array.prototype.find) {
+    Object.defineProperty(Array.prototype, 'find', {
+      value: function (predicate) {
+       // 1. Let O be ? ToObject(this value).
+        if (this == null) {
+          throw new TypeError('"this" is null or not defined');
+        }
+        let k, kValue;
+        const o = Object(this);
+
+        // 2. Let len be ? ToLength(? Get(O, "length")).
+        const len = o.length >>> 0;
+
+        // 3. If IsCallable(predicate) is false, throw a TypeError exception.
+        if (typeof predicate !== 'function') {
+          throw new TypeError('predicate must be a function');
+        }
+
+        // 4. If thisArg was supplied, let T be thisArg; else let T be undefined.
+        const thisArg = arguments[1];
+
+        // 5. Let k be 0.
+        k = 0;
+
+        // 6. Repeat, while k < len
+        while (k < len) {
+          // a. Let Pk be ! ToString(k).
+          // b. Let kValue be ? Get(O, Pk).
+          // c. Let testResult be ToBoolean(? Call(predicate, T, « kValue, k, O »)).
+          // d. If testResult is true, return kValue.
+          kValue = o[k];
+          if (predicate.call(thisArg, kValue, k, o)) {
+            return kValue;
+          }
+          // e. Increase k by 1.
+          k++;
+        }
+
+        // 7. Return undefined.
+        return undefined;
+      },
+    });
+  }
+})();
+
+
 // eslint-disable-next-line no-restricted-properties
 const math_pow = Math.pow;
 const math_abs = Math.abs;
@@ -13,19 +65,31 @@ const HALF_PI = Math.PI / 2;
 /**
 * Function to dispatch, according to their availability,
 * between the appropriate 'elementsFromPoint' function
-* (as Edge seems to use a different name than the others).
+* (as Edge seems to use a different name than the others),
+* or use a custom polyfill if the functionnality is unavailable.
 *
 * @param {Number} x - X screen coordinate.
 * @param {Number} y - Y screen coordinate.
-* @return {Array of Node} - An Array created from the resulting NodeList.
+* @return {Array of Nodes} - An Array created from the resulting NodeList.
 *
 */
-const getElementsFromPoint = (x, y) => {
-  return document.elementsFromPoint
-    ? Array.prototype.slice.call(document.elementsFromPoint(x, y))
-    : document.msElementsFromPoint
-    ? Array.prototype.slice.call(document.msElementsFromPoint(x, y))
-    : null;
+const getElementsFromPoint = (x, y, context = document.body) => {
+  if (document.elementsFromPoint) {
+    return Array.prototype.slice.call(document.elementsFromPoint(x, y));
+  } else if (document.msElementsFromPoint) {
+    return Array.prototype.slice.call(document.msElementsFromPoint(x, y));
+  }
+  const elements = [],
+    children = context.children;
+  let i, l, pos;
+
+  for (i = 0, l = children.length; i < l; i++) {
+    pos = children[i].getBoundingClientRect();
+    if (pos.left <= x && x <= pos.right && pos.top <= y && y <= pos.bottom) {
+      elements.push(children[i]);
+    }
+  }
+  return elements;
 };
 
 /**

@@ -1,7 +1,7 @@
-import { comp, math_round, math_abs, Rect, prepareTooltip2, getMean, svgPathToCoords, selectFirstAvailableVar, getElementsFromPoint } from './../helpers';
+import { comp, math_round, math_abs, Rect, prepareTooltip2, getMean, svgPathToCoords, getElementsFromPoint } from './../helpers';
 import { color_disabled, color_countries, color_sup, color_inf, color_highlight } from './../options';
-import { calcPopCompletudeSubset, calcCompletudeSubset, addVariable } from './../prepare_data';
-import { svg_map } from './../map';
+import { calcPopCompletudeSubset, calcCompletudeSubset } from './../prepare_data';
+// import { svg_map } from './../map';
 import { app, resetColors, variables_info } from './../../main';
 import TableResumeStat from './../tableResumeStat';
 import CompletudeSection from './../completude';
